@@ -1,67 +1,70 @@
 from selenium.webdriver.support.wait import WebDriverWait as wd_wait
 from selenium.common import exceptions
 from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.common.by import By
 import time
+from contextlib import contextmanager
 
 
-def login(self, email, password):
+def log_in_helper(driver, email, password):
     try:
-        wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.ID, "input_0"))).send_keys(email)
-    # TODO - REWRITE SO HE CAN RECOGNIZE IF ANYTHING IS LOADED AND THEN PROCEED - RATHER THAN WAITING AROUND FOR A
-    #  SPECIFIC AND IF NOT THEN PROCEEDING
+        wd_wait(driver, 10).until(ec.presence_of_element_located((By.TAG_NAME, "input")))
     except exceptions.TimeoutException:
-        inputs = self.driver.find_elements_by_tag_name('input')
-        for element in inputs:
-            if element.get_attribute('placeholder') == 'Your E-Mail':
-                element.send_keys(email)
-            elif element.get_attribute('placeholder') == 'Your Password':
-                element.send_keys(password)
+        driver.refresh()
+        try:
+            wd_wait(driver, 15).until(ec.presence_of_element_located((By.TAG_NAME, "input")))
+        except exceptions.TimeoutException:
+            driver.refresh()
+            try:
+                wd_wait(driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, "input")))
+            except exceptions.TimeoutException:
+                print('Salestrekker unresponsive, manual checkup needed')
+                driver.quit()
+                # TODO - Check Availability and Cleanup
+
+    # TODO - Unknown exception^
+
+    else:
+        input_elements = driver.find_elements_by_tag_name('input')
+        for log_input in input_elements:
+            if log_input.get_attribute('placeholder') == 'Your E-Mail':
+                log_input.send_keys(email)
+                continue
+            elif log_input.get_attribute('placeholder') == 'Your Password':
+                log_input.send_keys(password)
+                continue
             else:
                 continue
-        self.driver.find_element_by_tag_name('button').click()
-        time.sleep(5)
-    else:
-        self.driver.find_element_by_id('input_1').send_keys(password)
-        self.driver.find_element_by_tag_name('button').click()
+
+        driver.find_element_by_tag_name('button').click()
 
 
-def main_func(self):
-    self.driver.get(self.main_url + '/authenticate')
-
+def log_in(driver, ent, email, password):
+    driver.get("https://" + ent + '.salestrekker.com/authenticate')
     try:
-        assert "Authentication" in self.driver.title
-    except AssertionError:
+        wd_wait(driver, 10).until(ec.presence_of_element_located((By.TAG_NAME, 'sign-in')))
+    except exceptions.TimeoutException:
         time_increment = 0
         while True:
-            self.driver.get(self.main_url + '/authenticate')
-            time.sleep(time_increment)
-            time_increment += 1
-            if "Authentication" in self.driver.title:
+            driver.get("https://" + ent + '.salestrekker.com/authenticate')
+            if "Authentication" in driver.title:
                 break
-            elif time_increment > 8:
-                # find a way to check the availability of the service in this case
+            elif time_increment > 13:
                 print('Salestrekker unresponsive, manual checkup needed')
-                self.driver.quit()
+                driver.quit()
+                # TODO - Check Availability and Cleanup
 
-    self.login(self.email, self.password)
+            time.sleep(time_increment)
+            try:
+                wd_wait(driver, time_increment).until(ec.presence_of_element_located((By.TAG_NAME, 'sign-in')))
+            except exceptions.TimeoutException:
+                time_increment += 2
+
+    log_in_helper(driver, email, password)
 
     try:
-        wd_wait(self.driver, 15).until(ec.presence_of_element_located((By.ID, 'board')))
+        wd_wait(driver, 15).until(ec.presence_of_element_located((By.ID, 'board')))
     except exceptions.TimeoutException:
         while True:
-            self.driver.get(self.main_url + '/authenticate')
-            try:
-                wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.ID, "input_0"))).send_keys(
-                    self.email)
-            except exceptions.TimeoutException:
-                inputs = self.driver.find_elements_by_tag_name('input')
-                for element in inputs:
-                    if element.get_attribute('placeholder') == 'Your E-Mail':
-                        element.send_keys(self.email)
-                    elif element.get_attribute('placeholder') == 'Your Password':
-                        element.send_keys(self.password)
-                    else:
-                        continue
-            self.driver.find_element_by_id('input_1').send_keys(self.password)
-            self.driver.find_element_by_tag_name('button').click()
-            wd_wait(self.driver, 15).until(By.ID, 'board')
+            log_in_helper(driver, email, password)
+            wd_wait(driver, 15).until(By.ID, 'board')
