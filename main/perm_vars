@@ -1,0 +1,49 @@
+{
+  "orgs_info":
+  {
+    "vownet" : {
+    "main" : "Vow Financial Pty Ltd",
+    "learn" : "Learn Vownet"
+    },
+    "ioutsource" : {
+      "main": "outsource financial pty ltd",
+      "learn": "Learn ioutsource"
+    },
+    "sfg" :{
+      "main": "Specialist Finance Group",
+      "learn": "0 - Learn SFGconnect"
+    },
+    "chief" : {
+      "main": "Chief",
+      "learn": "Learn Chief"
+    },
+    "platform" : {
+      "main": "# Platform Connect",
+      "learn": "1. Learn Platform Connect"
+    },
+    "dev" : {
+      "main": "# Salestrekker Enterprise",
+      "learn": "**MAKE YOUR OWN** Matt Test Group (QA automation testing)"
+    },
+    "nlgconnect" : {
+      "main": "# NLG Connect",
+      "learn": "Z. Learn NLG Connect"
+    },
+    "app" : {
+      "main": "3 Demo N Co",
+      "learn": "3 Demo N Co"
+    },
+    "gemnz" : {
+      "main": "Gem New Zealand",
+      "learn": "0. Learn Gem"
+    },
+    "ynet": {
+      "main": "Yellow Brick Road Finance Pty Limited",
+      "learn": "0.Learn Ynet 2.0"
+    },
+    "gem": {
+      "main": "Astute Financial Management Pty Ltd",
+      "learn": "0. Learn GEM"
+    }
+  }
+}
