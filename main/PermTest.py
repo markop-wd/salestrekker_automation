@@ -18,8 +18,6 @@ init_list = []
 completed = []
 
 for count, org in enumerate(all_orgs):
-    if count > 1:
-        break
     init_list.append(rewritten.TestInitializer(email='helpdesk@salestrekker.com', password=info[org]['pass'], group=orgs_info[org]['learn'],ent=org))
     current_runner_instance = init_list[count]
     try:
@@ -35,7 +33,7 @@ for count, org in enumerate(all_orgs):
         completed.append(org + '\n')
         current_runner_instance.driver.quit()
 
-with open('completed.txt', 'a') as compl:
+with open('completed.txt', 'w+') as compl:
     compl.writelines(completed)
 
 # print(init_list)

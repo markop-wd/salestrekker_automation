@@ -13,6 +13,8 @@ import json
 
 user = 'matthew+0406@salestrekker.com'
 options = Options()
+options.headless = True
+
 
 #
 # with open("main/perm_vars") as perm_json:
@@ -27,7 +29,8 @@ class TestInitializer:
         self.ent = ent
         self.main_url = 'https://' + ent + '.salestrekker.com'
         self.driver = Firefox(executable_path=GeckoDriverManager().install(), options=options)
-        # self.driver = Chrome(ChromeDriverManager().in stall())
+        self.driver.maximize_window()
+        # self.driver = Chrome(ChromeDriverManager().install())
         self.email = email
         self.password = password
         self.new_org_name = new_org_name
@@ -36,14 +39,15 @@ class TestInitializer:
         self.hl_workflow_name = 'Automation Workflow Name'
         self.log_helper = helpers.LogIn(self.driver, self.ent, self.email, self.password)
         self.doc_helper = helpers.DocumentCheck(self.driver, self.ent)
+        self.wf_helper = helpers.WorkflowCheck(self.driver, self.ent)
 
     def test_logic(self, runner_main_org, runner_learn_org):
-
         self.log_helper.log_in()
         # self.org_helper.org_changer(runner_main_org)
         self.doc_helper.document_get(runner_main_org)
         self.doc_helper.document_compare(runner_learn_org)
-        # self.workflow_get()
+        self.wf_helper.workflow_get(runner_main_org)
+        self.wf_helper.workflow_compare(runner_learn_org)
         # self.org_changer(runner_main_org)
         # self.organization_create(group=self.group, new_org=self.new_org_name)
         # self.driver.get(self.main_url + '/authenticate')
