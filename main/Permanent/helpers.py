@@ -312,7 +312,8 @@ class DocumentCheck:
 
             if not_inherited:
                 with open(f"InfoFolder/{self.ent} {self.time} document_inheritance.txt", "a+") as doc_inherit:
-                    doc_inherit.write(self.main_url + ' - ' + "Documents are present in the child org " + self.child_org + ' that are not present in the parent org ' + self.parent_org + ' the following is \'extra\'\n')
+                    doc_inherit.write(
+                        self.main_url + ' - ' + "Documents are present in the child org " + self.child_org + ' that are not present in the parent org ' + self.parent_org + ' the following is \'extra\'\n')
                     doc_inherit.writelines(not_inherited)
 
         sleep(8)
@@ -398,7 +399,8 @@ class WorkflowCheck:
 
             if not_inherited:
                 with open(f"InfoFolder/{self.ent} {self.time} workflow_inheritance.txt", "a+") as wf_inherit:
-                    wf_inherit.write('From ' + self.main_url + ' - ' + self.parent_org + ' to ' + self.child_org + ' the following wasn\'t inherited\n')
+                    wf_inherit.write(
+                        'From ' + self.main_url + ' - ' + self.parent_org + ' to ' + self.child_org + ' the following wasn\'t inherited\n')
                     wf_inherit.writelines(not_inherited)
 
             not_inherited = []
@@ -409,6 +411,249 @@ class WorkflowCheck:
 
             if not_inherited:
                 with open(f"InfoFolder/{self.ent} {self.time} workflow_inheritance.txt", "a+") as wf_inherit:
-                    wf_inherit.write(self.main_url + ' - ' + "Workflows are present in the child org " + self.child_org + ' that are not present in the parent org ' + self.parent_org + ' the following is \'extra\'\n')
+                    wf_inherit.write(
+                        self.main_url + ' - ' + "Workflows are present in the child org " + self.child_org + ' that are not present in the parent org ' + self.parent_org + ' the following is \'extra\'\n')
                     wf_inherit.writelines(not_inherited)
         sleep(8)
+
+
+def user_extraction(driver, ent):
+    main_url = "https://" + ent + ".salestrekker.com"
+    driver.get(main_url + "settings/users")
+
+    main_documents = driver.find_element_by_css_selector('body > md-content')
+    last_height = driver.execute_script("return arguments[0].scrollHeight", main_documents)
+    # print(last_height)
+    sleep(1)
+    while True:
+        driver.execute_script(f"arguments[0].scroll(0,{last_height});", main_documents)
+        sleep(3)
+        new_height = driver.execute_script("return arguments[0].scrollHeight", main_documents)
+
+        if new_height == last_height:
+            break
+        last_height = new_height
+
+    users = []
+    for user in driver.find_elements_by_css_selector('a:first-of-type > content > span'):
+        users.append(user.text)
+
+    return users
+
+
+class WorkflowManipulation:
+    from datetime import datetime
+
+    def __init__(self, driver, ent):
+        self.ent = ent
+        self.driver = driver
+        self.main_url = "https://" + ent + ".salestrekker.com"
+
+    def add_workflow(self, workflow_name=f'Test Workflow {datetime.today()}', workflow_type='homeloan'):
+        import random
+        from selenium.webdriver.common.keys import Keys
+
+        assert "salestrekker" in self.driver.current_url, 'invalid url'
+        assert "authenticate" not in self.driver.current_url, 'you are at a login page'
+
+        # TODO - Assert that you ar at a correct position
+
+        self.driver.get(self.main_url + "/settings/workflow/0")
+        try:
+            wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
+        except exceptions.TimeoutException:
+            self.driver.get(self.main_url + "/settings/workflow/0")
+            try:
+                wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
+            except exceptions.TimeoutException:
+                self.driver.get(self.main_url + "/settings/workflow/0")
+                wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
+
+        users = user_extraction(self.driver, self.ent)
+        self.driver.find_element_by_css_selector('st-block-form-content > div > div:first-child > md-input-container > input').send_keys('')
+        # for count, input_el in enumerate(
+        #         self.driver.find_elements_by_css_selector('st-block-form-content > div input')):
+        #     if count == 0:
+        #         input_el.send_keys(workflow_name)
+        #     if count == 1:
+        #         input_el.send_keys('AutoTest WF')
+        #     if count == 2:
+        #         input_el.send_keys(current_user_name + Keys.ENTER)
+        #         sleep(1)
+        #         input_el.send_keys('Test Surname' + Keys.ENTER)
+
+        self.driver.find_element_by_css_selector('st-block-form-content >div >div:nth-child(4)').click()
+
+        type_list = wd_wait(self.driver, 10).until(
+            ec.presence_of_element_located((By.CSS_SELECTOR, 'body > div > md-select-menu '
+                                                             '> md-content')))
+
+        for wf_type in type_list.find_elements_by_tag_name('md-option'):
+            if wf_type.find_element_by_css_selector('div > span').text == 'Home Loan':
+                wf_type.click()
+                sleep(5)
+                break
+
+        new_stages = random.randint(0, 5)
+        while new_stages > 0:
+            self.driver.find_element_by_css_selector('span > button').click()
+            new_stages -= 1
+
+        number_of_stages = len(self.driver.find_elements_by_css_selector('st-block:nth-child(2) > '
+                                                                         'st-block-form-content main'))
+
+        sleep(5)
+
+        self.driver.get(self.main_url + "/settings/workflows")
+
+        try:
+            wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, 'md-content')))
+        except exceptions.TimeoutException:
+            self.driver.get(self.main_url + "/settings/workflow/0")
+            try:
+                wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, 'md-content')))
+            except exceptions.TimeoutException:
+                self.driver.get(self.main_url + "/settings/workflow/0")
+                wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, 'md-content')))
+
+        main_documents = self.driver.find_element_by_css_selector('body > md-content')
+
+        last_height = self.driver.execute_script("return arguments[0].scrollHeight", main_documents)
+        print(last_height)
+        sleep(1)
+        while True:
+            self.driver.execute_script(f"arguments[0].scroll(0,{last_height});", main_documents)
+            sleep(3)
+            new_height = self.driver.execute_script("return arguments[0].scrollHeight", main_documents)
+
+            if new_height == last_height:
+                break
+            last_height = new_height
+
+        for elel in self.driver.find_elements_by_css_selector('st-list-item > a > span'):
+            if elel.text == workflow_name:
+                nav_url = self.main_url + "/board/" + \
+                          str(elel.find_element_by_xpath('./..').get_attribute('href')).split('/')[-1]
+                self.driver.get(nav_url)
+                break
+
+        try:
+            wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.ID, 'board')))
+        except exceptions.TimeoutException:
+            self.driver.get(nav_url)
+            try:
+                wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.ID, 'board')))
+            except exceptions.TimeoutException:
+                wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.ID, 'board')))
+
+        if number_of_stages == len(self.driver.find_elements_by_css_selector('#board > stage ')):
+            print('all good with stage and HL WF adding')
+        else:
+            print('diff between expected and actual is ',
+                  number_of_stages - len(self.driver.find_elements_by_css_selector('#board > stage')))
+
+    def duplicate_hl_wf(self):
+        self.driver.get(self.main_url + "/settings/workflows")
+        try:
+            wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, 'md-content')))
+        except exceptions.TimeoutException:
+            self.driver.get(self.main_url + "/settings/workflows")
+            try:
+                wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, 'md-content')))
+            except exceptions.TimeoutException:
+                self.driver.get(self.main_url + "/settings/workflows")
+                wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, 'md-content')))
+
+        main_documents = self.driver.find_element_by_css_selector('body > md-content')
+
+        last_height = self.driver.execute_script("return arguments[0].scrollHeight", main_documents)
+        # print(last_height)
+        sleep(1)
+        while True:
+            self.driver.execute_script(f"arguments[0].scroll(0,{last_height});", main_documents)
+            sleep(3)
+            new_height = self.driver.execute_script("return arguments[0].scrollHeight", main_documents)
+
+            if new_height == last_height:
+                break
+            last_height = new_height
+
+        for elel in self.driver.find_elements_by_css_selector('st-list-item > a > span'):
+            if elel.text == self.hl_workflow_name:
+                elel.find_element_by_xpath('')
+                nav_url = self.main_url + "/board/" + \
+                          str(elel.find_element_by_xpath('./..').get_attribute('href')).split('/')[-1]
+
+                break
+
+        # self.hl_workflow_name
+        pass
+
+# def add_user(self):
+#     self.driver.get(self.main_url + '/settings/users')
+#     try:
+#         wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, 'st-accounts-list')))
+#     except exceptions.TimeoutException:
+#         self.driver.get(self.main_url + '/settings/users')
+#         wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, 'st-accounts-list')))
+#
+#     self.driver.find_element_by_css_selector('span > button').click()
+#     wd_wait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'span > button')))
+#     self.driver.find_element_by_css_selector('div:nth-child(1) > md-input-container > input').send_keys(user)
+#     self.driver.find_element_by_css_selector(
+#         'div:nth-child(2) > md-input-container:nth-child(1) > input').send_keys('Test')
+#     self.driver.find_element_by_css_selector(
+#         'div:nth-child(2) > md-input-container:nth-child(2) > input').send_keys('Surname')
+#
+#     try:
+#         wd_wait(self.driver, 10).until(ec.element_to_be_clickable(
+#             (By.CSS_SELECTOR, 'md-dialog-actions > button:nth-child(2)'))).click()
+#     except exceptions.ElementClickInterceptedException:
+#         self.driver.execute_script('document.querySelector("md-dialog-actions > button:nth-child(2)").click();')
+#     time.sleep(5)
+#     print('add user good')
+#     pass
+#
+# def organization_create(self, group, new_org='Test Organization 2020-03-31'):
+#     self.driver.get(self.main_url + "/settings/groups-and-branches")
+#     try:
+#         wd_wait(self.driver, 60).until(
+#             ec.invisibility_of_element_located((By.TAG_NAME, 'st-progressbar')))
+#     except exceptions.TimeoutException:
+#         self.driver.get(self.main_url + "/settings/groups-and-branches")
+#         try:
+#             wd_wait(self.driver, 30).until(
+#                 ec.invisibility_of_element_located((By.TAG_NAME, 'st-progressbar')))
+#         except exceptions.TimeoutException:
+#             self.driver.get(self.main_url + "/settings/groups-and-branches")
+#             try:
+#                 wd_wait(self.driver, 50).until(
+#                     ec.invisibility_of_element_located((By.TAG_NAME, 'st-progressbar')))
+#             except exceptions.TimeoutException:
+#                 self.driver.get(self.main_url + "/settings/groups-and-branches")
+#                 wd_wait(self.driver, 50).until(ec.invisibility_of_element_located((By.TAG_NAME, 'st-progressbar')))
+#
+#     self.current_user_name = self.driver.find_element_by_css_selector('div > st-avatar > img').get_attribute('alt')
+#     print(self.current_user_name)
+#     wd_wait(self.driver, 30).until(
+#         ec.element_to_be_clickable((By.CLASS_NAME, 'primary.md-button.md-ink-ripple'))).click()
+#     wd_wait(self.driver, 20).until(ec.visibility_of_element_located((By.TAG_NAME, 'md-dialog-content')))
+#     wd_wait(self.driver, 20).until(
+#         ec.element_to_be_clickable((By.CSS_SELECTOR, 'div > md-input-container > input'))).send_keys(
+#         new_org)
+#     wd_wait(self.driver, 20).until(
+#         ec.element_to_be_clickable(
+#             (By.CSS_SELECTOR, 'div > div > md-autocomplete > md-autocomplete-wrap > input'))).send_keys(
+#         str(self.current_user_name) + Keys.ENTER)
+#     # wd_wait(self.driver, 5).until(ec.presence_of_element_located((By.CLASS_NAME,
+#     # 'md-contact-suggestion'))).click()
+#     self.driver.find_element_by_css_selector('md-input-container > md-select').click()
+#     wd_wait(self.driver, 5).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'md-select-menu > md-content')))
+#     for elemento in self.driver.find_elements_by_tag_name('md-option'):
+#         if elemento.find_element_by_tag_name(
+#                 'span').text == group:
+#             elemento.click()
+#     wd_wait(self.driver, 10).until(ec.element_to_be_clickable((By.CSS_SELECTOR, 'md-dialog-actions > '
+#                                                                                 'button:nth-child(2)'))).click()
+#     time.sleep(10)
+#     pass

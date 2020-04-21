@@ -45,6 +45,7 @@ class TestInitializer:
         self.wf_helper.workflow_get(runner_main_org)
         self.doc_helper.document_compare(runner_learn_org)
         self.wf_helper.workflow_compare(runner_learn_org)
+        # helpers.add_hl_workflow()
         # self.org_changer(runner_main_org)
         # self.organization_create(group=self.group, new_org=self.new_org_name)
         # self.driver.get(self.main_url + '/authenticate')
