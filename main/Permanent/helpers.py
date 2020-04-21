@@ -38,8 +38,11 @@ def org_changer(driver, org_name):
             wd_wait(driver, 10).until(
                 ec.presence_of_element_located((By.CSS_SELECTOR, "body > div > md-dialog")))
         try:
+            sleep(1)
             driver.find_element_by_css_selector("input[placeholder='Search for an organization']").send_keys(
-                org_name)
+                str(org_name))
+            sleep(1)
+
         except exceptions.ElementNotInteractableException:
             # No idea what to do here
             # TODO - research alternate way to input the search value here
@@ -61,11 +64,10 @@ def org_changer(driver, org_name):
             else:
                 # org_name = new_org_name
                 org_changer(driver, new_org_name)
-
         for element in organisation_names:
             if element.find_element_by_tag_name('small').text.lower() == str(org_name).lower():
                 element.click()
-                print('found and clicked', org_name)
+                print('Moving to ', org_name)
                 try:
                     wd_wait(driver, 5).until(ec.title_contains(('Organization switch in progress')))
                 except exceptions.TimeoutException:
@@ -78,7 +80,7 @@ def org_changer(driver, org_name):
                             driver.quit()
 
             else:
-                print('passing over')
+                pass
 
         # TODO - Cleanup
 
@@ -87,7 +89,7 @@ def org_changer(driver, org_name):
         except exceptions.TimeoutException:
             driver.quit()
             # TODO - Cleanup
-        print('Org Changer Finished')
+        # print('Org Changer Finished')
     else:
         print('Already in that organisation, moving on')
         pass
@@ -208,12 +210,14 @@ class LogIn:
 
 class DocumentCheck:
 
-    def __init__(self, driver, ent):
+    def __init__(self, driver, ent, time):
+        self.ent = ent
         self.driver = driver
         self.document_list = []
         self.main_url = "https://" + ent + ".salestrekker.com"
         self.parent_org = ''
         self.child_org = ''
+        self.time = time
 
     def document_get(self, org):
         # TODO - LABEL
@@ -265,6 +269,105 @@ class DocumentCheck:
         new_org_document_list = []
         self.driver.get(self.main_url + '/settings/documents')
         wd_wait(self.driver, 30).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
+        md_content = self.driver.find_element_by_css_selector('body > md-content')
+
+        last_height = self.driver.execute_script("return arguments[0].scrollHeight", md_content)
+        sleep(1)
+        while True:
+            self.driver.execute_script(f"arguments[0].scroll(0,{last_height});", md_content)
+            sleep(3)
+            new_height = self.driver.execute_script("return arguments[0].scrollHeight", md_content)
+
+            if new_height == last_height:
+                break
+            last_height = new_height
+
+        for document in self.driver.find_elements_by_tag_name('st-list-item'):
+            new_org_document_list.append(document.find_element_by_css_selector('a > content > span').text)
+
+        # This got really convoluted in order to account for both from parent to child and reverse cases.
+        # TODO - Check if there is an easier way to handle this
+        if not set(new_org_document_list).symmetric_difference(set(self.document_list)):
+            with open(f"InfoFolder/{self.ent} {self.time} document_inheritance.txt", "a+") as doc_inherit:
+                doc_inherit.write(
+                    'From ' + self.main_url + ' - ' + self.parent_org + ' to ' + self.child_org + ' no disrepancies noted between documents\n')
+        else:
+            not_inherited = []
+
+            for documentino in self.document_list:
+                if documentino not in new_org_document_list:
+                    not_inherited.append('  ' + documentino + '\n')
+
+            if not_inherited:
+                with open(f"InfoFolder/{self.ent} {self.time} document_inheritance.txt", "a+") as doc_inherit:
+                    doc_inherit.write(
+                        'From ' + self.main_url + ' - ' + self.parent_org + ' to ' + self.child_org + ' the following wasn\'t inherited\n')
+                    doc_inherit.writelines(not_inherited)
+
+            not_inherited = []
+
+            for documentino in new_org_document_list:
+                if documentino not in self.document_list:
+                    not_inherited.append(' ' + documentino + '\n')
+
+            if not_inherited:
+                with open(f"InfoFolder/{self.ent} {self.time} document_inheritance.txt", "a+") as doc_inherit:
+                    doc_inherit.write(self.main_url + ' - ' + "Documents are present in the child org " + self.child_org + ' that are not present in the parent org ' + self.parent_org + ' the following is \'extra\'\n')
+                    doc_inherit.writelines(not_inherited)
+
+        sleep(8)
+
+
+class WorkflowCheck:
+
+    def __init__(self, driver, ent, time):
+        self.driver = driver
+        self.ent = ent
+        self.workflow_list = []
+        self.main_url = "https://" + ent + ".salestrekker.com"
+        self.parent_org = ''
+        self.child_org = ''
+        self.time = time
+
+    def workflow_get(self, org):
+
+        self.parent_org = org
+
+        if org in self.driver.current_url:
+            pass
+        else:
+            org_changer(self.driver, org)
+
+        self.driver.get(self.main_url + '/settings/workflows')
+        wd_wait(self.driver, 30).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
+        md_content = self.driver.find_element_by_css_selector('body > md-content')
+
+        last_height = self.driver.execute_script("return arguments[0].scrollHeight", md_content)
+        sleep(1)
+        while True:
+            self.driver.execute_script(f"arguments[0].scroll(0,{last_height});", md_content)
+            sleep(3)
+            new_height = self.driver.execute_script("return arguments[0].scrollHeight", md_content)
+
+            if new_height == last_height:
+                break
+            last_height = new_height
+
+        for document in self.driver.find_elements_by_tag_name('st-list-item'):
+            self.workflow_list.append(document.find_element_by_css_selector('a > span').text)
+
+    def workflow_compare(self, org):
+
+        self.child_org = org
+
+        if org in self.driver.current_url:
+            pass
+        else:
+            org_changer(self.driver, org)
+
+        new_workflow_list = []
+        self.driver.get(self.main_url + '/settings/workflows')
+        wd_wait(self.driver, 30).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
         # print('before compare scrolling')
         main_documents = self.driver.find_element_by_css_selector('body > md-content')
 
@@ -281,88 +384,31 @@ class DocumentCheck:
             last_height = new_height
 
         for document in self.driver.find_elements_by_tag_name('st-list-item'):
-            new_org_document_list.append(document.find_element_by_css_selector('a > content > span').text)
+            new_workflow_list.append(document.find_element_by_css_selector('a > span').text)
 
-        if new_org_document_list == self.document_list:
-            print('Documents good')
+        if not set(self.workflow_list).symmetric_difference(set(new_workflow_list)):
+            with open(f"InfoFolder/{self.ent} {self.time} workflow_inheritance.txt", "a+") as wf_inherit:
+                wf_inherit.write(
+                    'From ' + self.main_url + ' - ' + self.parent_org + ' to ' + self.child_org + ' no disrepancies noted between workflows\n')
         else:
             not_inherited = []
-            for documentino in self.document_list:
-                if documentino not in new_org_document_list:
-                    not_inherited.append(('  ' + documentino + '\n'))
+            for workflowino in self.workflow_list:
+                if workflowino not in new_workflow_list:
+                    not_inherited.append('  ' + workflowino + '\n')
 
-            with open("document_inheritance.txt", "rw+") as doc_inherit:
-                doc_inherit.write(
-                    'From ' + self.parent_org + ' to ' + self.child_org + ' the following wasn\'t inherited')
-                doc_inherit.writelines(not_inherited, )
+            if not_inherited:
+                with open(f"InfoFolder/{self.ent} {self.time} workflow_inheritance.txt", "a+") as wf_inherit:
+                    wf_inherit.write('From ' + self.main_url + ' - ' + self.parent_org + ' to ' + self.child_org + ' the following wasn\'t inherited\n')
+                    wf_inherit.writelines(not_inherited)
+
+            not_inherited = []
+
+            for worklofino in new_workflow_list:
+                if worklofino not in self.workflow_list:
+                    not_inherited.append(' ' + worklofino + '\n')
+
+            if not_inherited:
+                with open(f"InfoFolder/{self.ent} {self.time} workflow_inheritance.txt", "a+") as wf_inherit:
+                    wf_inherit.write(self.main_url + ' - ' + "Workflows are present in the child org " + self.child_org + ' that are not present in the parent org ' + self.parent_org + ' the following is \'extra\'\n')
+                    wf_inherit.writelines(not_inherited)
         sleep(8)
-
-# def workflow_get(driver, org, ent):
-#
-#     workflow_list = []
-#     main_url = "https://" + ent + ".salestrekker.com"
-#
-#     if org in driver.current_url:
-#         pass
-#     else:
-#         org_changer(driver,org)
-#
-#     driver.get(main_url + '/settings/workflows')
-#     wd_wait(driver, 30).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
-#     # print('before scrolling')
-#     main_documents = driver.find_element_by_css_selector('body > md-content')
-#
-#     last_height = driver.execute_script("return arguments[0].scrollHeight", main_documents)
-#     # print(last_height)
-#     sleep(1)
-#     while True:
-#         driver.execute_script(f"arguments[0].scroll(0,{last_height});", main_documents)
-#         sleep(3)
-#         new_height = driver.execute_script("return arguments[0].scrollHeight", main_documents)
-#
-#         if new_height == last_height:
-#             break
-#         last_height = new_height
-#
-#     for document in driver.find_elements_by_tag_name('st-list-item'):
-#         workflow_list.append(document.find_element_by_css_selector('a > span').text)
-#
-#     return workflow_list
-#
-#
-# def workflow_compare(driver, org, ent, workflow_list):
-#
-#     main_url = "https://" + ent + ".salestrekker.com"
-#
-#     if org in driver.current_url:
-#         pass
-#     else:
-#         org_changer(driver,org)
-#
-#     new_workflow_list = []
-#     driver.get(main_url + '/settings/workflows')
-#     wd_wait(driver, 30).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
-#     # print('before compare scrolling')
-#     main_documents = driver.find_element_by_css_selector('body > md-content')
-#
-#     last_height = driver.execute_script("return arguments[0].scrollHeight", main_documents)
-#     # print(last_height)
-#     sleep(1)
-#     while True:
-#         driver.execute_script(f"arguments[0].scroll(0,{last_height});", main_documents)
-#         sleep(3)
-#         new_height = driver.execute_script("return arguments[0].scrollHeight", main_documents)
-#
-#         if new_height == last_height:
-#             break
-#         last_height = new_height
-#
-#     for document in driver.find_elements_by_tag_name('st-list-item'):
-#         new_workflow_list.append(document.find_element_by_css_selector('a > span').text)
-#
-#     if not bool(set(workflow_list).difference(new_workflow_list)):
-#         print('Workflows good')
-#     else:
-#         print("Following workflows weren't inherited")
-#         [print(workflowino) for workflowino in workflow_list if workflowino not in new_workflow_list]
-#     sleep(8)

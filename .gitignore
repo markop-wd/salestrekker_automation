@@ -127,3 +127,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+/main/details
+/main/completed.txt
+/main/InfoFolder/
+/play/
+/temp_playground/

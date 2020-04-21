@@ -3,13 +3,14 @@ from pathlib import Path
 from urllib3 import exceptions
 import json
 import traceback
+import datetime
 
 # file_to_open = Path("main") / "perm_vars"
 
 with open("perm_vars") as perm_json:
     perm_vars = json.load(perm_json)
-    orgs_info = perm_vars['orgs_info']
-    all_orgs = [org for org in perm_vars['orgs_info']]
+    ents_info = perm_vars['ents_info']
+    all_ents = [ent for ent in perm_vars['ents_info']]
 
 with open("details") as details:
     info = json.load(details)
@@ -17,36 +18,35 @@ with open("details") as details:
 init_list = []
 completed = []
 
-for count, org in enumerate(all_orgs):
-    if count > 1:
-        break
-    init_list.append(rewritten.TestInitializer(email='helpdesk@salestrekker.com', password=info[org]['pass'], group=orgs_info[org]['learn'],ent=org))
+for count, ent in enumerate(all_ents):
+
+    # if count > 0:
+    #     break
+
+    currentDT = datetime.datetime.now()
+
+    init_list.append(rewritten.TestInitializer(start_time=currentDT.strftime("%Y-%m-%d %H.%M.%S"), email='helpdesk@salestrekker.com', password=info[ent]['pass'], group=ents_info[ent]['learn'], ent=ent))
     current_runner_instance = init_list[count]
     try:
-        current_runner_instance.test_logic(orgs_info[org]['main'],orgs_info[org]['learn'])
+        current_runner_instance.test_logic(ents_info[ent]['main'], ents_info[ent]['learn'])
     except exceptions.NewConnectionError:
+        traceback.print_exc()
         current_runner_instance.driver.refresh()
+        current_runner_instance.driver.quit()
+        completed.append(ent + ' - Not Completed\n')
     except exceptions.MaxRetryError:
+        traceback.print_exc()
         current_runner_instance.driver.refresh()
+        current_runner_instance.driver.quit()
+        completed.append(ent + ' - Not Completed\n')
+        # TODO - Find a way to go back to the line where he was after encountering either of the two errors
     except:
         traceback.print_exc()
         current_runner_instance.driver.quit()
+        completed.append(ent + ' - Not Completed\n')
     else:
-        completed.append(org + '\n')
         current_runner_instance.driver.quit()
+        completed.append(ent + '\n')
 
 with open('completed.txt', 'a') as compl:
     compl.writelines(completed)
-
-# print(init_list)
-#
-# init_test = rewritten.TestInitializer(email='matthew@salestrekker.com',password='tQ9^8K3HZsml9bKCuYme2u')
-# try:
-#     init_test.test_logic('test_org')
-#     # login.log_in(driver, "dev", "matthew@salestrekker.com", "tQ9^8K3HZsml9bKCuYme2u")
-#     # org_switch.org_changer(driver, "NOTANACTUALORGANISATION")
-#     # driver.quit()
-#
-# except:
-#
-#     init_test.driver.quit()
