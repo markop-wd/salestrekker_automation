@@ -1,4 +1,4 @@
-from main.Permanent import helpers
+from main.Permanent import Helpers
 
 from selenium.webdriver import Chrome
 from selenium.webdriver import Firefox
@@ -11,7 +11,7 @@ from webdriver_manager.firefox import GeckoDriverManager
 from datetime import date
 import json
 
-user = 'matthew+0406@salestrekker.com'
+# user = 'matthew+0406@salestrekker.com'
 options = Options()
 
 
@@ -28,23 +28,28 @@ class TestInitializer:
         self.main_url = 'https://' + ent + '.salestrekker.com'
         # self.driver = Firefox(executable_path=GeckoDriverManager().install(), options=options)
         self.driver = Chrome(ChromeDriverManager().install())
+        self.driver.maximize_window()
+        # self.driver.find_element().get_attribute('id')
         self.email = email
         self.password = password
         self.new_org_name = new_org_name
         self.main_org = ''
         self.group = group
         self.hl_workflow_name = 'Automation Workflow Name'
-        self.log_helper = helpers.LogIn(self.driver, self.ent, self.email, self.password)
-        self.doc_helper = helpers.DocumentCheck(self.driver, self.ent, start_time)
-        self.wf_helper = helpers.WorkflowCheck(self.driver, self.ent, start_time)
+        self.log_helper = Helpers.LogIn(self.driver, self.ent, self.email, self.password)
+        self.doc_helper = Helpers.DocumentCheck(self.driver, self.ent, start_time)
+        self.wf_helper = Helpers.WorkflowCheck(self.driver, self.ent, start_time)
+        self.wf_manipulate = Helpers.WorkflowManipulation(self.driver, self.ent)
+        # self.driver.find_element().get_property('')
 
     def test_logic(self, runner_main_org, runner_learn_org):
         self.log_helper.log_in()
-        # self.org_helper.org_changer(runner_main_org)
+        # helpers.org_changer(self.driver, runner_learn_org)
         self.doc_helper.document_get(runner_main_org)
         self.wf_helper.workflow_get(runner_main_org)
         self.doc_helper.document_compare(runner_learn_org)
         self.wf_helper.workflow_compare(runner_learn_org)
+        self.wf_manipulate.add_workflow()
         # helpers.add_hl_workflow()
         # self.org_changer(runner_main_org)
         # self.organization_create(group=self.group, new_org=self.new_org_name)
@@ -56,3 +61,5 @@ class TestInitializer:
         # self.workflow_compare()
         # self.add_user()
         # self.add_hl_workflow()
+
+

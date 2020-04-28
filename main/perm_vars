@@ -1,6 +1,10 @@
 {
   "ents_info":
   {
+      "dev" : {
+      "main": "# Salestrekker Enterprise",
+      "learn": "**MAKE YOUR OWN** Matt Test Group (QA automation testing)"
+    },
     "vownet" : {
     "main" : "Vow Financial Pty Ltd",
     "learn" : "Learn Vownet"
@@ -20,10 +24,6 @@
     "platform" : {
       "main": "# Platform Connect",
       "learn": "1. Learn Platform Connect"
-    },
-    "dev" : {
-      "main": "# Salestrekker Enterprise",
-      "learn": "**MAKE YOUR OWN** Matt Test Group (QA automation testing)"
     },
     "nlgconnect" : {
       "main": "# NLG Connect",

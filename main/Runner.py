@@ -1,7 +1,8 @@
-from main import rewritten
-from pathlib import Path
+from main import Logic
+from datetime import date
 from urllib3 import exceptions
 import json
+import csv
 import traceback
 import datetime
 
@@ -16,37 +17,44 @@ with open("details") as details:
     info = json.load(details)
 
 init_list = []
-completed = []
+completed = {}
 
 for count, ent in enumerate(all_ents):
-
+    #
     # if count > 0:
     #     break
 
-    currentDT = datetime.datetime.now()
+    currentDT = datetime.datetime.now().strftime("%Y-%m-%d")
 
-    init_list.append(rewritten.TestInitializer(start_time=currentDT.strftime("%Y-%m-%d %H.%M.%S"), email='helpdesk@salestrekker.com', password=info[ent]['pass'], group=ents_info[ent]['learn'], ent=ent))
+    init_list.append(Logic.TestInitializer(start_time=currentDT, email='helpdesk@salestrekker.com', password=info[ent]['pass'], group=ents_info[ent]['learn'], ent=ent))
     current_runner_instance = init_list[count]
+
     try:
         current_runner_instance.test_logic(ents_info[ent]['main'], ents_info[ent]['learn'])
     except exceptions.NewConnectionError:
-        traceback.print_exc()
-        current_runner_instance.driver.refresh()
-        current_runner_instance.driver.quit()
-        completed.append(ent + ' - Not Completed\n')
-    except exceptions.MaxRetryError:
-        traceback.print_exc()
-        current_runner_instance.driver.refresh()
-        current_runner_instance.driver.quit()
-        completed.append(ent + ' - Not Completed\n')
         # TODO - Find a way to go back to the line where he was after encountering either of the two errors
+
+        traceback.print_exc()
+        current_runner_instance.driver.refresh()
+        current_runner_instance.driver.quit()
+        completed[ent] = False
+    except exceptions.MaxRetryError:
+        # TODO - Find a way to go back to the line where he was after encountering either of the two errors
+        traceback.print_exc()
+        current_runner_instance.driver.refresh()
+        current_runner_instance.driver.quit()
+        completed[ent] = False
     except:
         traceback.print_exc()
         current_runner_instance.driver.quit()
-        completed.append(ent + ' - Not Completed\n')
+        completed[ent] = False
     else:
         current_runner_instance.driver.quit()
-        completed.append(ent + '\n')
+        completed[ent] = True
 
-with open('completed.txt', 'a') as compl:
-    compl.writelines(completed)
+
+with open(f'InfoFolder/{date.today()} organization_rundown.csv', 'a') as rundown:
+    writer = csv.writer(rundown)
+
+    for key, value in completed.items():
+        writer.writerow([key, value])
