@@ -1,11 +1,13 @@
-from selenium.webdriver.support.wait import WebDriverWait as wd_wait
+from selenium.webdriver.support.wait import WebDriverWait as WdWait
 from selenium.common import exceptions
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
+from datetime import date, datetime
 
 from time import sleep
 
 
+# TODO - Rewire what needs to  be rewired this is a mess
 def org_changer(driver, org_name):
     assert "salestrekker" in driver.current_url, 'invalid url'
     assert "authenticate" not in driver.current_url, 'you are at a login page'
@@ -25,19 +27,20 @@ def org_changer(driver, org_name):
             driver.execute_script('document.querySelector("#navBar > div > md-menu > a").click();')
 
         try:
-            wd_wait(driver, 10).until(ec.element_to_be_clickable(
+            WdWait(driver, 10).until(ec.element_to_be_clickable(
                 (By.CSS_SELECTOR, 'button[ng-click="::$ctrl.organizationChange($event)"]'))).click()
         except exceptions.ElementClickInterceptedException:
             driver.execute_script(
                 'document.querySelector(\'button[ng-click="::$ctrl.organizationChange($event)"]\').click();')
 
         try:
-            wd_wait(driver, 15).until(
+            WdWait(driver, 15).until(
                 ec.presence_of_element_located((By.CSS_SELECTOR, "md-dialog[aria-label='Switch organization']")))
         except exceptions.TimeoutException:
-            wd_wait(driver, 10).until(
+            WdWait(driver, 10).until(
                 ec.presence_of_element_located((By.CSS_SELECTOR, "body > div > md-dialog")))
         try:
+            # TODO - Two sleeps here, find a way to bypass them
             sleep(1)
             driver.find_element_by_css_selector("input[placeholder='Search for an organization']").send_keys(
                 str(org_name))
@@ -67,9 +70,11 @@ def org_changer(driver, org_name):
         for element in organisation_names:
             if element.find_element_by_tag_name('small').text.lower() == str(org_name).lower():
                 element.click()
-                print('Moving to ', org_name)
+                # print('Moving to ', org_name)
                 try:
-                    wd_wait(driver, 5).until(ec.title_contains(('Organization switch in progress')))
+                    WdWait(driver, 5).until(ec.title_contains(('Organization switch in progress')))
+                    sleep(2)
+                    break
                 except exceptions.TimeoutException:
                     if check_current_org(driver, org_name):
                         break
@@ -85,13 +90,14 @@ def org_changer(driver, org_name):
         # TODO - Cleanup
 
         try:
-            wd_wait(driver, 80).until(ec.title_contains(org_name))
+            WdWait(driver, 80).until(ec.title_contains(org_name))
+            sleep(1)
         except exceptions.TimeoutException:
             driver.quit()
             # TODO - Cleanup
         # print('Org Changer Finished')
     else:
-        print('Already in that organisation, moving on')
+        # print('Already in that organisation, moving on')
         pass
 
 
@@ -103,14 +109,15 @@ def check_current_org(driver, org_name):
     except exceptions.NoSuchElementException:
         driver.refresh()
         try:
-            wd_wait(driver, 15).until(ec.presence_of_element_located((By.TAG_NAME, 'st-toolbar')))
+            WdWait(driver, 15).until(ec.presence_of_element_located((By.TAG_NAME, 'st-toolbar')))
         except exceptions.TimeoutException:
             raise exceptions.TimeoutException
         else:
             search_input = driver.find_element_by_css_selector('md-autocomplete-wrap > input').get_attribute(
                 'aria-label')
 
-    if (org_name not in search_input) or (org_name not in driver.title):
+    # TODO - Redo this check for organisation names
+    if (("Search " + org_name + " ...") != search_input) or (org_name not in driver.title):
         return False
     else:
         return True
@@ -123,11 +130,11 @@ def toolbar_check(driver, wait_time=30):
     longer = wait_time - (wait_time // 4)
 
     try:
-        wd_wait(driver, wait_time - longer).until(ec.presence_of_element_located((By.TAG_NAME, 'st-toolbar')))
+        WdWait(driver, wait_time - longer).until(ec.presence_of_element_located((By.TAG_NAME, 'st-toolbar')))
     except exceptions.TimeoutException:
         driver.refresh()
         try:
-            wd_wait(driver, longer).until(ec.presence_of_element_located((By.TAG_NAME, 'st-toolbar')))
+            WdWait(driver, longer).until(ec.presence_of_element_located((By.TAG_NAME, 'st-toolbar')))
         except exceptions.TimeoutException:
             raise exceptions.TimeoutException
             # driver.quit()
@@ -145,15 +152,15 @@ class LogIn:
 
     def log_in_helper(self):
         try:
-            wd_wait(self.driver, 10).until(ec.presence_of_element_located((By.TAG_NAME, "input")))
+            WdWait(self.driver, 10).until(ec.presence_of_element_located((By.TAG_NAME, "input")))
         except exceptions.TimeoutException:
             self.driver.refresh()
             try:
-                wd_wait(self.driver, 15).until(ec.presence_of_element_located((By.TAG_NAME, "input")))
+                WdWait(self.driver, 15).until(ec.presence_of_element_located((By.TAG_NAME, "input")))
             except exceptions.TimeoutException:
                 self.driver.refresh()
                 try:
-                    wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, "input")))
+                    WdWait(self.driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, "input")))
                 except exceptions.TimeoutException:
                     print('Salestrekker unresponsive, manual checkup needed')
                     self.driver.quit()
@@ -178,7 +185,7 @@ class LogIn:
     def log_in(self):
         self.driver.get("https://" + self.ent + '.salestrekker.com/authenticate')
         try:
-            wd_wait(self.driver, 10).until(ec.presence_of_element_located((By.TAG_NAME, 'sign-in')))
+            WdWait(self.driver, 10).until(ec.presence_of_element_located((By.TAG_NAME, 'sign-in')))
         except exceptions.TimeoutException:
             time_increment = 0
             while True:
@@ -192,18 +199,18 @@ class LogIn:
 
                 sleep(time_increment)
                 try:
-                    wd_wait(self.driver, time_increment).until(ec.presence_of_element_located((By.TAG_NAME, 'sign-in')))
+                    WdWait(self.driver, time_increment).until(ec.presence_of_element_located((By.TAG_NAME, 'sign-in')))
                 except exceptions.TimeoutException:
                     time_increment += 2
 
         self.log_in_helper()
 
         try:
-            wd_wait(self.driver, 15).until(ec.presence_of_element_located((By.ID, 'board')))
+            WdWait(self.driver, 15).until(ec.presence_of_element_located((By.ID, 'board')))
         except exceptions.TimeoutException:
             while True:
                 self.log_in_helper()
-                wd_wait(self.driver, 15).until(By.ID, 'board')
+                WdWait(self.driver, 15).until(By.ID, 'board')
                 self.driver.quit()
                 # TODO - Create an exit function out of here
 
@@ -231,14 +238,14 @@ class DocumentCheck:
 
         self.driver.get(self.main_url + '/settings/documents')
         try:
-            wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
+            WdWait(self.driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
         except exceptions.TimeoutException:
             self.driver.get(self.main_url + '/settings/documents')
             try:
-                wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
+                WdWait(self.driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
             except exceptions.TimeoutException:
                 self.driver.get(self.main_url + '/settings/documents')
-                wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
+                WdWait(self.driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
 
         main_documents = self.driver.find_element_by_css_selector('body > md-content')
 
@@ -259,8 +266,6 @@ class DocumentCheck:
 
     def document_compare(self, org):
 
-        from datetime import datetime
-
         writer_time = str(datetime.today())
 
         self.child_org = org
@@ -272,7 +277,7 @@ class DocumentCheck:
 
         new_org_document_list = []
         self.driver.get(self.main_url + '/settings/documents')
-        wd_wait(self.driver, 30).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
+        WdWait(self.driver, 30).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
         md_content = self.driver.find_element_by_css_selector('body > md-content')
 
         last_height = self.driver.execute_script("return arguments[0].scrollHeight", md_content)
@@ -299,7 +304,7 @@ class DocumentCheck:
                     not_inherited.append('  ' + documentino + '\n')
 
             if not_inherited:
-                with open(f"InfoFolder/{self.ent} {self.time} document_inheritance.txt", "a+") as doc_inherit:
+                with open(f"Reports/{self.time}/{self.ent} document_inheritance.txt", "a+") as doc_inherit:
                     doc_inherit.write(writer_time +
                                       'From ' + self.main_url + ' - ' + self.parent_org + ' to ' + self.child_org + ' the following wasn\'t inherited\n')
                     doc_inherit.writelines(not_inherited)
@@ -312,14 +317,14 @@ class DocumentCheck:
                     not_inherited.append(' ' + documentino + '\n')
 
             if not_inherited:
-                with open(f"InfoFolder/{self.ent} {self.time} document_inheritance.txt", "a+") as doc_inherit:
+                with open(f"Reports/{self.time}/{self.ent} document_inheritance.txt", "a+") as doc_inherit:
                     doc_inherit.write(writer_time +
                                       self.main_url + ' - ' + "Documents are present in the child org " + self.child_org + ' that are not present in the parent org ' + self.parent_org + ' the following is \'extra\'\n')
                     doc_inherit.writelines(not_inherited)
                     doc_inherit.write('\n')
 
         else:
-            with open(f"InfoFolder/{self.ent} {self.time} document_inheritance.txt", "a+") as doc_inherit:
+            with open(f"Reports/{self.time}/{self.ent} document_inheritance.txt", "a+") as doc_inherit:
                 doc_inherit.write(
                     'From ' + self.main_url + ' - ' + self.parent_org + ' to ' + self.child_org + ' no disrepancies noted between documents\n')
 
@@ -347,7 +352,7 @@ class WorkflowCheck:
             org_changer(self.driver, org)
 
         self.driver.get(self.main_url + '/settings/workflows')
-        wd_wait(self.driver, 30).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
+        WdWait(self.driver, 30).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
         md_content = self.driver.find_element_by_css_selector('body > md-content')
 
         last_height = self.driver.execute_script("return arguments[0].scrollHeight", md_content)
@@ -365,10 +370,9 @@ class WorkflowCheck:
             self.workflow_list.append(document.find_element_by_css_selector('a > span').text)
 
     def workflow_compare(self, org):
-        from datetime import datetime
 
         self.child_org = org
-        writer_time = str(datetime.today())
+        writer_time = str(datetime.today().time())
 
         if org in self.driver.current_url:
             pass
@@ -377,7 +381,7 @@ class WorkflowCheck:
 
         new_workflow_list = []
         self.driver.get(self.main_url + '/settings/workflows')
-        wd_wait(self.driver, 30).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
+        WdWait(self.driver, 30).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
         main_documents = self.driver.find_element_by_css_selector('body > md-content')
 
         last_height = self.driver.execute_script("return arguments[0].scrollHeight", main_documents)
@@ -395,7 +399,7 @@ class WorkflowCheck:
             new_workflow_list.append(document.find_element_by_css_selector('a > span').text)
 
         if not set(self.workflow_list).symmetric_difference(set(new_workflow_list)):
-            with open(f"InfoFolder/{self.ent} {self.time} workflow_inheritance.txt", "a+") as wf_inherit:
+            with open(f"Reports/{self.time}/{self.ent} workflow_inheritance.txt", "a+") as wf_inherit:
                 wf_inherit.write(
                     'From ' + self.main_url + ' - ' + self.parent_org + ' to ' + self.child_org + ' no disrepancies noted between workflows\n')
         else:
@@ -405,7 +409,7 @@ class WorkflowCheck:
                     not_inherited.append('  ' + workflowino + '\n')
 
             if not_inherited:
-                with open(f"InfoFolder/{self.ent} {self.time} workflow_inheritance.txt", "a+") as wf_inherit:
+                with open(f"Reports/{self.time}/{self.ent} workflow_inheritance.txt", "a+") as wf_inherit:
                     wf_inherit.write(writer_time +
                                      'From ' + self.main_url + ' - ' + self.parent_org + ' to ' + self.child_org + ' the following wasn\'t inherited\n')
                     wf_inherit.writelines(not_inherited)
@@ -418,7 +422,7 @@ class WorkflowCheck:
                     not_inherited.append(' ' + worklofino + '\n')
 
             if not_inherited:
-                with open(f"InfoFolder/{self.ent} {self.time} workflow_inheritance.txt", "a+") as wf_inherit:
+                with open(f"Reports/{self.time}/{self.ent} workflow_inheritance.txt", "a+") as wf_inherit:
                     wf_inherit.write(
                         writer_time + self.main_url + ' - ' + "Workflows are present in the child org " + self.child_org + ' that are not present in the parent org ' + self.parent_org + ' the following is \'extra\'\n')
                     wf_inherit.writelines(not_inherited)
@@ -431,7 +435,7 @@ def user_extraction(driver, ent):
     main_url = "https://" + ent + ".salestrekker.com"
     driver.get(main_url + "/settings/users")
 
-    wd_wait(driver, 15).until(ec.presence_of_element_located((By.TAG_NAME, "st-accounts-list")))
+    WdWait(driver, 15).until(ec.presence_of_element_located((By.TAG_NAME, "st-accounts-list")))
     main_documents = driver.find_element_by_css_selector('body > md-content')
     last_height = driver.execute_script("return arguments[0].scrollHeight", main_documents)
     sleep(1)
@@ -453,28 +457,26 @@ def user_extraction(driver, ent):
 
 def get_current_username(driver):
     try:
-        test = driver.find_element_by_css_selector('md-menu > a > st-avatar > img').get_property('alt')
-        return test
+        return driver.find_element_by_css_selector('md-menu > a > st-avatar > img').get_property('alt')
     except exceptions.NoSuchElementException:
-        # TODO - Write a different way to capture the username
-        # return driver.find_element_by_css_selector('st-avatar[account="CurrentAccount"] > img').get_property('alt')
+        return driver.find_element_by_css_selector('st-avatar[account="CurrentAccount"] > img').get_property('alt')
         pass
 
 
 class WorkflowManipulation:
-    from datetime import datetime
 
     def __init__(self, driver, ent):
         self.ent = ent
         self.driver = driver
         self.main_url = "https://" + ent + ".salestrekker.com"
         self.num_of_created_stages = 0
+        self.all_users = []
 
     # def workflow_name_convert(self,wf_name):
     #     if wf_name == 'homeloan' or 'hl'
 
-    def add_workflow(self, workflow_name=f'Test Workflow {datetime.today()}', workflow_type='Home Loan',
-                     all_users=False, wf_owner=''):
+    def add_workflow(self, workflow_type='Home Loan',
+                     all_users=True, wf_owner=''):
 
         valid_wfs = ["None", "Asset Finance", "Commercial Loan", "Conveyancing", "Home Loan", "Insurance",
                      "Personal Loan", "Real Estate"]
@@ -487,6 +489,9 @@ class WorkflowManipulation:
                 print(wf + '\n')
             workflow_type = input("Please enter a valid wf type")
 
+        workflow_name = f'Test WF - {workflow_type} - {date.today()}'
+        sleep(0.1)
+
         assert "salestrekker" in self.driver.current_url, 'invalid url'
         assert "authenticate" not in self.driver.current_url, 'you are at a login page'
 
@@ -497,24 +502,26 @@ class WorkflowManipulation:
 
         self.driver.get(self.main_url + "/settings/workflow/0")
         try:
-            wd_wait(self.driver, 5).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
+            WdWait(self.driver, 5).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
         except exceptions.TimeoutException:
             self.driver.get(self.main_url + "/settings/workflow/0")
             try:
-                wd_wait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
+                WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
             except exceptions.TimeoutException:
                 self.driver.get(self.main_url + "/settings/workflow/0")
-                wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
-
-        # self.driver.find_element_by_css_selector('st-block-form-content > div > div:first-child > md-input-container '
-        #                                          '> input').send_keys(workflow_name)
+                WdWait(self.driver, 20).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
 
         if all_users:
-            users = user_extraction(self.driver, self.ent)
-            self.driver.get(self.main_url + "/settings/workflow/0")
-            for user in users:
-                self.driver.find_element_by_css_selector('div:nth-child(6) input').send_keys(user + Keys.ENTER)
-                sleep(0.1)
+            if not bool(self.all_users):
+                self.all_users = user_extraction(self.driver, self.ent)
+                self.driver.get(self.main_url + "/settings/workflow/0")
+                for user in self.all_users:
+                    self.driver.find_element_by_css_selector('div:nth-child(6) input').send_keys(user + Keys.ENTER)
+                    sleep(0.1)
+            else:
+                for user in self.all_users:
+                    self.driver.find_element_by_css_selector('div:nth-child(6) input').send_keys(user + Keys.ENTER)
+                    sleep(0.1)
         else:
             user = get_current_username(self.driver)
             self.driver.find_element_by_css_selector('div:nth-child(6) input').send_keys(user + Keys.ENTER)
@@ -523,34 +530,46 @@ class WorkflowManipulation:
 
         wf_select_id = str(self.driver.find_element_by_css_selector(
             'st-block-form-content >div >div:nth-child(4) > md-input-container > md-select').get_attribute('id'))
+        wf_select_container_id = str(int(wf_select_id.split("_")[-1]) + 1)
 
+        self.driver.find_element_by_css_selector('st-block-form-content > div > div:nth-child(4)').click()
         # don't look at me like that, this was the safer route... I think
-        workflow_types = self.driver.find_elements_by_css_selector(
-            "div#select_container_" + str(int(wf_select_id.split("_")[-1]) + 1) + " md-option")
 
-        self.driver.find_element_by_css_selector('st-block-form-content >div >div:nth-child(4)').click()
+        WdWait(self.driver, 10).until(ec.element_to_be_clickable((By.ID, "select_container_" + wf_select_container_id)))
+
+        workflow_types = self.driver.find_elements_by_css_selector(
+            "div#select_container_" + wf_select_container_id + " > md-select-menu > md-content > md-option > div > span")
+        sleep(0.1)
         for wf_type in workflow_types:
-            loop_type = wf_type.find_element_by_tag_name("span").text
+            wf_el_text = wf_type.text
             # TODO
-            if loop_type == workflow_type:
-                self.driver.execute_script("arguments[0].click()", wf_type.find_element_by_tag_name('span'))
+            if wf_el_text == workflow_type:
+                try:
+                    wf_type.click()
+                except:
+                    self.driver.execute_script("arguments[0].click()", wf_type.find_element_by_tag_name('span'))
                 break
 
         # This is the workflow owner selector
 
-        owner_select_id = str(self.driver.find_element_by_css_selector(
-            'st-block-form-content >div >div:nth-child(3) > md-input-container > md-select').get_attribute('id'))
-
-        deal_owners = self.driver.find_elements_by_css_selector(
-            "div#select_container_" + str(int(owner_select_id.split("_")[-1]) + 1) + " md-option")
         try:
             self.driver.find_element_by_css_selector('st-block-form-content > div > div:nth-child(3)').click()
         except exceptions.ElementClickInterceptedException:
             self.driver.execute_script(
                 "document.querySelector('st-block-form-content > div > div:nth-child(3)').click();")
 
+        owner_select_id = str(self.driver.find_element_by_css_selector(
+            'st-block-form-content >div >div:nth-child(3) > md-input-container > md-select').get_attribute('id'))
+
+        owner_select_container_id = str(int(owner_select_id.split("_")[-1]) + 1)
+
+        WdWait(self.driver, 10).until(
+            ec.element_to_be_clickable((By.ID, "select_container_" + owner_select_container_id)))
+        deal_owners = self.driver.find_elements_by_css_selector(
+            "div#select_container_" + owner_select_container_id + " md-option")
         if not wf_owner:
             user = get_current_username(self.driver)
+            sleep(0.1)
             for deal_owner in deal_owners:
                 span = deal_owner.find_element_by_tag_name('span')
                 if span.text == user:
@@ -559,6 +578,7 @@ class WorkflowManipulation:
         else:
             user = wf_owner
             owners = []
+            sleep(0.1)
             for deal_owner in deal_owners:
                 loop_owner = deal_owner.find_element_by_tag_name('span').text
                 owners.append(loop_owner)
@@ -574,6 +594,7 @@ class WorkflowManipulation:
                 wf_owner = input('Please re-input the workflow owner name')
                 user = wf_owner
                 owners = []
+                sleep(0.1)
                 for deal_owner in deal_owners:
                     loop_owner = deal_owner.find_element_by_tag_name('span').text
                     owners.append(loop_owner)
@@ -594,10 +615,16 @@ class WorkflowManipulation:
 
             new_stages -= 1
 
-        number_of_stages = len(self.driver.find_elements_by_css_selector('workflow-stages > workflow-stage'))
+        sleep(1)
+        self.driver.find_element_by_css_selector('st-block-form-content > div > div:first-child > md-input-container '
+                                                 '> input').send_keys(workflow_name)
 
-        wd_wait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))
-        wd_wait(self.driver, 10).until(ec.invisibility_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))
+        # number_of_stages = len(self.driver.find_elements_by_css_selector('workflow-stages > workflow-stage'))
+
+        WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))
+        WdWait(self.driver, 10).until(ec.invisibility_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))
+
+        # TODO - Confirm that the workflow exists
 
         # self.driver.get(self.main_url + "/settings/workflows")
         #
@@ -684,71 +711,131 @@ class WorkflowManipulation:
     #     # self.hl_workflow_name
     #     pass
     #
-# def add_user(self):
-#     self.driver.get(self.main_url + '/settings/users')
-#     try:
-#         wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, 'st-accounts-list')))
-#     except exceptions.TimeoutException:
-#         self.driver.get(self.main_url + '/settings/users')
-#         wd_wait(self.driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, 'st-accounts-list')))
-#
-#     self.driver.find_element_by_css_selector('span > button').click()
-#     wd_wait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'span > button')))
-#     self.driver.find_element_by_css_selector('div:nth-child(1) > md-input-container > input').send_keys(user)
-#     self.driver.find_element_by_css_selector(
-#         'div:nth-child(2) > md-input-container:nth-child(1) > input').send_keys('Test')
-#     self.driver.find_element_by_css_selector(
-#         'div:nth-child(2) > md-input-container:nth-child(2) > input').send_keys('Surname')
-#
-#     try:
-#         wd_wait(self.driver, 10).until(ec.element_to_be_clickable(
-#             (By.CSS_SELECTOR, 'md-dialog-actions > button:nth-child(2)'))).click()
-#     except exceptions.ElementClickInterceptedException:
-#         self.driver.execute_script('document.querySelector("md-dialog-actions > button:nth-child(2)").click();')
-#     time.sleep(5)
-#     print('add user good')
-#     pass
-#
-# def organization_create(self, group, new_org='Test Organization 2020-03-31'):
-#     self.driver.get(self.main_url + "/settings/groups-and-branches")
-#     try:
-#         wd_wait(self.driver, 60).until(
-#             ec.invisibility_of_element_located((By.TAG_NAME, 'st-progressbar')))
-#     except exceptions.TimeoutException:
-#         self.driver.get(self.main_url + "/settings/groups-and-branches")
-#         try:
-#             wd_wait(self.driver, 30).until(
-#                 ec.invisibility_of_element_located((By.TAG_NAME, 'st-progressbar')))
-#         except exceptions.TimeoutException:
-#             self.driver.get(self.main_url + "/settings/groups-and-branches")
-#             try:
-#                 wd_wait(self.driver, 50).until(
-#                     ec.invisibility_of_element_located((By.TAG_NAME, 'st-progressbar')))
-#             except exceptions.TimeoutException:
-#                 self.driver.get(self.main_url + "/settings/groups-and-branches")
-#                 wd_wait(self.driver, 50).until(ec.invisibility_of_element_located((By.TAG_NAME, 'st-progressbar')))
-#
-#     self.current_user_name = self.driver.find_element_by_css_selector('div > st-avatar > img').get_attribute('alt')
-#     print(self.current_user_name)
-#     wd_wait(self.driver, 30).until(
-#         ec.element_to_be_clickable((By.CLASS_NAME, 'primary.md-button.md-ink-ripple'))).click()
-#     wd_wait(self.driver, 20).until(ec.visibility_of_element_located((By.TAG_NAME, 'md-dialog-content')))
-#     wd_wait(self.driver, 20).until(
-#         ec.element_to_be_clickable((By.CSS_SELECTOR, 'div > md-input-container > input'))).send_keys(
-#         new_org)
-#     wd_wait(self.driver, 20).until(
-#         ec.element_to_be_clickable(
-#             (By.CSS_SELECTOR, 'div > div > md-autocomplete > md-autocomplete-wrap > input'))).send_keys(
-#         str(self.current_user_name) + Keys.ENTER)
-#     # wd_wait(self.driver, 5).until(ec.presence_of_element_located((By.CLASS_NAME,
-#     # 'md-contact-suggestion'))).click()
-#     self.driver.find_element_by_css_selector('md-input-container > md-select').click()
-#     wd_wait(self.driver, 5).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'md-select-menu > md-content')))
-#     for elemento in self.driver.find_elements_by_tag_name('md-option'):
-#         if elemento.find_element_by_tag_name(
-#                 'span').text == group:
-#             elemento.click()
-#     wd_wait(self.driver, 10).until(ec.element_to_be_clickable((By.CSS_SELECTOR, 'md-dialog-actions > '
-#                                                                                 'button:nth-child(2)'))).click()
-#     time.sleep(10)
-#     pass
+
+
+# TODO - Re-write to allow adding multiple users
+def add_user(driver, ent, email, username='Test Surname'):
+    from selenium.webdriver.common.keys import Keys
+
+    main_url = "https://" + ent + ".salestrekker.com"
+    first_name = username.split(' ')[0]
+    try:
+        last_name = username.split(' ')[1]
+    except IndexError:
+        last_name = 'Surname'
+
+    try:
+        WdWait(driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, 'st-accounts-list')))
+    except exceptions.TimeoutException:
+        driver.get(main_url + '/settings/users')
+        WdWait(driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, 'st-accounts-list')))
+
+    driver.find_element_by_css_selector('span > button').click()
+    WdWait(driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'span > button')))
+
+    # TODO - All the three Try Excepts below are of the same pattern and just require the css element selector as input - maybe this can be turn into a general pattern for a checker, input details assert it's there etc.
+    driver.find_element_by_css_selector('div:nth-child(1) > md-input-container > input').send_keys(email)
+    try:
+        WdWait(driver, 1).until(
+            ec.text_to_be_present_in_element_value((By.CSS_SELECTOR, 'div:nth-child(1) > md-input-container > input'),
+                                                   email))
+    except exceptions.TimeoutException:
+        driver.find_element_by_css_selector('div:nth-child(1) > md-input-container > input').send_keys(
+            Keys.CONTROL + "a")
+        driver.find_element_by_css_selector('div:nth-child(1) > md-input-container > input').send_keys(email)
+
+    sleep(0.1)
+    driver.find_element_by_css_selector(
+        'div:nth-child(2) > md-input-container:nth-child(1) > input').send_keys(first_name)
+    try:
+        WdWait(driver, 1).until(
+            ec.text_to_be_present_in_element_value((By.CSS_SELECTOR, 'div:nth-child(2) > md-input-container > input'),
+                                                   first_name))
+    except exceptions.TimeoutException:
+        driver.find_element_by_css_selector(
+            'div:nth-child(2) > md-input-container:nth-child(1) > input').send_keys(Keys.CONTROL + 'a')
+        driver.find_element_by_css_selector(
+            'div:nth-child(2) > md-input-container:nth-child(1) > input').send_keys(first_name)
+
+    sleep(0.1)
+    driver.find_element_by_css_selector(
+        'div:nth-child(2) > md-input-container:nth-child(2) > input').send_keys(last_name)
+    try:
+        WdWait(driver, 1).until(ec.text_to_be_present_in_element_value(
+            (By.CSS_SELECTOR, 'div:nth-child(2) > md-input-container:nth-child(2) > input'), last_name))
+    except exceptions.TimeoutException:
+        driver.find_element_by_css_selector(
+            'div:nth-child(2) > md-input-container:nth-child(2) > input').send_keys(Keys.CONTROL + 'a')
+        driver.find_element_by_css_selector(
+            'div:nth-child(2) > md-input-container:nth-child(2) > input').send_keys(last_name)
+
+    sleep(0.1)
+    # input('Add user test')
+    try:
+        WdWait(driver, 10).until(ec.element_to_be_clickable(
+            (By.CSS_SELECTOR, 'md-dialog-actions > button:nth-child(2)'))).click()
+    except exceptions.ElementClickInterceptedException:
+        driver.execute_script('document.querySelector("md-dialog-actions > button:nth-child(2)").click();')
+
+    WdWait(driver, 10).until(
+        ec.text_to_be_present_in_element((By.CSS_SELECTOR, 'span.md-toast-text > span:first-child'), 'User'))
+    WdWait(driver, 10).until(
+        ec.invisibility_of_element_located((By.CSS_SELECTOR, 'span.md-toast-text > span:first-child')))
+
+
+def organization_create(driver, ent, parent_group, ent_group, new_org=f'Test Organization {date.today()}'):
+    from selenium.webdriver.common.keys import Keys
+
+    main_url = "https://" + ent + ".salestrekker.com"
+
+    # Go to the main enterprise group
+    org_changer(driver, ent_group)
+
+    driver.get(main_url + "/settings/groups-and-branches")
+    try:
+        WdWait(driver, 60).until(
+            ec.invisibility_of_element_located((By.TAG_NAME, 'st-progressbar')))
+    except exceptions.TimeoutException:
+        driver.get(main_url + "/settings/groups-and-branches")
+        try:
+            WdWait(driver, 30).until(
+                ec.invisibility_of_element_located((By.TAG_NAME, 'st-progressbar')))
+        except exceptions.TimeoutException:
+            driver.get(main_url + "/settings/groups-and-branches")
+            try:
+                WdWait(driver, 50).until(
+                    ec.invisibility_of_element_located((By.TAG_NAME, 'st-progressbar')))
+            except exceptions.TimeoutException:
+                driver.get(main_url + "/settings/groups-and-branches")
+                WdWait(driver, 50).until(ec.invisibility_of_element_located((By.TAG_NAME, 'st-progressbar')))
+
+    current_user_name = get_current_username(driver)
+    WdWait(driver, 30).until(
+        ec.element_to_be_clickable((By.CLASS_NAME, 'primary.md-button.md-ink-ripple'))).click()
+    WdWait(driver, 20).until(ec.visibility_of_element_located((By.TAG_NAME, 'md-dialog-content')))
+    WdWait(driver, 20).until(
+        ec.element_to_be_clickable((By.CSS_SELECTOR, 'div > md-input-container > input'))).send_keys(
+        new_org)
+    WdWait(driver, 20).until(
+        ec.element_to_be_clickable(
+            (By.CSS_SELECTOR, 'div > div > md-autocomplete > md-autocomplete-wrap > input'))).send_keys(
+        str(current_user_name) + Keys.ENTER)
+    # wd_wait(driver, 5).until(ec.presence_of_element_located((By.CLASS_NAME,
+    # 'md-contact-suggestion'))).click()
+    driver.find_element_by_css_selector('md-input-container > md-select').click()
+    parent_group_selector = WdWait(driver, 5).until(
+        ec.visibility_of_element_located((By.CSS_SELECTOR, 'md-select-menu > md-content')))
+    sleep(0.1)
+    for elemento in parent_group_selector.find_elements_by_tag_name('md-option > div > span'):
+        if elemento.text == parent_group:
+            elemento.click()
+
+    # input('Test')
+    try:
+        WdWait(driver, 10).until(ec.element_to_be_clickable((By.CSS_SELECTOR, 'md-dialog-actions > '
+                                                                              'button:nth-child(2)'))).click()
+    except exceptions.ElementClickInterceptedException:
+        driver.execute_script("document.querySelector('md-dialog-actions > button:nth-child(2)').click();")
+
+    WdWait(driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))
+    WdWait(driver, 10).until(ec.invisibility_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))

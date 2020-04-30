@@ -129,6 +129,6 @@ dmypy.json
 .pyre/
 /main/details
 /main/completed.txt
-/main/InfoFolder/
+/main/Reports/
 /play/
 /temp_playground/
