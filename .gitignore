@@ -132,3 +132,5 @@ dmypy.json
 /main/Reports/
 /play/
 /temp_playground/
+/.idea/misc.xml
+/.idea/dictionaries/mark.xml

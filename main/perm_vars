@@ -1,9 +1,9 @@
 {
   "ents_info":
   {
-      "dev" : {
-      "main": "# Salestrekker Enterprise",
-      "learn": "**MAKE YOUR OWN** Matt Test Group (QA automation testing)"
+    "dev" : {
+    "main": "# Salestrekker Enterprise",
+    "learn": "**MAKE YOUR OWN** Matt Test Group (QA automation testing)"
     },
     "vownet" : {
     "main" : "Vow Financial Pty Ltd",
@@ -45,5 +45,12 @@
       "main": "Astute Financial Management Pty Ltd",
       "learn": "0. Learn GEM"
     }
+  },
+  "workflows": "None-Asset Finance-Commercial Loan-Conveyancing-Home Loan-Insurance-Personal Loan-Real Estate",
+  "test_users": {
+    "Matthew Test" : "matthew@salestrekker.com",
+    "Maya Test" : "maya@salestrekker.com",
+    "Phillip Test": "phillip@salestrekker.com",
+    "Zac Test": "zac@salestrekker.com"
   }
 }
