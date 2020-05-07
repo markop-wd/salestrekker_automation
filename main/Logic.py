@@ -1,5 +1,5 @@
 from main.Permanent import document_comparator, workflow_comparator, workflow_manipulation, user_manipulation, \
-    org_funcs, login
+    org_funcs, login, deal_create
 
 from selenium.webdriver import Chrome
 from selenium.webdriver import Firefox
@@ -40,6 +40,7 @@ class WorkerInitializer:
         self.doc_helper = document_comparator.DocumentCheck(self.driver, self.ent, start_time)
         self.wf_helper = workflow_comparator.WorkflowCheck(self.driver, self.ent, start_time)
         self.wf_manipulate = workflow_manipulation.WorkflowManipulation(self.driver, self.ent)
+        self.deal_manipulate = deal_create.MultipleDealCreator(self.ent, self.driver)
 
     def deployment_logic(self, runner_main_org, runner_learn_org):
 
@@ -63,11 +64,13 @@ class WorkerInitializer:
     def test_logic(self, runner_main_org, runner_learn_org):
 
         self.log_helper.log_in()
+        org_funcs.org_changer(self.driver,'Test Organization 2020-05-01')
+        self.deal_manipulate.create_deal()
         # org_funcs.organization_create(self.driver, self.ent, runner_learn_org, runner_main_org)
         # self.log_helper.log_in()
         # self.doc_helper.document_get(runner_learn_org)
         # self.wf_helper.workflow_get(runner_learn_org)
-        org_funcs.org_changer(self.driver, f'Test Organization {date.today()}')
+        # org_funcs.org_changer(self.driver, f'Test Organization {date.today()}')
 
         # for user in self.test_users:
         #     email_split = self.test_users[user].split('@')

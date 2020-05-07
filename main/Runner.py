@@ -103,20 +103,21 @@ class Runners:
                 continue
             except exceptions.MaxRetryError:
                 # TODO - Find a way to go back to the line where he was after encountering either of the two errors
-                self.completed[ent] = (datetime.now(), False, traceback.format_exc())
+                self.completed[ent] = (datetime.now().strftime("%H:%M:%S"), False, traceback.format_exc())
                 traceback.print_exc()
                 current_runner.driver.quit()
                 continue
             except Exception as exc:
+                captured_time = datetime.now().strftime("%H:%M:%S")
                 current_runner.driver.get_screenshot_as_file(
-                    f'{self.folder_name}/Test/{datetime.now().strftime("%H:%M:%S")} {ent} {exc}.png')
-                self.completed[ent] = (datetime.now().strftime("%H:%M:%S"), False, traceback.format_exc())
+                    f'{self.folder_name}/Test/{captured_time} {ent}.png')
+                self.completed[ent] = (captured_time, False, traceback.format_exc())
                 self.csv_writer()
                 traceback.print_exc()
                 current_runner.driver.quit()
                 continue
             else:
-                self.completed[ent] = (datetime.now(), True, '')
+                self.completed[ent] = (datetime.now().strftime("%H:%M:%S"), True, '')
                 current_runner.driver.quit()
 
         self.csv_writer()

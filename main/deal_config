@@ -1,0 +1,13 @@
+
+{
+  "number_of_contacts": {
+    "random": true,
+    "rand_val": {
+      "min": 5,
+      "max": 7
+    },
+    "value": 5
+  },
+  "contact_types": "mixed"
+
+}
