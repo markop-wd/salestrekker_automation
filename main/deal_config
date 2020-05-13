@@ -1,13 +1,18 @@
 
 {
-  "number_of_contacts": {
+  "contacts": {
+      "number_of_contacts": {
     "random": true,
     "rand_val": {
-      "min": 5,
-      "max": 7
+      "min": 3,
+      "max": 5
     },
-    "value": 5
+    "value": 2
   },
   "contact_types": "mixed"
-
+  },
+  "deal_info": {
+    "random": false,
+    "stage_num": 1
+  }
 }

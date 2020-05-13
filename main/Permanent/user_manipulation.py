@@ -7,7 +7,7 @@ from datetime import date
 from time import sleep
 
 
-def add_user(driver, ent, email, username='Test Surname'):
+def add_user(driver, ent, email, username, broker=True, admin=True, mentor=False):
 
     from selenium.webdriver.common.keys import Keys
 
@@ -17,6 +17,7 @@ def add_user(driver, ent, email, username='Test Surname'):
         last_name = username.split(' ')[1]
     except IndexError:
         last_name = 'Surname'
+        username = first_name + ' Surname'
 
     try:
         WdWait(driver, 5).until(ec.presence_of_element_located((By.TAG_NAME, 'st-accounts-list')))
@@ -32,6 +33,7 @@ def add_user(driver, ent, email, username='Test Surname'):
     WdWait(driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'span > button')))
 
     def test_pattern(css_input, input_value):
+        sleep(0.5)
         driver.find_element_by_css_selector(css_input).send_keys(input_value)
         try:
             WdWait(driver, 1).until(
@@ -43,45 +45,10 @@ def add_user(driver, ent, email, username='Test Surname'):
             driver.find_element_by_css_selector(css_input).send_keys(input_value)
 
     test_pattern('div:nth-child(1) > md-input-container > input', email)
-    sleep(0.1)
-
-    # driver.find_element_by_css_selector('div:nth-child(1) > md-input-container > input').send_keys(email)
-    # try:
-    #     WdWait(driver, 1).until(
-    #         ec.text_to_be_present_in_element_value((By.CSS_SELECTOR, 'div:nth-child(1) > md-input-container > input'),
-    #                                                email))
-    # except exceptions.TimeoutException:
-    #     driver.find_element_by_css_selector('div:nth-child(1) > md-input-container > input').send_keys(
-    #         Keys.CONTROL + "a")
-    #     driver.find_element_by_css_selector('div:nth-child(1) > md-input-container > input').send_keys(email)
-    #
 
     test_pattern('div:nth-child(2) > md-input-container:nth-child(1) > input', first_name)
-    sleep(0.1)
-    # driver.find_element_by_css_selector(
-    #     'div:nth-child(2) > md-input-container:nth-child(1) > input').send_keys(first_name)
-    # try:
-    #     WdWait(driver, 1).until(
-    #         ec.text_to_be_present_in_element_value((By.CSS_SELECTOR, 'div:nth-child(2) > md-input-container > input'),
-    #                                                first_name))
-    # except exceptions.TimeoutException:
-    #     driver.find_element_by_css_selector(
-    #         'div:nth-child(2) > md-input-container:nth-child(1) > input').send_keys(Keys.CONTROL + 'a')
-    #     driver.find_element_by_css_selector(
-    #         'div:nth-child(2) > md-input-container:nth-child(1) > input').send_keys(first_name)
-    #
+
     test_pattern('div:nth-child(2) > md-input-container:nth-child(2) > input', last_name)
-    sleep(0.1)
-    # driver.find_element_by_css_selector(
-    #     'div:nth-child(2) > md-input-container:nth-child(2) > input').send_keys(last_name)
-    # try:
-    #     WdWait(driver, 1).until(ec.text_to_be_present_in_element_value(
-    #         (By.CSS_SELECTOR, 'div:nth-child(2) > md-input-container:nth-child(2) > input'), last_name))
-    # except exceptions.TimeoutException:
-    #     driver.find_element_by_css_selector(
-    #         'div:nth-child(2) > md-input-container:nth-child(2) > input').send_keys(Keys.CONTROL + 'a')
-    #     driver.find_element_by_css_selector(
-    #         'div:nth-child(2) > md-input-container:nth-child(2) > input').send_keys(last_name)
 
     try:
         WdWait(driver, 10).until(ec.element_to_be_clickable(
@@ -93,16 +60,77 @@ def add_user(driver, ent, email, username='Test Surname'):
         ec.text_to_be_present_in_element((By.CSS_SELECTOR, 'span.md-toast-text > span:first-child'), 'User'))
     WdWait(driver, 10).until(
         ec.invisibility_of_element_located((By.CSS_SELECTOR, 'span.md-toast-text > span:first-child')))
+    user = return_user(driver, username, email)
+
+    if broker:
+        mortgage_broker_switch = user.find_element_by_css_selector('md-switch[aria-label="User is Mortgage Broker"]')
+
+        try:
+            mortgage_broker_switch.click()
+        except exceptions.ElementClickInterceptedException:
+            driver.execute_script("arguments[0].click();",mortgage_broker_switch)
+
+        try:
+            user.find_element_by_css_selector('a:nth-child(7) > md-switch[aria-checked="true"]')
+        except exceptions.NoSuchElementException:
+            print(username, 'Broker Click Error')
+
+    if mentor:
+        mentor_switch = user.find_element_by_css_selector('md-switch[aria-label="User is Mentor"]')
+
+        try:
+            mentor_switch.click()
+        except exceptions.ElementClickInterceptedException:
+            driver.execute_script("arguments[0].click();", mentor_switch)
+
+        try:
+            user.find_element_by_css_selector('a:nth-child(6) > md-switch[aria-checked="true"]')
+        except exceptions.NoSuchElementException:
+            print(username, 'Mentor Click Error')
+
+    if admin:
+        admin_switch = user.find_element_by_css_selector('md-switch[aria-label="User is System Admin"]')
+
+        try:
+            admin_switch.click()
+        except exceptions.ElementClickInterceptedException:
+            driver.execute_script("arguments[0].click();", admin_switch)
+
+        try:
+            user.find_element_by_css_selector('a:nth-child(8) > md-switch[aria-checked="true"]')
+        except exceptions.NoSuchElementException:
+            print(username, 'Admin Click Error')
 
 
-def user_extraction(driver, ent):
+def return_user(driver, username, email):
+    assert "Users : Settings" in driver.title
+    main_documents = driver.find_element_by_css_selector('body > md-content')
+    last_height = driver.execute_script("return arguments[0].scrollHeight", main_documents)
+    sleep(0.2)
+    while True:
+        driver.execute_script(f"arguments[0].scroll(0,{last_height});", main_documents)
+        sleep(3)
+        new_height = driver.execute_script("return arguments[0].scrollHeight", main_documents)
+
+        if new_height == last_height:
+            break
+        last_height = new_height
+
+    users = driver.find_elements_by_tag_name('st-list-item')
+    for user in users:
+        if user.find_element_by_css_selector('a:first-of-type > content > span').text == username:
+            if user.find_element_by_css_selector('a:first-of-type > content > sub-content > em').text.lower() == email.lower():
+                return user
+
+
+def return_all_users(driver, ent):
     main_url = "https://" + ent + ".salestrekker.com"
     driver.get(main_url + "/settings/users")
 
     WdWait(driver, 15).until(ec.presence_of_element_located((By.TAG_NAME, "st-accounts-list")))
     main_documents = driver.find_element_by_css_selector('body > md-content')
     last_height = driver.execute_script("return arguments[0].scrollHeight", main_documents)
-    sleep(1)
+    sleep(0.2)
     while True:
         driver.execute_script(f"arguments[0].scroll(0,{last_height});", main_documents)
         sleep(3)

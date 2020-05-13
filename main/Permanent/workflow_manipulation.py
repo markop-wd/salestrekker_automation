@@ -6,7 +6,8 @@ from datetime import date
 
 from time import sleep
 
-from main.Permanent.user_manipulation import user_extraction, get_current_username
+from main.Permanent.user_manipulation import return_all_users, get_current_username
+from selenium.webdriver.common.keys import Keys
 
 
 class WorkflowManipulation:
@@ -18,17 +19,13 @@ class WorkflowManipulation:
         self.num_of_created_stages = 0
         self.all_users = []
 
-    # def workflow_name_convert(self,wf_name):
-    #     if wf_name == 'homeloan' or 'hl'
-
     def add_workflow(self, workflow_type='Home Loan',
-                     all_users=True, wf_owner=''):
+                     add_all_users=True, wf_owner=''):
 
         valid_wfs = ["None", "Asset Finance", "Commercial Loan", "Conveyancing", "Home Loan", "Insurance",
                      "Personal Loan", "Real Estate"]
 
         import random
-        from selenium.webdriver.common.keys import Keys
         while workflow_type not in valid_wfs:
             print('Valid options are\n')
             for wf in valid_wfs:
@@ -57,13 +54,9 @@ class WorkflowManipulation:
                 self.driver.get(self.main_url + "/settings/workflow/0")
                 WdWait(self.driver, 20).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
 
-        if all_users:
+        if add_all_users:
             if not bool(self.all_users):
-                self.all_users = user_extraction(self.driver, self.ent)
-                self.driver.get(self.main_url + "/settings/workflow/0")
-                for user in self.all_users:
-                    self.driver.find_element_by_css_selector('div:nth-child(6) input').send_keys(user + Keys.ENTER)
-                    sleep(0.1)
+                self.add_users_to_workflow()
             else:
                 for user in self.all_users:
                     self.driver.find_element_by_css_selector('div:nth-child(6) input').send_keys(user + Keys.ENTER)
@@ -220,6 +213,37 @@ class WorkflowManipulation:
         #     print('diff between expected and actual is ',
         #           number_of_stages - len(self.driver.find_elements_by_css_selector('#board > stage')))
 
+    def workflow_users(self, workflow_id):
+        self.driver.get(self.main_url + '/settings/workflow/' + workflow_id)
+        WdWait(self.driver, 5).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
+        try:
+            return_list = [user.text for user in
+                           self.driver.find_elements_by_css_selector('md-chip div.md-contact-name')]
+        except exceptions.NoSuchElementException:
+            return_list = []
+
+        return return_list
+
+    def add_users_to_workflow(self, worklfow_id='New', users="All"):
+
+        if users == 'All':
+            self.all_users = return_all_users(self.driver, self.ent)
+        else:
+            self.all_users = users.split('-')
+
+        if worklfow_id == 'New':
+            self.driver.get(self.main_url + "/settings/workflow/0")
+        else:
+            self.driver.get(self.main_url + "/settings/workflow/" + worklfow_id)
+        for user in self.all_users:
+            WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'div:nth-child(6) input')))
+            self.driver.find_element_by_css_selector('div:nth-child(6) input').send_keys(user + Keys.ENTER)
+            sleep(0.1)
+
+        WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'div.md-toast-content')))
+        WdWait(self.driver, 10).until(ec.invisibility_of_element_located((By.CSS_SELECTOR, 'div.md-toast-content')))
+
+
     # def duplicate_hl_wf(self):
     #     self.driver.get(self.main_url + "/settings/workflows")
     #     try:
@@ -257,3 +281,17 @@ class WorkflowManipulation:
     #     # self.hl_workflow_name
     #     pass
     #
+
+    def get_all_workflows(self):
+        """
+        Returns full href of the workflows - example https://dev.salestrekker.com/board/jaoj0342-joadf203-wraf
+        :return:
+        """
+        self.driver.get(self.main_url)
+        WdWait(self.driver, 10).until(
+            ec.presence_of_element_located((By.CSS_SELECTOR, 'button[aria-label="Deals"]'))).click()
+        workflow_container = WdWait(self.driver, 10).until(
+            ec.presence_of_element_located((By.CSS_SELECTOR, 'md-menu-content.sub-menu > section')))
+        workflows = workflow_container.find_elements_by_css_selector('md-menu-item > a')
+        workflow_list = [workflow.get_attribute('href') for workflow in workflows]
+        return workflow_list

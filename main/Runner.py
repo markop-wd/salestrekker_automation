@@ -111,7 +111,7 @@ class Runners:
                 captured_time = datetime.now().strftime("%H:%M:%S")
                 current_runner.driver.get_screenshot_as_file(
                     f'{self.folder_name}/Test/{captured_time} {ent}.png')
-                self.completed[ent] = (captured_time, False, traceback.format_exc())
+                self.completed[ent] = (captured_time, False, traceback.format_exc(), current_runner.driver.current_url)
                 self.csv_writer()
                 traceback.print_exc()
                 current_runner.driver.quit()
