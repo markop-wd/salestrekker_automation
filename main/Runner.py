@@ -93,7 +93,7 @@ class Runners:
                                                      group=ents_info[ent]['learn'], ent=ent)
 
             try:
-                print(datetime.now(), ent)
+                # print(datetime.now(), ent)
                 current_runner.test_logic(ents_info[ent]['main'], ents_info[ent]['learn'])
             except exceptions.NewConnectionError:
                 # TODO - Find a way to go back to the line where he was after encountering either of the two errors

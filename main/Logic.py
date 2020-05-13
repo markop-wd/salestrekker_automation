@@ -10,7 +10,7 @@ from selenium.webdriver.chrome.options import Options as chr_options
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
 
-from datetime import date
+from datetime import date, datetime
 import json
 
 chrome_options = chr_options()
@@ -96,46 +96,49 @@ class WorkerInitializer:
         # self.driver.refresh()
 
         workflows = self.wf_manipulate.get_all_workflows()
+        while True:
+            try:
+                for workflow in workflows:
+                        print(datetime.now())
+                        print(workflow)
+                        self.deal_create.create_deal(workflow=workflow.split('/')[-1])
+            except:
+                continue
 
-        for workflow in workflows:
-            self.deal_create.create_deal(workflow=workflow.split('/')[-1])
 
-        if screenshots:
-            all_deals = self.deal_manipulate.get_deals()
-            for deal in all_deals:
-                self.driver.get(deal)
-                WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'md-content > md-content')))
-                WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR,'st-sidebar-block button:nth-child(2)')))
-                test = self.driver.find_elements_by_css_selector('st-sidebar-block button')
-                test[-1].click()
-                WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-contact')))
-                deal_name = self.driver.find_element_by_css_selector('div > header-title > h1 > small').text
-                # seleniumself.driver.find_element().
-                for button_count, button in enumerate(
-                        self.driver.find_elements_by_css_selector('st-sidebar-content > st-sidebar-block > div button'),
-                        start=1):
-                    current_separator = button.find_element_by_css_selector('span.truncate').text
-
-                    if current_separator in ['Asset to be financed', 'Lender and product', 'Compare products',
-                                             'Security details', 'Funding worksheet', 'Maximum borrowing']:
-                        break
-                    if current_separator in ['Connect to Mercury', 'Connect to Flex']:
-                        continue
-                    elif current_separator == 'First Surname':
-                        current_separator_text = f'{button_count}. Client'
-                    elif current_separator == 'Company Name':
-                        current_separator_text = f'{button_count}. Company'
-                    else:
-                        current_separator_text = f'{button_count}. {current_separator}'
-
-                    try:
-                        button.click()
-                    except exceptions.ElementClickInterceptedException:
-                        self.driver.execute_script('arguments[0].click();', button)
-
-                    content = WdWait(self.driver, 10).until(
-                        ec.presence_of_element_located((By.CSS_SELECTOR, 'body > md-content')))
-                    self.deal_manipulate.screenshot(element_with_scroll=content,sub_section_name=current_separator_text,deal_name=deal_name)
+        # if screenshots:
+        #     all_deals = self.deal_manipulate.get_deals()
+        #     for deal in all_deals:
+        #         self.driver.get(deal)
+        #         WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'md-content > md-content')))
+        #         WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR,'st-sidebar-block button:nth-child(2)')))
+        #         test = self.driver.find_elements_by_css_selector('st-sidebar-block button')
+        #         test[-1].click()
+        #         WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-contact')))
+        #         deal_name = self.driver.find_element_by_css_selector('div > header-title > h1 > small').text
+        #         # seleniumself.driver.find_element().
+        #         for button_count, button in enumerate(
+        #                 self.driver.find_elements_by_css_selector('st-sidebar-content > st-sidebar-block > div button'),
+        #                 start=1):
+        #             current_separator = button.find_element_by_css_selector('span.truncate').text
+        #
+        #             if current_separator in ['Connect to Mercury', 'Connect to Flex']:
+        #                 continue
+        #             elif current_separator == 'First Surname':
+        #                 current_separator_text = f'{button_count}. Client'
+        #             elif current_separator == 'Company Name':
+        #                 current_separator_text = f'{button_count}. Company'
+        #             else:
+        #                 current_separator_text = f'{button_count}. {current_separator}'
+        #
+        #             try:
+        #                 button.click()
+        #             except exceptions.ElementClickInterceptedException:
+        #                 self.driver.execute_script('arguments[0].click();', button)
+        #
+        #             content = WdWait(self.driver, 10).until(
+        #                 ec.presence_of_element_located((By.CSS_SELECTOR, 'body > md-content')))
+        #             self.deal_manipulate.screenshot(element_with_scroll=content,sub_section_name=current_separator_text,deal_name=deal_name)
 
         # self.doc_helper.document_compare(new_org)
         # self.wf_helper.workflow_compare(new_org)

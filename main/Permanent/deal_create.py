@@ -274,6 +274,7 @@ class MultipleDealCreator:
         # Deal Owner
         deal_owner_select_element = main_info_block.find_element_by_css_selector(
             'div:nth-child(2) > md-input-container > md-select')
+
         try:
             deal_owner_select_element.click()
         except exceptions.ElementClickInterceptedException:
@@ -381,13 +382,8 @@ class MultipleDealCreator:
         WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-contact')))
         contact_buttons = self.driver.find_elements_by_css_selector(
             'st-sidebar-content > st-sidebar-block:first-of-type > div > button')
-        if len(contact_buttons) == 0:
-            print('No contact buttons')
-        else:
-            print(len(contact_buttons))
 
         for button_count, contact_button in enumerate(contact_buttons, start=1):
-            sleep(1)
             try:
                 current_button = self.driver.find_element_by_xpath(
                     f'//span[text()={button_count}]/ancestor::*[position()=2]')
@@ -397,7 +393,6 @@ class MultipleDealCreator:
                 try:
                     current_button.click()
                 except exceptions.ElementClickInterceptedException:
-                    print('intercepted')
                     self.driver.execute_script('arguments[0].click();', current_button)
 
                 content = WdWait(self.driver, 10).until(
@@ -587,6 +582,8 @@ class MultipleDealCreator:
                 sleep(2)
 
         sleep(2)
+        self.driver.refresh()
+        WdWait(self.driver, 20).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'form-content > form')))
 
         try:
             buttons = self.driver.find_elements_by_css_selector(
@@ -618,7 +615,7 @@ class MultipleDealCreator:
                     current_button = self.driver.find_element_by_xpath(
                         f"//span[text()='{separator}']/ancestor::*[position()=1]")
                 except exceptions.NoSuchElementException:
-                    print(separator)
+                    # print(separator)
                     current_button = self.driver.find_element_by_xpath(f"//*[normalize-space(span)='{separator}']")
                 try:
                     current_button.click()
@@ -827,10 +824,16 @@ class MultipleDealCreator:
                     for input_el in content.find_elements_by_tag_name('input'):
                         if input_el.get_attribute('class') == 'md-datepicker-input md-input':
                             year = random.randrange(1930, 2030)
-                            try:
-                                input_el.send_keys(f'01/01/{year}')
-                            except exceptions.ElementNotInteractableException:
-                                continue
+                            if input_el.get_attribute('placeholder') == 'MM/YYYY':
+                                try:
+                                    input_el.send_keys(f'01/{year}')
+                                except exceptions.ElementNotInteractableException:
+                                    continue
+                            else:
+                                try:
+                                    input_el.send_keys(f'01/01/{year}')
+                                except exceptions.ElementNotInteractableException:
+                                    continue
                         elif input_el.get_attribute('st-input-default-value') == '0':
                             value = random.randrange(0, 50000)
                             try:
@@ -1045,29 +1048,10 @@ class MultipleDealCreator:
                                 current_sel.select_by_index(random.randrange(0, len(current_sel.options)))
 
                     for input_el in content.find_elements_by_tag_name('input'):
-                        if input_el.get_attribute('class') == 'md-datepicker-input md-input':
-                            year = random.randrange(1930, 2030)
-                            if input_el.get_attribute('placeholder') == 'MM/YYYY':
-                                try:
-                                    input_el.send_keys(f'01/{year}')
-                                except exceptions.ElementNotInteractableException:
-                                    continue
-                            else:
-                                try:
-                                    input_el.send_keys(f'01/01/{year}')
-                                except exceptions.ElementNotInteractableException:
-                                    continue
-                        elif input_el.get_attribute('st-input-default-value') == '0':
-                            value = random.randrange(0, 50000)
-                            try:
-                                input_el.send_keys(value)
-                            except exceptions.ElementNotInteractableException:
-                                continue
-                        else:
-                            try:
-                                input_el.send_keys('nanobots')
-                            except exceptions.ElementNotInteractableException:
-                                continue
+                        try:
+                            input_el.send_keys('nanobots')
+                        except exceptions.ElementNotInteractableException:
+                            continue
                         sleep(2)
 
                     for md_select in content.find_elements_by_tag_name('md-select'):
