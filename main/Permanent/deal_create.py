@@ -394,6 +394,7 @@ class MultipleDealCreator:
                 current_button = self.driver.find_element_by_xpath(
                     f'//span[text()={button_count}]/ancestor::*[position()=2]')
             except exceptions.NoSuchElementException:
+                print(f'{button_count}')
                 print('No such element?')
             else:
                 try:
@@ -435,8 +436,9 @@ class MultipleDealCreator:
                     try:
                         current_sel = Select(select_el)
                     except exceptions.StaleElementReferenceException as inst:
-                        print('Stale reference 2', inst)
-                        print(inst.stacktrace)
+                        # print('Stale reference 2', inst)
+                        # print(inst.stacktrace)
+                        pass
                     except:
                         traceback.print_stack()
                         traceback.print_exc()
@@ -518,8 +520,9 @@ class MultipleDealCreator:
                     try:
                         current_sel = Select(select_el)
                     except exceptions.StaleElementReferenceException as inst:
-                        print('Stale reference 3', inst)
-                        print(inst.stacktrace)
+                        # print('Stale reference 3', inst)
+                        # print(inst.stacktrace)
+                        pass
                     except:
                         traceback.print_stack()
                         traceback.print_exc()
@@ -661,6 +664,7 @@ class MultipleDealCreator:
                 except exceptions.NoSuchElementException as inst:
                     print(inst.stacktrace)
                     print('No such element')
+                    print(f'{separator}')
                     current_button = self.driver.find_element_by_xpath(f"//*[normalize-space(span)='{separator}']")
                 try:
                     current_button.click()
@@ -690,8 +694,9 @@ class MultipleDealCreator:
                         try:
                             current_sel = Select(select_el)
                         except exceptions.StaleElementReferenceException as inst:
-                            print('Stale reference 4 ', inst)
-                            print(inst.stacktrace)
+                            # print('Stale reference 4 ', inst)
+                            # print(inst.stacktrace)
+                            pass
                         except Exception as inst:
                             print('bad reference', inst)
                             pass
