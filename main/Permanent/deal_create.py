@@ -739,6 +739,22 @@ class MultipleDealCreator:
                             except exceptions.ElementNotInteractableException:
                                 continue
                     sleep(2)
+                    for select_el in content.find_elements_by_tag_name('select'):
+                        try:
+                            current_sel = Select(select_el)
+                        except exceptions.StaleElementReferenceException as inst:
+                            # print('Stale reference 4 ', inst)
+                            # print(inst.stacktrace)
+                            pass
+                        except Exception as inst:
+                            print('bad reference', inst)
+                            pass
+                        else:
+                            # print(len(current_sel.options))
+                            try:
+                                current_sel.select_by_index(random.randrange(1, len(current_sel.options)))
+                            except ValueError:
+                                current_sel.select_by_index(random.randrange(0, len(current_sel.options)))
 
                 elif separator == 'Expenses':
                     self.driver.find_element_by_css_selector('st-block-form-header > button').click()
