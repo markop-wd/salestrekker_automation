@@ -14,7 +14,7 @@ from datetime import date, datetime
 import json
 
 chrome_options = chr_options()
-# chrome_options.add_argument('--headless')
+chrome_options.add_argument('--headless')
 chrome_options.add_argument('start-maximized')
 
 
@@ -78,7 +78,7 @@ class WorkerInitializer:
         # self.log_helper.log_in()
         # self.doc_helper.document_get(runner_learn_org)
         # self.wf_helper.workflow_get(runner_learn_org)
-        org_funcs.org_changer(self.driver, new_org)
+        org_funcs.org_changer(self.driver, 'Deploy 1805')
         # org_funcs.org_changer(self.driver, 'Test Organization 2020-05-12')
 
         # for user in self.test_users:
@@ -102,7 +102,8 @@ class WorkerInitializer:
                         print(datetime.now())
                         print(workflow)
                         self.deal_create.create_deal(workflow=workflow.split('/')[-1])
-            except:
+            except Exception as inst:
+                print('Main exception', inst)
                 continue
 
 

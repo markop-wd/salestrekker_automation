@@ -579,6 +579,32 @@ class MultipleDealCreator:
                             except exceptions.ElementNotInteractableException:
                                 continue
 
+                try:
+                    employment = self.driver.find_element_by_css_selector(
+                        'st-block-form-header > button[ng-click="$ctrl.employmentAdd($event)"]')
+                except exceptions.NoSuchElementException:
+                    pass
+                else:
+                    try:
+                        employment.click()
+                    except exceptions.ElementClickInterceptedException:
+                        self.driver.execute_script('arguments[0].click();', employment)
+
+                    else:
+                        employment.click()
+                        sleep(0.01)
+                        for employment_type in self.driver.find_elements_by_css_selector(
+                                'st-contact-employment div > div > st-form-field-container:nth-child(2) > select'):
+                            Select(employment_type).select_by_index(random.randrange(1, 3))
+                        for employment_status in self.driver.find_elements_by_css_selector('div.ng-scope > st-contact-employment > st-block > st-block-form-content > div > div > st-form-field-container:nth-child(1) > select'):
+                            Select(employment_status).select_by_index((random.randrange(0,2)))
+
+
+                for textarea in content.find_elements_by_tag_name('textarea'):
+                    try:
+                        textarea.send_keys('nanobots')
+                    except exceptions.ElementNotInteractableException:
+                        continue
                 sleep(2)
 
         sleep(2)
@@ -871,8 +897,10 @@ class MultipleDealCreator:
 
                 elif separator == 'Needs and objectives':
                     for textarea in content.find_elements_by_tag_name('textarea'):
-                        textarea.send_keys('nanobots')
-
+                        try:
+                            textarea.send_keys('nanobots')
+                        except exceptions.ElementNotInteractableException:
+                            continue
                     for select_el in content.find_elements_by_tag_name('select'):
                         try:
                             current_sel = Select(select_el)
@@ -889,10 +917,16 @@ class MultipleDealCreator:
                     for input_el in content.find_elements_by_tag_name('input'):
                         if input_el.get_attribute('class') == 'md-datepicker-input md-input':
                             year = random.randrange(1930, 2030)
-                            try:
-                                input_el.send_keys(f'01/01/{year}')
-                            except exceptions.ElementNotInteractableException:
-                                continue
+                            if input_el.get_attribute('placeholder') == 'MM/YYYY':
+                                try:
+                                    input_el.send_keys(f'01/{year}')
+                                except exceptions.ElementNotInteractableException:
+                                    continue
+                            else:
+                                try:
+                                    input_el.send_keys(f'01/01/{year}')
+                                except exceptions.ElementNotInteractableException:
+                                    continue
                         elif input_el.get_attribute('st-input-default-value') == '0':
                             value = random.randrange(0, 50000)
                             try:
@@ -924,12 +958,70 @@ class MultipleDealCreator:
                                 continue
 
                     for input_el in content.find_elements_by_tag_name('input'):
+                        if not input_el.get_attribute('value'):
+                            if input_el.get_attribute('class') == 'md-datepicker-input md-input':
+                                year = random.randrange(1930, 2030)
+                                if input_el.get_attribute('placeholder') == 'MM/YYYY':
+                                    try:
+                                        input_el.send_keys(f'01/{year}')
+                                    except exceptions.ElementNotInteractableException:
+                                        continue
+                                else:
+                                    try:
+                                        input_el.send_keys(f'01/01/{year}')
+                                    except exceptions.ElementNotInteractableException:
+                                        continue
+                            elif input_el.get_attribute('st-input-default-value') == '0':
+                                value = random.randrange(0, 50000)
+                                try:
+                                    input_el.send_keys(value)
+                                except exceptions.ElementNotInteractableException:
+                                    continue
+                            else:
+                                try:
+                                    input_el.send_keys('nanobots')
+                                except exceptions.ElementNotInteractableException:
+                                    continue
+
+                    for textarea in content.find_elements_by_tag_name('textarea'):
+                        try:
+                            textarea.send_keys('nanobots')
+                        except exceptions.ElementNotInteractableException:
+                            continue
+                    sleep(2)
+
+                elif separator == 'Product requirements':
+                    for textarea in content.find_elements_by_tag_name('textarea'):
+                        try:
+                            textarea.send_keys('nanobots')
+                        except exceptions.ElementNotInteractableException:
+                            continue
+                    for select_el in content.find_elements_by_tag_name('select'):
+                        try:
+                            current_sel = Select(select_el)
+                        except exceptions.StaleElementReferenceException:
+                            pass
+                        except:
+                            pass
+                        else:
+                            try:
+                                current_sel.select_by_index(random.randrange(1, len(current_sel.options)))
+                            except ValueError:
+                                current_sel.select_by_index(random.randrange(0, len(current_sel.options)))
+
+                    for input_el in content.find_elements_by_tag_name('input'):
                         if input_el.get_attribute('class') == 'md-datepicker-input md-input':
                             year = random.randrange(1930, 2030)
-                            try:
-                                input_el.send_keys(f'01/01/{year}')
-                            except exceptions.ElementNotInteractableException:
-                                continue
+                            if input_el.get_attribute('placeholder') == 'MM/YYYY':
+                                try:
+                                    input_el.send_keys(f'01/{year}')
+                                except exceptions.ElementNotInteractableException:
+                                    continue
+                            else:
+                                try:
+                                    input_el.send_keys(f'01/01/{year}')
+                                except exceptions.ElementNotInteractableException:
+                                    continue
                         elif input_el.get_attribute('st-input-default-value') == '0':
                             value = random.randrange(0, 50000)
                             try:
@@ -941,12 +1033,57 @@ class MultipleDealCreator:
                                 input_el.send_keys('nanobots')
                             except exceptions.ElementNotInteractableException:
                                 continue
-                    sleep(2)
 
+                    for md_radio_group in content.find_elements_by_tag_name('md-radio-group'):
+                        md_radio_buttons = md_radio_group.find_elements_by_tag_name('md-radio-button')
+                        radio_button_to_click = random.randrange(0, len(md_radio_buttons))
+                        try:
+                            md_radio_buttons[radio_button_to_click].click()
+                        except exceptions.ElementClickInterceptedException:
+                            self.driver.execute_script("arguments[0].click();", md_radio_buttons[radio_button_to_click])
+                        except Exception as inst:
+                            print('Exception', inst)
+                            continue
 
+                    for checkbox in content.find_elements_by_tag_name('md-checkbox'):
+                        if random.randrange(0, 100) > 30:
+                            try:
+                                checkbox.click()
+                            except:
+                                continue
 
-                # elif current_separator == 'Product requirements':
-                #     pass
+                    for input_el in content.find_elements_by_tag_name('input'):
+                        if not input_el.get_attribute('value'):
+                            if input_el.get_attribute('class') == 'md-datepicker-input md-input':
+                                year = random.randrange(1930, 2030)
+                                if input_el.get_attribute('placeholder') == 'MM/YYYY':
+                                    try:
+                                        input_el.send_keys(f'01/{year}')
+                                    except exceptions.ElementNotInteractableException:
+                                        continue
+                                else:
+                                    try:
+                                        input_el.send_keys(f'01/01/{year}')
+                                    except exceptions.ElementNotInteractableException:
+                                        continue
+                            elif input_el.get_attribute('st-input-default-value') == '0':
+                                value = random.randrange(0, 50000)
+                                try:
+                                    input_el.send_keys(value)
+                                except exceptions.ElementNotInteractableException:
+                                    continue
+                            else:
+                                try:
+                                    input_el.send_keys('nanobots')
+                                except exceptions.ElementNotInteractableException:
+                                    continue
+
+                    for textarea in content.find_elements_by_tag_name('textarea'):
+                        try:
+                            textarea.send_keys('nanobots')
+                        except exceptions.ElementNotInteractableException:
+                            continue
+
                 elif separator == 'Insurance':
                     insurance = self.driver.find_elements_by_css_selector('div.mt0 button')
                     for insuranc in insurance:
@@ -1052,7 +1189,6 @@ class MultipleDealCreator:
                             input_el.send_keys('nanobots')
                         except exceptions.ElementNotInteractableException:
                             continue
-                        sleep(2)
 
                     for md_select in content.find_elements_by_tag_name('md-select'):
                         try:
@@ -1076,8 +1212,100 @@ class MultipleDealCreator:
                             self.driver.execute_script("arguments[0].click();", md_select_container[to_click])
                         except:
                             pass
-                        sleep(2)
 
+                elif separator == 'Analysis':
+                    for textarea in content.find_elements_by_tag_name('textarea'):
+                        try:
+                            textarea.send_keys('nanobots')
+                        except exceptions.ElementNotInteractableException:
+                            continue
+                    for select_el in content.find_elements_by_tag_name('select'):
+                        try:
+                            current_sel = Select(select_el)
+                        except exceptions.StaleElementReferenceException:
+                            pass
+                        except:
+                            pass
+                        else:
+                            try:
+                                current_sel.select_by_index(random.randrange(1, len(current_sel.options)))
+                            except ValueError:
+                                current_sel.select_by_index(random.randrange(0, len(current_sel.options)))
+
+                    for input_el in content.find_elements_by_tag_name('input'):
+                        if input_el.get_attribute('class') == 'md-datepicker-input md-input':
+                            year = random.randrange(1930, 2030)
+                            if input_el.get_attribute('placeholder') == 'MM/YYYY':
+                                try:
+                                    input_el.send_keys(f'01/{year}')
+                                except exceptions.ElementNotInteractableException:
+                                    continue
+                            else:
+                                try:
+                                    input_el.send_keys(f'01/01/{year}')
+                                except exceptions.ElementNotInteractableException:
+                                    continue
+                        elif input_el.get_attribute('st-input-default-value') == '0':
+                            value = random.randrange(0, 50000)
+                            try:
+                                input_el.send_keys(value)
+                            except exceptions.ElementNotInteractableException:
+                                continue
+                        else:
+                            try:
+                                input_el.send_keys('nanobots')
+                            except exceptions.ElementNotInteractableException:
+                                continue
+
+                    for md_radio_group in content.find_elements_by_tag_name('md-radio-group'):
+                        md_radio_buttons = md_radio_group.find_elements_by_tag_name('md-radio-button')
+                        radio_button_to_click = random.randrange(0, len(md_radio_buttons))
+                        try:
+                            md_radio_buttons[radio_button_to_click].click()
+                        except exceptions.ElementClickInterceptedException:
+                            self.driver.execute_script("arguments[0].click();", md_radio_buttons[radio_button_to_click])
+                        except Exception as inst:
+                            print('Exception', inst)
+                            continue
+
+                    for checkbox in content.find_elements_by_tag_name('md-checkbox'):
+                        if random.randrange(0, 100) > 30:
+                            try:
+                                checkbox.click()
+                            except:
+                                continue
+
+                    for input_el in content.find_elements_by_tag_name('input'):
+                        if not input_el.get_attribute('value'):
+                            if input_el.get_attribute('class') == 'md-datepicker-input md-input':
+                                year = random.randrange(1930, 2030)
+                                if input_el.get_attribute('placeholder') == 'MM/YYYY':
+                                    try:
+                                        input_el.send_keys(f'01/{year}')
+                                    except exceptions.ElementNotInteractableException:
+                                        continue
+                                else:
+                                    try:
+                                        input_el.send_keys(f'01/01/{year}')
+                                    except exceptions.ElementNotInteractableException:
+                                        continue
+                            elif input_el.get_attribute('st-input-default-value') == '0':
+                                value = random.randrange(0, 50000)
+                                try:
+                                    input_el.send_keys(value)
+                                except exceptions.ElementNotInteractableException:
+                                    continue
+                            else:
+                                try:
+                                    input_el.send_keys('nanobots')
+                                except exceptions.ElementNotInteractableException:
+                                    continue
+
+                    for textarea in content.find_elements_by_tag_name('textarea'):
+                        try:
+                            textarea.send_keys('nanobots')
+                        except exceptions.ElementNotInteractableException:
+                            continue
 
                 else:
                     for select_el in content.find_elements_by_tag_name('select'):
@@ -1106,7 +1334,6 @@ class MultipleDealCreator:
                             except ValueError:
                                 current_sel.select_by_index(random.randrange(0, len(current_sel.options)))
 
-                    sleep(1)
                     for input_el in content.find_elements_by_tag_name('input'):
                         if input_el.get_attribute('class') == 'md-datepicker-input md-input':
                             year = random.randrange(1930, 2030)
