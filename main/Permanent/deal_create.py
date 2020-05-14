@@ -408,10 +408,11 @@ class MultipleDealCreator:
                     try:
                         current_sel = Select(select_el)
                     except exceptions.StaleElementReferenceException as inst:
-                        print('Stale reference', inst)
+                        print('Stale reference 1', inst)
                         print(inst.stacktrace)
                     except:
                         traceback.print_stack()
+                        traceback.print_exc()
                     else:
                         try:
                             current_sel.select_by_index(random.randrange(1, len(current_sel.options)))
@@ -434,10 +435,11 @@ class MultipleDealCreator:
                     try:
                         current_sel = Select(select_el)
                     except exceptions.StaleElementReferenceException as inst:
-                        print('Stale reference', inst)
+                        print('Stale reference 2', inst)
                         print(inst.stacktrace)
                     except:
                         traceback.print_stack()
+                        traceback.print_exc()
                     else:
                         try:
                             current_sel.select_by_index(random.randrange(1, len(current_sel.options)))
@@ -510,15 +512,17 @@ class MultipleDealCreator:
                         self.driver.execute_script("arguments[0].click();", md_select_container[to_click])
                     except:
                         traceback.print_stack()
+                        traceback.print_exc()
 
                 for select_el in content.find_elements_by_tag_name('select'):
                     try:
                         current_sel = Select(select_el)
                     except exceptions.StaleElementReferenceException as inst:
-                        print('Stale reference', inst)
+                        print('Stale reference 3', inst)
                         print(inst.stacktrace)
                     except:
                         traceback.print_stack()
+                        traceback.print_exc()
                     else:
                         try:
                             current_sel.select_by_index(random.randrange(1, len(current_sel.options)))
@@ -557,8 +561,11 @@ class MultipleDealCreator:
                     if random.randrange(0, 100) > 30:
                         try:
                             checkbox.click()
+                        except exceptions.ElementClickInterceptedException:
+                            self.driver.execute_script('arguments[0].click();', checkbox)
                         except:
                             traceback.print_stack()
+                            traceback.print_exc()
 
                 for input_el in content.find_elements_by_tag_name('input'):
                     if not input_el.get_attribute('value'):
@@ -651,8 +658,9 @@ class MultipleDealCreator:
                 try:
                     current_button = self.driver.find_element_by_xpath(
                         f"//span[text()='{separator}']/ancestor::*[position()=1]")
-                except exceptions.NoSuchElementException:
-                    # print(separator)
+                except exceptions.NoSuchElementException as inst:
+                    print(inst.stacktrace)
+                    print('No such element')
                     current_button = self.driver.find_element_by_xpath(f"//*[normalize-space(span)='{separator}']")
                 try:
                     current_button.click()
@@ -682,7 +690,7 @@ class MultipleDealCreator:
                         try:
                             current_sel = Select(select_el)
                         except exceptions.StaleElementReferenceException as inst:
-                            print('Stale reference', inst)
+                            print('Stale reference 4 ', inst)
                             print(inst.stacktrace)
                         except Exception as inst:
                             print('bad reference', inst)
@@ -748,11 +756,15 @@ class MultipleDealCreator:
                                 input_el.send_keys(random.randrange(0, 5000))
                             except:
                                 traceback.print_stack()
+                                traceback.print_exc()
+
                         elif input_el.get_attribute('ng-model') == 'householdExpense.comments':
                             try:
                                 input_el.send_keys('expense comment')
                             except:
                                 traceback.print_stack()
+                                traceback.print_exc()
+
                     for select_el in content.find_elements_by_tag_name('select'):
                         select = Select(select_el)
                         select.select_by_index(random.randrange(0, len(select.options)))
@@ -773,10 +785,12 @@ class MultipleDealCreator:
                         try:
                             current_sel = Select(select_el)
                         except exceptions.StaleElementReferenceException as inst:
-                            print('Stale reference', inst)
+                            print('Stale reference 5 ', inst)
                             print(inst.stacktrace)
                         except:
                             traceback.print_stack()
+                            traceback.print_exc()
+
                         else:
                             try:
                                 current_sel.select_by_index(random.randrange(1, len(current_sel.options)))
@@ -830,6 +844,8 @@ class MultipleDealCreator:
                             self.driver.execute_script("arguments[0].click();", md_select_container[to_click])
                         except:
                             traceback.print_stack()
+                            traceback.print_exc()
+
                     sleep(2)
 
                 elif separator == 'Liabilities':
@@ -850,10 +866,12 @@ class MultipleDealCreator:
                         try:
                             current_sel = Select(select_el)
                         except exceptions.StaleElementReferenceException as inst:
-                            print('Stale reference', inst)
+                            print('Stale reference 6 ', inst)
                             print(inst.stacktrace)
                         except:
                             traceback.print_stack()
+                            traceback.print_exc()
+
                         else:
                             try:
                                 current_sel.select_by_index(random.randrange(1, len(current_sel.options)))
@@ -906,6 +924,8 @@ class MultipleDealCreator:
                             self.driver.execute_script("arguments[0].click();", md_select_container[to_click])
                         except:
                             traceback.print_stack()
+                            traceback.print_exc()
+
                     sleep(2)
 
                 elif separator == 'Needs and objectives':
@@ -918,10 +938,12 @@ class MultipleDealCreator:
                         try:
                             current_sel = Select(select_el)
                         except exceptions.StaleElementReferenceException as inst:
-                            print('Stale reference', inst)
+                            print('Stale reference 7 ', inst)
                             print(inst.stacktrace)
                         except:
                             traceback.print_stack()
+                            traceback.print_exc()
+
                         else:
                             try:
                                 current_sel.select_by_index(random.randrange(1, len(current_sel.options)))
@@ -962,14 +984,21 @@ class MultipleDealCreator:
                             self.driver.execute_script("arguments[0].click();", md_radio_buttons[radio_button_to_click])
                         except Exception as inst:
                             print('Exception', inst)
+                            traceback.print_stack()
+                            traceback.print_exc()
+
                             continue
 
                     for checkbox in content.find_elements_by_tag_name('md-checkbox'):
                         if random.randrange(0, 100) > 30:
                             try:
                                 checkbox.click()
+                            except exceptions.ElementClickInterceptedException:
+                                self.driver.execute_script('arguments[0].click();', checkbox)
                             except:
                                 traceback.print_stack()
+                                traceback.print_exc()
+
 
                     for input_el in content.find_elements_by_tag_name('input'):
                         if not input_el.get_attribute('value'):
@@ -1014,10 +1043,12 @@ class MultipleDealCreator:
                         try:
                             current_sel = Select(select_el)
                         except exceptions.StaleElementReferenceException as inst:
-                            print('Stale reference', inst)
+                            print('Stale reference 8 ', inst)
                             print(inst.stacktrace)
                         except:
                             traceback.print_stack()
+                            traceback.print_exc()
+
                         else:
                             try:
                                 current_sel.select_by_index(random.randrange(1, len(current_sel.options)))
@@ -1064,8 +1095,12 @@ class MultipleDealCreator:
                         if random.randrange(0, 100) > 30:
                             try:
                                 checkbox.click()
+                            except exceptions.ElementClickInterceptedException:
+                                self.driver.execute_script('arguments[0].click();', checkbox)
                             except:
                                 traceback.print_stack()
+                                traceback.print_exc()
+
 
                     for input_el in content.find_elements_by_tag_name('input'):
                         if not input_el.get_attribute('value'):
@@ -1116,10 +1151,12 @@ class MultipleDealCreator:
                         try:
                             current_sel = Select(select_el)
                         except exceptions.StaleElementReferenceException as inst:
-                            print('Stale reference', inst)
+                            print('Stale reference 9 ', inst)
                             print(inst.stacktrace)
                         except:
                             traceback.print_stack()
+                            traceback.print_exc()
+
                         else:
                             try:
                                 current_sel.select_by_index(random.randrange(1, len(current_sel.options)))
@@ -1173,6 +1210,8 @@ class MultipleDealCreator:
                             self.driver.execute_script("arguments[0].click();", md_select_container[to_click])
                         except:
                             traceback.print_stack()
+                            traceback.print_exc()
+
 
                 elif separator == 'Other advisers':
                     other_advisers = self.driver.find_elements_by_css_selector('div.mt0 button')
@@ -1191,10 +1230,12 @@ class MultipleDealCreator:
                         try:
                             current_sel = Select(select_el)
                         except exceptions.StaleElementReferenceException as inst:
-                            print('Stale reference', inst)
+                            print('Stale reference 10 ', inst)
                             print(inst.stacktrace)
                         except:
                             traceback.print_stack()
+                            traceback.print_exc()
+
                         else:
                             try:
                                 current_sel.select_by_index(random.randrange(1, len(current_sel.options)))
@@ -1229,6 +1270,8 @@ class MultipleDealCreator:
                             self.driver.execute_script("arguments[0].click();", md_select_container[to_click])
                         except:
                             traceback.print_stack()
+                            traceback.print_exc()
+
 
                 elif separator == 'Analysis':
                     for textarea in content.find_elements_by_tag_name('textarea'):
@@ -1240,10 +1283,12 @@ class MultipleDealCreator:
                         try:
                             current_sel = Select(select_el)
                         except exceptions.StaleElementReferenceException as inst:
-                            print('Stale reference', inst)
+                            print('Stale reference 11', inst)
                             print(inst.stacktrace)
                         except:
                             traceback.print_stack()
+                            traceback.print_exc()
+
 
                         else:
                             try:
@@ -1291,8 +1336,12 @@ class MultipleDealCreator:
                         if random.randrange(0, 100) > 30:
                             try:
                                 checkbox.click()
+                            except exceptions.ElementClickInterceptedException:
+                                self.driver.execute_script('arguments[0].click();', checkbox)
                             except:
                                 traceback.print_stack()
+                                traceback.print_exc()
+
 
                     for input_el in content.find_elements_by_tag_name('input'):
                         if not input_el.get_attribute('value'):
@@ -1331,10 +1380,12 @@ class MultipleDealCreator:
                         try:
                             current_sel = Select(select_el)
                         except exceptions.StaleElementReferenceException as inst:
-                            print('Stale reference', inst)
+                            print('Stale reference 12', inst)
                             print(inst.stacktrace)
                         except:
                             traceback.print_stack()
+                            traceback.print_exc()
+
                         else:
                             try:
                                 current_sel.select_by_index(random.randrange(1, len(current_sel.options)))
@@ -1345,10 +1396,12 @@ class MultipleDealCreator:
                         try:
                             current_sel = Select(select_el)
                         except exceptions.StaleElementReferenceException as inst:
-                            print('Stale reference', inst)
+                            print('Stale reference 13', inst)
                             print(inst.stacktrace)
                         except:
                             traceback.print_stack()
+                            traceback.print_exc()
+
                         else:
                             try:
                                 current_sel.select_by_index(random.randrange(1, len(current_sel.options)))
@@ -1401,6 +1454,8 @@ class MultipleDealCreator:
                             self.driver.execute_script("arguments[0].click();", md_select_container[to_click])
                         except:
                             traceback.print_stack()
+                            traceback.print_exc()
+
                 sleep(2)
 
     # def CreateDeal(self, name, surname):
