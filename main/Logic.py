@@ -56,7 +56,8 @@ class WorkerInitializer:
         for user in self.test_users:
             test_list = self.test_users[user].split('@')
             email = test_list[0] + f'+{date.today().strftime("%d%m%y")}@' + test_list[1]
-            user_manipulation.add_user(self.driver, self.ent, email=email, username=user['username'], broker=user['broker'], admin=user['admin'], mentor=user['mentor'])
+            user_manipulation.add_user(self.driver, self.ent, email=email, username=user['username'],
+                                       broker=user['broker'], admin=user['admin'], mentor=user['mentor'])
 
         self.doc_helper.document_compare(f'Test Organization {date.today()}')
         self.wf_helper.workflow_compare(f'Test Organization {date.today()}')
@@ -78,7 +79,7 @@ class WorkerInitializer:
         # self.log_helper.log_in()
         # self.doc_helper.document_get(runner_learn_org)
         # self.wf_helper.workflow_get(runner_learn_org)
-        org_funcs.org_changer(self.driver, 'Deploy 1805')
+        org_funcs.org_changer(self.driver, 'New Zealand Test')
         # org_funcs.org_changer(self.driver, 'Test Organization 2020-05-12')
 
         # for user in self.test_users:
@@ -96,17 +97,14 @@ class WorkerInitializer:
         # self.driver.refresh()
 
         workflows = self.wf_manipulate.get_all_workflows()
-        while True:
-            try:
-                for workflow in workflows:
-                        print(datetime.now())
-                        print(workflow)
-                        self.deal_create.create_deal(workflow=workflow.split('/')[-1])
-            except Exception as inst:
-                print('Main exception', inst)
-                continue
+        for workflow in workflows:
+            if workflow in ['https://dev.salestrekker.com/board/592111a5-b638-41c5-bf09-92b6a9b0c9e5','https://dev.salestrekker.com/board/9a2d3ca1-5cd3-4cf2-8d32-1f0f2fae710d']:
+                print(datetime.now())
+                print(workflow)
+                self.deal_create.create_deal(workflow=workflow.split('/')[-1])
 
-
+        # print('start', datetime.now())
+        #
         # if screenshots:
         #     all_deals = self.deal_manipulate.get_deals()
         #     for deal in all_deals:
@@ -117,6 +115,8 @@ class WorkerInitializer:
         #         test[-1].click()
         #         WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-contact')))
         #         deal_name = self.driver.find_element_by_css_selector('div > header-title > h1 > small').text
+        #         print(deal_name)
+        #         print(datetime.now())
         #         # seleniumself.driver.find_element().
         #         for button_count, button in enumerate(
         #                 self.driver.find_elements_by_css_selector('st-sidebar-content > st-sidebar-block > div button'),
@@ -139,8 +139,9 @@ class WorkerInitializer:
         #
         #             content = WdWait(self.driver, 10).until(
         #                 ec.presence_of_element_located((By.CSS_SELECTOR, 'body > md-content')))
-        #             self.deal_manipulate.screenshot(element_with_scroll=content,sub_section_name=current_separator_text,deal_name=deal_name)
-
+        #             self.deal_manipulate.screenshot(element_with_scroll=content, sub_section_name=current_separator_text, deal_name=deal_name)
+        # print('end', datetime.now())
+        #
         # self.doc_helper.document_compare(new_org)
         # self.wf_helper.workflow_compare(new_org)
 

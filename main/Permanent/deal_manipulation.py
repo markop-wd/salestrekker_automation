@@ -50,9 +50,9 @@ class DealManipulation:
 
         scroll_height_total = self.driver.execute_script("return arguments[0].scrollHeight", element_with_scroll)
         content_height = self.driver.execute_script("return arguments[0].clientHeight", element_with_scroll)
-        print(sub_section_name)
-        print('scroll height', scroll_height_total)
-        print('content height', content_height)
+        # print(sub_section_name)
+        # print('scroll height', scroll_height_total)
+        # print('content height', content_height)
         scroll_height_new = 0
         count = 1
         while scroll_height_new < scroll_height_total:
