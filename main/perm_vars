@@ -5,6 +5,8 @@
     "main": "# Salestrekker Enterprise",
     "learn": "**MAKE YOUR OWN** Matt Test Group (QA automation testing)"
     },
+    "react": {"main":  "# Salestrekker Enterprise",
+    "learn":  "**MAKE YOUR OWN** Matt Test Group (QA automation testing)"},
     "vownet" : {
     "main" : "Vow Financial Pty Ltd",
     "learn" : "Learn Vownet"
@@ -83,3 +85,4 @@
     }
   ]
 }
+

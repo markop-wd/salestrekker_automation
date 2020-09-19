@@ -2,14 +2,19 @@
 {
   "contacts": {
       "number_of_contacts": {
-    "random": true,
+    "random": false,
     "rand_val": {
       "min": 3,
       "max": 5
     },
     "value": 2
   },
-  "contact_types": "mixed"
+  "contact_types": "mixed",
+  "non_client":
+{
+  "active": false,
+  "no_of_clients": 2
+}
   },
   "deal_info": {
     "random": false,

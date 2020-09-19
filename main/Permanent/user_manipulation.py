@@ -2,14 +2,13 @@ from selenium.webdriver.support.wait import WebDriverWait as WdWait
 from selenium.common import exceptions
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 
-from datetime import date
 from time import sleep
 
 
 def add_user(driver, ent, email, username, broker=True, admin=True, mentor=False):
 
-    from selenium.webdriver.common.keys import Keys
 
     main_url = "https://" + ent + ".salestrekker.com"
     first_name = username.split(' ')[0]
@@ -103,7 +102,7 @@ def add_user(driver, ent, email, username, broker=True, admin=True, mentor=False
 
 
 def return_user(driver, username, email):
-    assert "Users : Settings" in driver.title
+    # assert "Users : Settings" in driver.title
     main_documents = driver.find_element_by_css_selector('body > md-content')
     last_height = driver.execute_script("return arguments[0].scrollHeight", main_documents)
     sleep(0.2)
@@ -151,5 +150,5 @@ def get_current_username(driver):
     try:
         return driver.find_element_by_css_selector('md-menu > a > st-avatar > img').get_property('alt')
     except exceptions.NoSuchElementException:
-        return driver.find_element_by_css_selector('st-avatar[account="CurrentAccount"] > img').get_property('alt')
+        return driver.find_element_by_css_selector('st-avatar[account="$ctrl.currentAccount"] > img').get_property('alt')
         pass

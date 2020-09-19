@@ -32,8 +32,6 @@ class LogIn:
                     self.driver.quit()
                     # TODO - Check Availability and Cleanup
 
-        # TODO - Unknown exception^
-
         else:
             input_elements = self.driver.find_elements_by_tag_name('input')
             for log_input in input_elements:
@@ -48,7 +46,34 @@ class LogIn:
 
             self.driver.find_element_by_tag_name('button').click()
 
+            try:
+                WdWait(self.driver, 10).until(ec.presence_of_element_located((By.ID, 'navBar')))
+            except exceptions.TimeoutException:
+                try:
+                    WdWait(self.driver, 3).until(ec.url_matches(f'https://{self.ent}.salestrekker.com/authenticate'))
+                except exceptions.TimeoutException:
+                    if not self.retries > 1:
+                        self.retries += 1
+                        self.log_in()
+                    else:
+                        self.driver.quit()
+
+                # TODO - Rewrite the two factor to actually find the element and then prompty for the second factor instead of assuming
+                else:
+                    two_factor_el = self.driver.find_element_by_css_selector('#auth input[ng-model="twoFactorCode"]')
+                    two_factor_el.send_keys(input(f'Enter the two factor for {self.email} on {self.ent}: '))
+                    self.driver.find_element_by_tag_name('button').click()
+                    try:
+                        WdWait(self.driver, 5).until(ec.presence_of_element_located((By.ID, 'navBar')))
+                    except exceptions.TimeoutException:
+                        if not self.retries > 1:
+                            self.retries += 1
+                            self.log_in()
+                        else:
+                            self.driver.quit()
+
     def log_in(self):
+
         self.driver.get("https://" + self.ent + '.salestrekker.com/authenticate')
         try:
             WdWait(self.driver, 10).until(ec.presence_of_element_located((By.TAG_NAME, 'sign-in')))
@@ -70,12 +95,3 @@ class LogIn:
                     time_increment += 2
 
         self.log_in_helper()
-
-        try:
-            WdWait(self.driver, 15).until(ec.presence_of_element_located((By.ID, 'navBar')))
-        except exceptions.TimeoutException:
-            if not self.retries > 1:
-                self.log_in()
-            else:
-                self.driver.quit()
-

@@ -2,15 +2,15 @@ from selenium.webdriver.support.wait import WebDriverWait as WdWait
 from selenium.common import exceptions
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 
 from datetime import date
 from time import sleep
 
-
-# TODO - Rewrite and ensure more stability on this one
 from main.Permanent.user_manipulation import get_current_username
 
 
+# TODO - Rewrite and ensure more stability on this one
 def org_changer(driver, org_name):
     assert "salestrekker" in driver.current_url, 'invalid url'
     assert "authenticate" not in driver.current_url, 'you are at a login page'
@@ -26,10 +26,16 @@ def org_changer(driver, org_name):
             driver.execute_script("document.querySelector('#navBar > div > md-menu > a').click();")
         except exceptions.ElementClickInterceptedException:
             driver.execute_script('document.querySelector("#navBar > div > md-menu > a").click();')
+        except exceptions.TimeoutException:
+            driver.refresh()
+            pass
 
         try:
             WdWait(driver, 10).until(ec.element_to_be_clickable(
                 (By.CSS_SELECTOR, 'button[ng-click="::$ctrl.organizationChange($event)"]'))).click()
+        except exceptions.ElementNotInteractableException:
+            driver.execute_script(
+                'document.querySelector(\'button[ng-click="::$ctrl.organizationChange($event)"]\').click();')
         except exceptions.ElementClickInterceptedException:
             driver.execute_script(
                 'document.querySelector(\'button[ng-click="::$ctrl.organizationChange($event)"]\').click();')
@@ -90,10 +96,20 @@ def org_changer(driver, org_name):
         # TODO - Cleanup
 
         try:
-            WdWait(driver, 80).until(ec.title_contains(org_name))
+            WdWait(driver, 20).until(ec.title_contains(org_name))
             sleep(1)
         except exceptions.TimeoutException:
-            driver.quit()
+            try:
+                search_box = WdWait(driver, 20).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'input[role="combobox"]')))
+            except exceptions.TimeoutException:
+                pass
+            else:
+                if org_name in search_box.get_attribute('placeholder'):
+                    pass
+                else:
+                    print('Not in the right org')
+                    driver.quit()
+
             # TODO - Cleanup
         # print('Org Changer Finished')
     else:
@@ -144,7 +160,6 @@ def toolbar_check(driver, wait_time=30):
 
 
 def organization_create(driver, ent, parent_group, ent_group, new_org=f'Test Organization {date.today()}'):
-    from selenium.webdriver.common.keys import Keys
 
     main_url = "https://" + ent + ".salestrekker.com"
 
@@ -154,12 +169,12 @@ def organization_create(driver, ent, parent_group, ent_group, new_org=f'Test Org
     driver.get(main_url + "/settings/groups-and-branches")
     try:
         WdWait(driver, 60).until(
-            ec.invisibility_of_element_located((By.TAG_NAME, 'st-progressbar')))
+            ec.visibility_of_element_located((By.CSS_SELECTOR, 'st-organization-groups-and-branches-list > main > md-content > st-list')))
     except exceptions.TimeoutException:
         driver.get(main_url + "/settings/groups-and-branches")
         try:
             WdWait(driver, 30).until(
-                ec.invisibility_of_element_located((By.TAG_NAME, 'st-progressbar')))
+                ec.visibility_of_element_located((By.TAG_NAME, 'st-organization-groups-and-branches-list > main > md-content > st-list')))
         except exceptions.TimeoutException:
             driver.get(main_url + "/settings/groups-and-branches")
             try:

@@ -10,6 +10,8 @@ from main.Permanent.user_manipulation import return_all_users, get_current_usern
 from selenium.webdriver.common.keys import Keys
 
 
+# TODO - Find a way to extract work
+
 class WorkflowManipulation:
 
     def __init__(self, driver, ent):
@@ -18,9 +20,60 @@ class WorkflowManipulation:
         self.main_url = "https://" + ent + ".salestrekker.com"
         self.num_of_created_stages = 0
         self.all_users = []
+        self.all_deals = []
 
+    # TODO
+    def get_deals(self, all_deals=True, workflow_id=''):
+        if all_deals:
+            all_wfs = self.get_all_workflows()
+
+            for wf in all_wfs:
+                self.driver.get(wf)
+                WdWait(self.driver, 15).until(
+                    ec.presence_of_element_located((By.CSS_SELECTOR, 'body > md-content > board')))
+
+                element_with_scroll = WdWait(self.driver, 15).until(
+                    ec.presence_of_element_located((By.CSS_SELECTOR, 'body > md-content > board')))
+
+                scroll_height_total = self.driver.execute_script("return arguments[0].scrollHeight",
+                                                                 element_with_scroll)
+                scroll_height_new = 0
+                while scroll_height_total != scroll_height_new:
+                    self.driver.execute_script(f"arguments[0].scroll(0,{scroll_height_total});", element_with_scroll)
+                    sleep(1)
+                    # WdWait(self.driver, 50).until(ec.invisibility_of_element_located((By.TAG_NAME, 'md-progress-linear.ng-scope')))
+                    scroll_height_new = scroll_height_total
+                    scroll_height_total = self.driver.execute_script("return arguments[0].scrollHeight",
+                                                                     element_with_scroll)
+
+                for deal in self.driver.find_elements_by_css_selector('st-ticket-tile > a'):
+                    self.all_deals.append(deal.get_attribute('href'))
+            return self.all_deals
+
+        else:
+            self.driver.get(workflow_id)
+            WdWait(self.driver, 15).until(
+                ec.presence_of_element_located((By.CSS_SELECTOR, 'body > md-content > board')))
+            element_with_scroll = WdWait(self.driver, 15).until(
+                ec.presence_of_element_located((By.CSS_SELECTOR, 'body > md-content > board')))
+
+            scroll_height_total = self.driver.execute_script("return arguments[0].scrollHeight",
+                                                             element_with_scroll)
+            scroll_height_new = 0
+            while scroll_height_total != scroll_height_new:
+                self.driver.execute_script(f"arguments[0].scroll(0,{scroll_height_total});", element_with_scroll)
+                sleep(1)
+                scroll_height_new = scroll_height_total
+                scroll_height_total = self.driver.execute_script("return arguments[0].scrollHeight",
+                                                                 element_with_scroll)
+
+            for deal in self.driver.find_elements_by_css_selector('st-ticket-tile > a'):
+                self.all_deals.append(deal.get_attribute('href'))
+            return self.all_deals
+
+    # TODO - create an option to vary
     def add_workflow(self, workflow_type='Home Loan',
-                     add_all_users=True, wf_owner=''):
+                     add_all_users=True, wf_owner='', workflow_name=''):
 
         valid_wfs = ["None", "Asset Finance", "Commercial Loan", "Conveyancing", "Home Loan", "Insurance",
                      "Personal Loan", "Real Estate"]
@@ -32,8 +85,8 @@ class WorkflowManipulation:
                 print(wf + '\n')
             workflow_type = input("Please enter a valid wf type")
 
-        workflow_name = f'Test WF - {workflow_type} - {date.today()}'
-        sleep(0.1)
+        if not workflow_name:
+            workflow_name = f'Test WF - {workflow_type} - {date.today()}'
 
         assert "salestrekker" in self.driver.current_url, 'invalid url'
         assert "authenticate" not in self.driver.current_url, 'you are at a login page'
@@ -88,8 +141,6 @@ class WorkflowManipulation:
                 except:
                     self.driver.execute_script("arguments[0].click()", wf_type.find_element_by_tag_name('span'))
                 break
-
-        # This is the workflow owner selector
 
         try:
             self.driver.find_element_by_css_selector('st-block-form-content > div > div:nth-child(3)').click()
@@ -242,7 +293,10 @@ class WorkflowManipulation:
 
         WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'div.md-toast-content')))
         WdWait(self.driver, 10).until(ec.invisibility_of_element_located((By.CSS_SELECTOR, 'div.md-toast-content')))
-
+        try:
+            WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'div.md-toast-content')))
+        except exceptions.TimeoutException:
+            pass
 
     # def duplicate_hl_wf(self):
     #     self.driver.get(self.main_url + "/settings/workflows")
@@ -284,14 +338,21 @@ class WorkflowManipulation:
 
     def get_all_workflows(self):
         """
-        Returns full href of the workflows - example https://dev.salestrekker.com/board/jaoj0342-joadf203-wraf
+        Returns list of full hrefs of the workflows - example href https://dev.salestrekker.com/board/jaoj0342-joadf203-wraf
         :return:
         """
         self.driver.get(self.main_url)
-        WdWait(self.driver, 10).until(
-            ec.presence_of_element_located((By.CSS_SELECTOR, 'button[aria-label="Deals"]'))).click()
-        workflow_container = WdWait(self.driver, 10).until(
-            ec.presence_of_element_located((By.CSS_SELECTOR, 'md-menu-content.sub-menu > section')))
-        workflows = workflow_container.find_elements_by_css_selector('md-menu-item > a')
-        workflow_list = [workflow.get_attribute('href') for workflow in workflows]
-        return workflow_list
+        try:
+            WdWait(self.driver, 10).until(
+                ec.presence_of_element_located((By.CSS_SELECTOR, 'button[aria-label="Deals"]'))).click()
+        except exceptions.TimeoutException:
+            workflow = WdWait(self.driver, 10).until(
+                ec.presence_of_element_located((By.CSS_SELECTOR, 'a[aria-label="Deals"]')))
+            workflow_list = [workflow.get_attribute('href')]
+            return workflow_list
+        else:
+            workflow_container = WdWait(self.driver, 10).until(
+                ec.presence_of_element_located((By.CSS_SELECTOR, 'md-menu-content.sub-menu > section')))
+            workflows = workflow_container.find_elements_by_css_selector('md-menu-item > a')
+            workflow_list = [workflow.get_attribute('href') for workflow in workflows]
+            return workflow_list
