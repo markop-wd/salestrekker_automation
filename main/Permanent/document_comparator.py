@@ -38,7 +38,7 @@ class DocumentCheck:
                 self.driver.get(self.main_url + '/settings/documents')
                 WdWait(self.driver, 20).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
 
-        main_content = self.driver.find_element_by_css_selector('body > md-content')
+        main_content = self.driver.find_element(by=By.CSS_SELECTOR,value='body > md-content')
 
         last_height = self.driver.execute_script("return arguments[0].scrollHeight", main_content)
         sleep(1)
@@ -52,7 +52,7 @@ class DocumentCheck:
             last_height = new_height
 
         self.document_list = [document.text for document in
-                              self.driver.find_elements_by_css_selector('st-list-item a > content > span')]
+                              self.driver.find_elements(by=By.CSS_SELECTOR,value='st-list-item a > content > span')]
 
     def document_compare(self, org):
 
@@ -64,7 +64,7 @@ class DocumentCheck:
 
         self.driver.get(self.main_url + '/settings/documents')
         WdWait(self.driver, 30).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
-        main_content = self.driver.find_element_by_css_selector('body > md-content')
+        main_content = self.driver.find_element(by=By.CSS_SELECTOR,value='body > md-content')
 
         last_height = self.driver.execute_script("return arguments[0].scrollHeight", main_content)
         sleep(1)
@@ -78,7 +78,7 @@ class DocumentCheck:
             last_height = new_height
 
         new_org_document_list = [document.text for document in
-                                 self.driver.find_elements_by_css_selector('st-list-item a > content > span')]
+                                 self.driver.find_elements(by=By.CSS_SELECTOR,value='st-list-item a > content > span')]
 
         # TODO - Check if there is an easier way to handle this
 

@@ -1,5 +1,5 @@
 from main.Permanent import document_comparator, workflow_comparator, workflow_manipulation, user_manipulation, \
-    org_funcs, login, deal_create, deal_manipulation, groups_and_branches_manipulation, csv_reader
+    org_funcs, login, deal_create, deal_manipulation, groups_and_branches_manipulation
 
 from selenium.webdriver import Chrome
 from selenium.webdriver import Firefox
@@ -14,9 +14,14 @@ from selenium.webdriver.support.wait import WebDriverWait as WdWait
 from selenium.common import exceptions
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 
 from datetime import date, datetime
 import json
+import time
+from random import randrange
+import traceback
+
 
 # chrome_options = chr_options()
 # # chrome_options.add_argument('--headless')
@@ -100,9 +105,9 @@ class WorkerInitializer:
         #     WdWait(self.driver, 40).until(ec.presence_of_element_located(
         #         (By.CSS_SELECTOR, 'st-organization-groups-and-branches-list > main > md-content > st-list')))
         #
-        # content = self.driver.find_element_by_css_selector('body > md-content')
+        # content = self.driver.find_element(by=By.CSS_SELECTOR,value='body > md-content')
         # self.groups_and_branches.group_and_branches_scroller(content)
-        # organizations = self.driver.find_elements_by_css_selector('st-list-item a:first-child')
+        # organizations = self.driver.find_elements(by=By.CSS_SELECTOR,value='st-list-item a:first-child')
         # count = 0
         #
         # if self.ent == 'ynet':
@@ -122,9 +127,9 @@ class WorkerInitializer:
         #                         By.CSS_SELECTOR,
         #                         'st-organization-groups-and-branches-list > main > md-content > st-list')))
         #
-        #             content = self.driver.find_element_by_css_selector('body > md-content')
+        #             content = self.driver.find_element(by=By.CSS_SELECTOR,value='body > md-content')
         #             self.groups_and_branches.group_and_branches_scroller(content)
-        #             organizations = self.driver.find_elements_by_css_selector('st-list-item a:first-child')
+        #             organizations = self.driver.find_elements(by=By.CSS_SELECTOR,value='st-list-item a:first-child')
         #             self.groups_and_branches.organisations = []
         #             count = 0
         #
@@ -157,9 +162,9 @@ class WorkerInitializer:
         #                         By.CSS_SELECTOR,
         #                         'st-organization-groups-and-branches-list > main > md-content > st-list')))
         #
-        #             content = self.driver.find_element_by_css_selector('body > md-content')
+        #             content = self.driver.find_element(by=By.CSS_SELECTOR,value='body > md-content')
         #             self.groups_and_branches.group_and_branches_scroller(content)
-        #             organizations = self.driver.find_elements_by_css_selector('st-list-item a:first-child')
+        #             organizations = self.driver.find_elements(by=By.CSS_SELECTOR,value='st-list-item a:first-child')
         #             count = 0
         #             self.groups_and_branches.groups_and_branches_main(organizations, row[0].rstrip().lstrip(),
         #                                                               row[1].rstrip().lstrip(),
@@ -186,9 +191,9 @@ class WorkerInitializer:
         #                         By.CSS_SELECTOR,
         #                         'st-organization-groups-and-branches-list > main > md-content > st-list')))
         #
-        #             content = self.driver.find_element_by_css_selector('body > md-content')
+        #             content = self.driver.find_element(by=By.CSS_SELECTOR,value='body > md-content')
         #             self.groups_and_branches.group_and_branches_scroller(content)
-        #             organizations = self.driver.find_elements_by_css_selector('st-list-item a:first-child')
+        #             organizations = self.driver.find_elements(by=By.CSS_SELECTOR,value='st-list-item a:first-child')
         #             self.groups_and_branches.organisations = []
         #             count = 0
         #
@@ -222,7 +227,7 @@ class WorkerInitializer:
                 created_url = self.deal_create.create_deal(workflow=workflow.split('/')[-1])
                 self.deal_fill.client_profile_input(created_url)
 
-        if self.ent == 'vownet':
+        elif self.ent == 'vownet':
             org_funcs.org_changer(self.driver, 'Learn Vownet')
             workflows = ['https://vownet.salestrekker.com/board/008a9205-ef53-4842-bcbe-3dae0178609c']
 
@@ -230,7 +235,7 @@ class WorkerInitializer:
                 created_url = self.deal_create.create_deal(workflow=workflow.split('/')[-1])
                 self.deal_fill.client_profile_input(created_url)
 
-        if self.ent == 'sfg':
+        elif self.ent == 'sfg':
             org_funcs.org_changer(self.driver, '0 - Learn SFGconnect')
             workflows = ['https://sfg.salestrekker.com/board/67c68515-e3b1-45b7-9f98-3c276629bf85']
 
@@ -238,7 +243,7 @@ class WorkerInitializer:
                 created_url = self.deal_create.create_deal(workflow=workflow.split('/')[-1])
                 self.deal_fill.client_profile_input(created_url)
 
-        if self.ent == 'platform':
+        elif self.ent == 'platform':
             org_funcs.org_changer(self.driver, 'Z. Learn Platform Connect')
             workflows = ['https://platform.salestrekker.com/board/81e50a6c-abe3-4917-91ef-b2ba3b40b962']
 
@@ -246,13 +251,80 @@ class WorkerInitializer:
                 created_url = self.deal_create.create_deal(workflow=workflow.split('/')[-1])
                 self.deal_fill.client_profile_input(created_url)
 
-        if self.ent == 'dev':
-            org_funcs.org_changer(self.driver, '# Salestrekker Enterprise')
-            workflows = ['https://dev.salestrekker.com/board/d016d318-0d3c-48cb-9fe5-0f9d238e9ab9']
+        elif self.ent == 'dev':
 
-            for workflow in workflows:
-                created_url = self.deal_create.create_deal(workflow=workflow.split('/')[-1])
-                self.deal_fill.client_profile_input(created_url)
+            # org_funcs.org_changer(self.driver, '# Salestrekker Enterprise')
+            hl_workflow = 'https://dev.salestrekker.com/board/179e90ab-ccde-41b3-bbe5-935dc87482eb'
+            af_workflow = 'https://dev.salestrekker.com/board/0d0b2524-c365-4d03-acb4-8d4728596a61'
+
+            created_url = self.deal_create.create_deal(workflow=hl_workflow.split('/')[-1])
+            self.deal_fill.client_profile_input(created_url)
+
+            # self.driver.get(
+            #     'https://dev.salestrekker.com/deal/home-loan/179e90ab-ccde-41b3-bbe5-935dc87482eb/d0f3fd00-ecce-4a17-a55d-4c6f31085e1e')
+            # assets_button = WdWait(self.driver, 20).until(
+            #     ec.visibility_of_element_located((By.XPATH, '//span[text()="Assets"]')))
+            # assets_button.click()
+            # for i in [1, 21, 31, 32, 33, 34, 35, 68, 84, 95, 109, 131, 134, 138, 139, 141, 148, 155, 185, 199, 208, 230,
+            #           255, 312, 313, 314, 315, 316, 317, 318, 319, 320, 321, 322, 323, 324, 325, 326, 327, 328, 329,
+            #           330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 341, 342, 343, 344, 345, 346, 347, 348,
+            #           349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367,
+            #           368, 369, 370, 371, 372, 373, 374, 375, 376, 377, 378, 379, 380, 381, 382, 383, 384, 385, 386,
+            #           387, 388, 389, 390, 391, 392, 393, 394, 395, 396, 397, 398, 399, 400, 401, 402, 403, 404, 405,
+            #           406, 407, 408, 409, 410, 411, 412, 413, 414, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424,
+            #           425, 426, 427, 428, 429, 430, 431, 432, 433, 434, 435, 436, 437, 438, 439, 440, 441, 442, 443,
+            #           444, 445, 446, 447, 448, 449, 450, 451, 452, 453, 454, 455, 456, 457, 458, 459, 460, 461, 462,
+            #           463, 464, 465, 466, 467, 468, 469, 470, 471, 472, 473, 474, 475, 476, 477, 478, 479, 480, 481,
+            #           482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500,
+            #           501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 515, 516, 517, 518, 519,
+            #           520, 521, 522, 523, 524, 525, 526, 527, 528, 529, 530, 531, 532, 533, 534, 535, 536, 537, 538,
+            #           539, 540, 541, 542, 543, 544, 545, 546, 547, 548, 549, 550, 551, 552, 553, 554, 555, 556, 557,
+            #           558, 559, 560, 561, 562, 563, 564, 565, 566, 567, 568, 569, 570, 571, 572, 573, 574, 575, 576,
+            #           577, 578, 579, 580, 581, 582, 583, 584, 585, 586, 587, 588, 589, 590, 591, 592, 593, 594, 595,
+            #           596, 597, 598, 599, 600, 601, 602, 603, 604, 605, 606, 607, 608, 609, 610, 611, 612, 613, 614,
+            #           615, 616, 617, 618, 619, 620, 621, 622, 623, 624, 625, 626, 627, 628, 629, 630, 631, 632, 633,
+            #           634, 635, 636, 637, 638, 639, 640, 641, 642, 643, 659, 675, 740, 747, 749, 751, 798, 802, 831]:
+            #     try:
+            #         new_oo_button = self.driver.find_element(by=By.CSS_SELECTOR,
+            #                                      value='button[aria-label="Owner occupier property address"]')
+            #         try:
+            #             new_oo_button.click()
+            #         except exceptions.ElementNotInteractableException:
+            #             time.sleep(2)
+            #             self.driver.execute_script('arguments[0].click();', new_oo_button)
+            #
+            #         input_el = self.driver.find_element(By.CSS_SELECTOR,
+            #                                              'input[aria-label="Search Property (eg. 1 Walker Avenue)"]')
+            #         ul_el_id = 'ul-' + str(input_el.get_attribute('id')).split('-')[-1]
+            #         input_el.send_keys(f'{i} address')
+            #         WdWait(self.driver, 15).until(ec.visibility_of_element_located((By.ID, ul_el_id)))
+            #         li_els = self.driver.find_element(By.ID, ul_el_id).find_elements(by=By.CSS_SELECTOR,
+            #                                                                          value='li span')
+            #
+            #         if len(li_els) == 0:
+            #             input_el.send_keys(Keys.CONTROL + 'a')
+            #             time.sleep(1)
+            #             input_el.send_keys(Keys.DELETE)
+            #
+            #         else:
+            #             self.driver.execute_script("arguments[0].click();", li_els[randrange(0, len(li_els))])
+            #             time.sleep(5)
+            #     except Exception as exc:
+            #         print('address num: ', i)
+            #         traceback.print_exc()
+            #         print(exc)
+            #     finally:
+            #         asset_delete = self.driver.find_element(by=By.CSS_SELECTOR, value='button[aria-label="Remove "]')
+            #         try:
+            #             asset_delete.click()
+            #         except exceptions.ElementClickInterceptedException:
+            #             self.driver.execute_script("arguments[0].click();", asset_delete)
+
+            # created_url = self.deal_create.create_deal(workflow=af_workflow.split('/')[-1], af_type='comm')
+            # self.deal_fill.client_profile_input(created_url)
+            #
+            # created_url = self.deal_create.create_deal(workflow=af_workflow.split('/')[-1],af_type='cons')
+            # self.deal_fill.client_profile_input(created_url)
 
         # org_funcs.org_changer(self.driver, '3 Demo N Co')
 
@@ -261,9 +333,9 @@ class WorkerInitializer:
         #                                broker=user['broker'], admin=user['admin'], mentor=user['mentor'])
         #
 
-            # email_split = user['email'].split('@')
-            # email = email_split[0] + f'+{date.today().strftime("%d%m%y")}@' + email_split[1]
-            # user_manipulation.add_user(self.driver, self.ent, email=user['email'], username=user['username'], broker=user['broker'], admin=user['admin'], mentor=user['mentor'])
+        # email_split = user['email'].split('@')
+        # email = email_split[0] + f'+{date.today().strftime("%d%m%y")}@' + email_split[1]
+        # user_manipulation.add_user(self.driver, self.ent, email=user['email'], username=user['username'], broker=user['broker'], admin=user['admin'], mentor=user['mentor'])
         # user_manipulation.add_user(self.driver, self.ent, email='matthew@salestrekker.com', username='Matthew Test',
         #                            broker=True, admin=True, mentor=False)
 
@@ -290,8 +362,6 @@ class WorkerInitializer:
         #         self.wf_manipulate.add_workflow(workflow_name=str('0409 - ') + str(workflow) + str(' - AF'), workflow_type='Asset Finance')
         #         self.wf_manipulate.add_workflow(workflow_name=str('0409 - ') + str(workflow) + str(' - HL'), workflow_type='Home Loan')
 
-        self.driver.refresh()
-
         # workflows = self.wf_manipulate.get_all_workflows()
         #
         # workflows = ['https://app.salestrekker.com/board/3235f045-376c-4c66-a795-ca1869ffe7d9']
@@ -315,4 +385,3 @@ class WorkerInitializer:
         print('end:', datetime.now())
 
         input('Good?')
-

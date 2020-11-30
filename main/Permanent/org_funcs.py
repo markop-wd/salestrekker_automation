@@ -49,7 +49,7 @@ def org_changer(driver, org_name):
         try:
             # TODO - Two sleeps here, find a way to bypass them
             sleep(1)
-            driver.find_element_by_css_selector("input[placeholder='Search for an organization']").send_keys(
+            driver.find_element(by=By.CSS_SELECTOR,value="input[placeholder='Search for an organization']").send_keys(
                 str(org_name))
             sleep(1)
 
@@ -63,7 +63,7 @@ def org_changer(driver, org_name):
             pass
 
         # TODO - REWRITE
-        organisation_names = driver.find_elements_by_css_selector('md-content > div > div > div')
+        organisation_names = driver.find_elements(by=By.CSS_SELECTOR,value='md-content > div > div > div')
         if not organisation_names:
             print('No organisation with such a name please input the correct name or press Q to quit')
 
@@ -74,7 +74,7 @@ def org_changer(driver, org_name):
                 # org_name = new_org_name
                 org_changer(driver, new_org_name)
         for element in organisation_names:
-            if element.find_element_by_tag_name('small').text.lower() == str(org_name).lower():
+            if element.find_element(by=By.TAG_NAME,value='small').text.lower() == str(org_name).lower():
                 element.click()
                 # print('Moving to ', org_name)
                 try:
@@ -122,16 +122,16 @@ def check_current_org(driver, org_name):
     toolbar_check(driver)
 
     try:
-        search_input = driver.find_element_by_css_selector('md-autocomplete-wrap > input').get_attribute(
+        search_input = driver.find_element(by=By.CSS_SELECTOR,value='md-autocomplete-wrap > input').get_attribute(
             'aria-label')
     except exceptions.NoSuchElementException:
         try:
-            driver.find_element_by_css_selector('button.md-icon-button').click()
+            driver.find_element(by=By.CSS_SELECTOR,value='button.md-icon-button').click()
         except exceptions.NoSuchElementException:
             raise exceptions.NoSuchElementException('Tried to check the current org, couldnt find the alternative '
                                                     'sandwich clicker.')
         else:
-            search_input = driver.find_element_by_css_selector('md-autocomplete-wrap > input').get_attribute('aria-label')
+            search_input = driver.find_element(by=By.CSS_SELECTOR,value='md-autocomplete-wrap > input').get_attribute('aria-label')
 
     # TODO - Redo this check for organisation names
     if ("Search " + org_name + " ...") != search_input:
@@ -197,11 +197,11 @@ def organization_create(driver, ent, parent_group, ent_group, new_org=f'Test Org
         str(current_user_name) + Keys.ENTER)
     # wd_wait(driver, 5).until(ec.presence_of_element_located((By.CLASS_NAME,
     # 'md-contact-suggestion'))).click()
-    driver.find_element_by_css_selector('md-input-container > md-select').click()
+    driver.find_element(by=By.CSS_SELECTOR,value='md-input-container > md-select').click()
     parent_group_selector = WdWait(driver, 5).until(
         ec.visibility_of_element_located((By.CSS_SELECTOR, 'md-select-menu > md-content')))
     sleep(0.1)
-    for elemento in parent_group_selector.find_elements_by_tag_name('md-option > div > span'):
+    for elemento in parent_group_selector.find_elements(by=By.TAG_NAME,value='md-option > div > span'):
         if elemento.text == parent_group:
             elemento.click()
 

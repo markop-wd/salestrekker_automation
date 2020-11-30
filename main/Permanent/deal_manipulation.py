@@ -21,13 +21,13 @@ class Screenshot:
 
     def toast_remover(self):
         try:
-            md_toast = self.driver.find_element_by_tag_name('md-toast')
+            md_toast = self.driver.find_element(by=By.TAG_NAME,value='md-toast')
         except exceptions.NoSuchElementException:
             pass
         else:
             self.driver.execute_script("arguments[0].remove();", md_toast)
             try:
-                md_toast2 = self.driver.find_element_by_tag_name('md-toast')
+                md_toast2 = self.driver.find_element(by=By.TAG_NAME,value='md-toast')
             except exceptions.NoSuchElementException:
                 pass
             else:
@@ -90,7 +90,7 @@ class Screenshot:
 
         WdWait(self.driver, 10).until(
             ec.presence_of_element_located((By.CSS_SELECTOR, 'st-sidebar-block button:nth-child(2)')))
-        deal_name = (self.driver.find_element_by_css_selector('header-title > h1').text).split(':', maxsplit=1)[
+        deal_name = (self.driver.find_element(by=By.CSS_SELECTOR,value='header-title > h1').text).split(':', maxsplit=1)[
             -1].lstrip()
 
         if not os.path.exists(f'{main_folder_name}/{deal_name}'):
@@ -103,9 +103,9 @@ class Screenshot:
 
         try:
             for button_count, button in enumerate(
-                    self.driver.find_elements_by_css_selector('st-sidebar-content > st-sidebar-block > button'),
+                    self.driver.find_elements(by=By.CSS_SELECTOR,value='st-sidebar-content > st-sidebar-block > button'),
                     start=1):
-                current_separator = button.find_element_by_css_selector('span.truncate').text
+                current_separator = button.find_element(by=By.CSS_SELECTOR,value='span.truncate').text
 
                 current_separator_text = f'Edit Deal: {button_count}. {current_separator}'
 
@@ -145,7 +145,7 @@ class Screenshot:
                 self.driver.get_screenshot_as_file(f'{deal} - Timeout.png')
                 return
 
-        # deal_name = self.driver.find_element_by_css_selector('ticket-title > h1 > span').text
+        # deal_name = self.driver.find_element(by=By.CSS_SELECTOR,value='ticket-title > h1 > span').text
 
         try:
             WdWait(self.driver, 10).until(
@@ -159,13 +159,13 @@ class Screenshot:
                 return
 
         try:
-            self.driver.find_element_by_xpath("//button/span[contains(text(), 'quote')]")
+            self.driver.find_element(by=By.XPATH,value="//button/span[contains(text(), 'quote')]")
         except exceptions.NoSuchElementException:
             pass
         else:
-            credit_quote = self.driver.find_element_by_xpath("//button/span[contains(text(), 'quote')]")
+            credit_quote = self.driver.find_element(by=By.XPATH,value="//button/span[contains(text(), 'quote')]")
             try:
-                self.driver.find_element_by_xpath("//button/span[contains(text(), 'quote')]").click()
+                self.driver.find_element(by=By.XPATH,value="//button/span[contains(text(), 'quote')]").click()
             except exceptions.ElementClickInterceptedException:
                 self.driver.execute_script('arguments[0].click();', credit_quote)
             WdWait(self.driver, 10).until(
@@ -191,7 +191,7 @@ class Screenshot:
                         print('Deal quote timeout:', deal)
                         return
 
-                # deal_name = self.driver.find_element_by_css_selector('ticket-title > h1 > span').text
+                # deal_name = self.driver.find_element(by=By.CSS_SELECTOR,value='ticket-title > h1 > span').text
 
                 try:
                     WdWait(self.driver, 10).until(
@@ -200,14 +200,14 @@ class Screenshot:
                     WdWait(self.driver, 10).until(
                         ec.presence_of_element_located((By.CSS_SELECTOR, 'st-sidebar-block > div > button')))
 
-        test = self.driver.find_elements_by_css_selector('st-sidebar-block button')
+        test = self.driver.find_elements(by=By.CSS_SELECTOR,value='st-sidebar-block button')
         test[-1].click()
         WdWait(self.driver, 20).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-contact')))
         try:
             for button_count, button in enumerate(
-                    self.driver.find_elements_by_css_selector('st-sidebar-content > st-sidebar-block > div button'),
+                    self.driver.find_elements(by=By.CSS_SELECTOR,value='st-sidebar-content > st-sidebar-block > div button'),
                     start=1):
-                current_separator = button.find_element_by_css_selector('span.truncate').text
+                current_separator = button.find_element(by=By.CSS_SELECTOR,value='span.truncate').text
 
                 if current_separator in ['Connect to Mercury', 'Connect to Flex']:
                     continue
@@ -253,7 +253,7 @@ class Screenshot:
                     content = WdWait(self.driver, 10).until(
                         ec.presence_of_element_located((By.CSS_SELECTOR, 'body > md-content')))
                     for count, household_button in enumerate(
-                            self.driver.find_elements_by_css_selector('st-tabs-list-nav > button'), start=1):
+                            self.driver.find_elements(by=By.CSS_SELECTOR,value='st-tabs-list-nav > button'), start=1):
                         if 'active' in household_button.get_attribute('class'):
                             pass
                         else:

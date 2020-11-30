@@ -12,7 +12,7 @@ with open("perm_vars") as perm_json:
     all_ents = [ent for ent in perm_vars['ents_info']]
 
 
-with open("details") as details:
+with open("details.json") as details:
     info = json.load(details)
 
 
@@ -83,7 +83,7 @@ class Runners:
             if ent not in ['dev']:
                 continue
 
-            current_runner = Logic.WorkerInitializer(start_time=date.today(), email='helpdesk@salestrekker.com',
+            current_runner = Logic.WorkerInitializer(start_time=date.today(), email='matthew@salestrekker.com',
                                                      password=info[ent]['pass'],
                                                      group=ents_info[ent]['learn'], ent=ent)
 

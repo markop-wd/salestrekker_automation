@@ -11,9 +11,6 @@ from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait as WdWait
 
-from main.Permanent.csv_reader import billables
-
-
 # TODO - Empty lender accreditation check
 # TODO -
 class GroupsAndBranches:
@@ -28,10 +25,9 @@ class GroupsAndBranches:
 
     def existing_lender_accreditation(self, lender: str, lender_value: str, overwrite: bool):
         # TODO - Add numbers
-        for md_select in self.driver.find_elements_by_css_selector('st-block-form-content md-select:first-of-type'):
+        for md_select in self.driver.find_elements(by=By.CSS_SELECTOR,value='st-block-form-content md-select:first-of-type'):
             if lender.lower() in md_select.get_attribute('aria-label').lower():
-                md_select_input_value = md_select.find_element_by_xpath(
-                    '../../md-input-container/input[@ng-model="lenderAccreditation.brokerIdPrimary"]')
+                md_select_input_value = md_select.find_element(by=By.XPATH,value='../../md-input-container/input[@ng-model="lenderAccreditation.brokerIdPrimary"]')
                 if md_select_input_value.get_attribute('value') == lender_value:
                     return True
                 else:
@@ -45,10 +41,9 @@ class GroupsAndBranches:
             return False
 
     def existing_gateway_accreditation(self, gateway: str, gateway_value: str, overwrite: bool):
-        for select in self.driver.find_elements_by_css_selector('st-block-form-content select'):
+        for select in self.driver.find_elements(by=By.CSS_SELECTOR,value='st-block-form-content select'):
             if gateway.lower() in str(Select(select).first_selected_option.text).lower():
-                select_input_value = select.find_element_by_xpath(
-                    '../../md-input-container/input[@ng-model="gatewayAccreditation.brokerUsername"]')
+                select_input_value = select.find_element(by=By.XPATH,value='../../md-input-container/input[@ng-model="gatewayAccreditation.brokerUsername"]')
                 if select_input_value.get_attribute('value') == gateway_value:
                     return True
                 else:
@@ -75,10 +70,9 @@ class GroupsAndBranches:
             WdWait(self.driver, 10).until(
                 ec.element_to_be_clickable((By.ID, md_select_container_id)))
 
-        self.driver.find_element_by_id(md_select_container_id).click()
+        self.driver.find_element(by=By.ID,value=md_select_container_id).click()
 
-        lender_element = self.driver.find_element_by_xpath(
-            f"//div[@id='{md_select_container_id}']/md-select-menu/md-content/md-option[contains(text(), '{to_find}')]")
+        lender_element = self.driver.find_element(by=By.XPATH,value=f"//div[@id='{md_select_container_id}']/md-select-menu/md-content/md-option[contains(text(), '{to_find}')]")
 
         try:
             lender_element.click()
@@ -89,7 +83,7 @@ class GroupsAndBranches:
 
     def css_clicker(self, css_selector: str):
         try:
-            element = self.driver.find_element_by_css_selector(css_selector)
+            element = self.driver.find_element(by=By.CSS_SELECTOR,value=css_selector)
 
         except exceptions.NoSuchElementException:
             return False
@@ -140,7 +134,7 @@ class GroupsAndBranches:
 
         self.organisation_names = []
         for organization in organizations:
-            name_of_the_organization_el = str(organization.find_element_by_tag_name('span').text).lower()
+            name_of_the_organization_el = str(organization.find_element(by=By.TAG_NAME,value='span').text).lower()
             self.organisation_names.append(name_of_the_organization_el)
 
         if email:
@@ -184,30 +178,26 @@ class GroupsAndBranches:
                                                 return 'Sooomething weeent wrooong'
                                 else:
 
-                                    content = self.driver.find_element_by_css_selector('body > md-content')
+                                    content = self.driver.find_element(by=By.CSS_SELECTOR,value='body > md-content')
 
                                     self.driver.execute_script(
                                         f"arguments[0].scroll({organization.location['x']},{organization.location['y']});",
                                         content)
 
-                                for account in organization.find_elements_by_xpath(
-                                        '//../st-list-item[@ng-show="$ctrl.showAccounts(branch) && $ctrl.hasAccounts(branch)"]'):
+                                for account in organization.find_elements(by=By.XPATH,value='//../st-list-item[@ng-show="$ctrl.showAccounts(branch) && $ctrl.hasAccounts(branch)"]'):
 
                                     sleep(0.1)
 
                                     if email:
-                                        if str(account.find_element_by_css_selector('em').text).lower() == str(
+                                        if str(account.find_element(by=By.CSS_SELECTOR,value='em').text).lower() == str(
                                                 identification).lower():
-                                            account.find_element_by_css_selector(
-                                                'a > span[aria-label="Edit Account"]').click()
+                                            account.find_element(by=By.CSS_SELECTOR,value='a > span[aria-label="Edit Account"]').click()
                                             self.user_edit_box(ran_number, [identification, billable_org_name, email])
                                             break
 
                                     else:
-                                        if str(account.find_element_by_css_selector(
-                                                'span[ng-bind="::account.getName()"]').text).lower() == str(identification).lower():
-                                            account.find_element_by_css_selector(
-                                                'a > span[aria-label="Edit Account"]').click()
+                                        if str(account.find_element(by=By.CSS_SELECTOR,value='span[ng-bind="::account.getName()"]').text).lower() == str(identification).lower():
+                                            account.find_element(by=By.CSS_SELECTOR,value='a > span[aria-label="Edit Account"]').click()
                                             self.user_edit_box(ran_number, [identification, billable_org_name, email])
                                             break
                                 else:
@@ -258,7 +248,7 @@ class GroupsAndBranches:
 
     def accreditation_input(self, ran_number):
         try:
-            accreditations_button = self.driver.find_element_by_css_selector('button[aria-label="Accreditations"]')
+            accreditations_button = self.driver.find_element(by=By.CSS_SELECTOR,value='button[aria-label="Accreditations"]')
         except exceptions.NoSuchElementException:
             statement = 'No accreditations under that account'
         else:
@@ -285,14 +275,12 @@ class GroupsAndBranches:
                         statement = 'Missing the button to add new lender accreditation - manual checkup needed'
                         return statement
 
-                    lender_box = self.driver.find_element_by_css_selector(
-                        'st-block:first-of-type > st-block-form-content:last-of-type')
-                    lender_md_select = lender_box.find_element_by_css_selector('md-input-container > md-select')
+                    lender_box = self.driver.find_element(by=By.CSS_SELECTOR,value='st-block:first-of-type > st-block-form-content:last-of-type')
+                    lender_md_select = lender_box.find_element(by=By.CSS_SELECTOR,value='md-input-container > md-select')
 
                     self.md_select_handler(lender_md_select, self.lender)
 
-                    lender_box.find_element_by_css_selector(
-                        'md-input-container > input[ng-model="lenderAccreditation.brokerIdPrimary"]').send_keys(
+                    lender_box.find_element(by=By.CSS_SELECTOR,value='md-input-container > input[ng-model="lenderAccreditation.brokerIdPrimary"]').send_keys(
                         ran_number)
 
                     sleep(1)
@@ -308,12 +296,10 @@ class GroupsAndBranches:
                         statement = 'Missing the button to add new gateway accreditation - manual checkup needed'
                         return statement
 
-                    gateway_box = self.driver.find_element_by_css_selector(
-                        'st-block:nth-of-type(2) > st-block-form-content:last-of-type')
-                    selectino = Select(gateway_box.find_element_by_css_selector('st-form-field-container > select'))
+                    gateway_box = self.driver.find_element(by=By.CSS_SELECTOR,value='st-block:nth-of-type(2) > st-block-form-content:last-of-type')
+                    selectino = Select(gateway_box.find_element(by=By.CSS_SELECTOR,value='st-form-field-container > select'))
                     selectino.select_by_visible_text(self.gateway)
-                    gateway_box.find_element_by_css_selector(
-                        'input[ng-model="gatewayAccreditation.brokerUsername"]').send_keys(
+                    gateway_box.find_element(by=By.CSS_SELECTOR,value='input[ng-model="gatewayAccreditation.brokerUsername"]').send_keys(
                         ran_number)
 
                     sleep(1)

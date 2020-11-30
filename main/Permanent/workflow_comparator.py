@@ -28,7 +28,7 @@ class WorkflowCheck:
 
         self.driver.get(self.main_url + '/settings/workflows')
         WdWait(self.driver, 30).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
-        main_content = self.driver.find_element_by_css_selector('body > md-content')
+        main_content = self.driver.find_element(by=By.CSS_SELECTOR,value='body > md-content')
 
         last_height = self.driver.execute_script("return arguments[0].scrollHeight", main_content)
         sleep(1)
@@ -42,7 +42,7 @@ class WorkflowCheck:
             last_height = new_height
 
         self.workflow_list = [workflow.text for workflow in
-                              self.driver.find_elements_by_css_selector('st-list-item a > span')]
+                              self.driver.find_elements(by=By.CSS_SELECTOR,value='st-list-item a > span')]
 
     # TODO - Make an incrementer list for workflow get, and workflow compare would actually just compare without
     #  doing the get for the second list
@@ -55,7 +55,7 @@ class WorkflowCheck:
 
         self.driver.get(self.main_url + '/settings/workflows')
         WdWait(self.driver, 30).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
-        main_content = self.driver.find_element_by_css_selector('body > md-content')
+        main_content = self.driver.find_element(by=By.CSS_SELECTOR,value='body > md-content')
 
         last_height = self.driver.execute_script("return arguments[0].scrollHeight", main_content)
         sleep(1)
@@ -69,7 +69,7 @@ class WorkflowCheck:
             last_height = new_height
 
         new_workflow_list = [workflow.text for workflow in
-                             self.driver.find_elements_by_css_selector('st-list-item a > span')]
+                             self.driver.find_elements(by=By.CSS_SELECTOR,value='st-list-item a > span')]
 
         # TODO - Check if there is an easier way to handle this
 

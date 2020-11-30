@@ -33,7 +33,7 @@ class LogIn:
                     # TODO - Check Availability and Cleanup
 
         else:
-            input_elements = self.driver.find_elements_by_tag_name('input')
+            input_elements = self.driver.find_elements(by=By.TAG_NAME,value='input')
             for log_input in input_elements:
                 if log_input.get_attribute('placeholder') == 'Your E-Mail':
                     log_input.send_keys(self.email)
@@ -44,7 +44,7 @@ class LogIn:
                 else:
                     continue
 
-            self.driver.find_element_by_tag_name('button').click()
+            self.driver.find_element(by=By.TAG_NAME,value='button').click()
 
             try:
                 WdWait(self.driver, 10).until(ec.presence_of_element_located((By.ID, 'navBar')))
@@ -60,9 +60,9 @@ class LogIn:
 
                 # TODO - Rewrite the two factor to actually find the element and then prompty for the second factor instead of assuming
                 else:
-                    two_factor_el = self.driver.find_element_by_css_selector('#auth input[ng-model="twoFactorCode"]')
+                    two_factor_el = self.driver.find_element(by=By.CSS_SELECTOR,value='#auth input[ng-model="twoFactorCode"]')
                     two_factor_el.send_keys(input(f'Enter the two factor for {self.email} on {self.ent}: '))
-                    self.driver.find_element_by_tag_name('button').click()
+                    self.driver.find_element(by=By.TAG_NAME,value='button').click()
                     try:
                         WdWait(self.driver, 5).until(ec.presence_of_element_located((By.ID, 'navBar')))
                     except exceptions.TimeoutException:
