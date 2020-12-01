@@ -5,8 +5,6 @@
     "main": "# Salestrekker Enterprise",
     "learn": "**MAKE YOUR OWN** Matt Test Group (QA automation testing)"
     },
-    "react": {"main":  "# Salestrekker Enterprise",
-    "learn":  "**MAKE YOUR OWN** Matt Test Group (QA automation testing)"},
     "vownet" : {
     "main" : "Vow Financial Pty Ltd",
     "learn" : "Learn Vownet"
@@ -21,14 +19,14 @@
     },
     "chief" : {
       "main": "Chief",
-      "learn": "Learn Chief"
+      "learn": "ZZZ Learn Chief"
     },
     "platform" : {
       "main": "# Platform Connect",
-      "learn": "1. Learn Platform Connect"
+      "learn": "Z. Learn Platform Connect"
     },
     "nlgconnect" : {
-      "main": "# NLG Connect",
+      "main": "NLG Leasing Pty Ltd",
       "learn": "Z. Learn NLG Connect"
     },
     "app" : {

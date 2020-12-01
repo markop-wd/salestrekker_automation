@@ -3,12 +3,13 @@ from selenium.common import exceptions
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver import Firefox
+
 
 from time import sleep
 
 
-def add_user(driver, ent, email, username, broker=True, admin=True, mentor=False):
-
+def add_user(driver: Firefox, ent: str, email: str, username: str, broker: bool = True, admin: bool = True, mentor: bool = False):
 
     main_url = "https://" + ent + ".salestrekker.com"
     first_name = username.split(' ')[0]
@@ -19,17 +20,17 @@ def add_user(driver, ent, email, username, broker=True, admin=True, mentor=False
         username = first_name + ' Surname'
 
     try:
-        WdWait(driver, 5).until(ec.presence_of_element_located((By.TAG_NAME, 'st-accounts-list')))
+        WdWait(driver, 5).until(ec.visibility_of_element_located((By.TAG_NAME, 'st-accounts-list')))
     except exceptions.TimeoutException:
         driver.get(main_url + '/settings/users')
         try:
-            WdWait(driver, 10).until(ec.presence_of_element_located((By.TAG_NAME, 'st-accounts-list')))
+            WdWait(driver, 10).until(ec.visibility_of_element_located((By.TAG_NAME, 'st-accounts-list')))
         except exceptions.TimeoutException:
             driver.get(main_url + '/settings/users')
-            WdWait(driver, 15).until(ec.presence_of_element_located((By.TAG_NAME, 'st-accounts-list')))
+            WdWait(driver, 15).until(ec.visibility_of_element_located((By.TAG_NAME, 'st-accounts-list')))
 
     driver.find_element(by=By.CSS_SELECTOR,value='span > button').click()
-    WdWait(driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'span > button')))
+    WdWait(driver, 10).until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'span > button')))
 
     def test_pattern(css_input, input_value):
         sleep(0.5)
@@ -126,7 +127,7 @@ def return_all_users(driver, ent):
     main_url = "https://" + ent + ".salestrekker.com"
     driver.get(main_url + "/settings/users")
 
-    WdWait(driver, 15).until(ec.presence_of_element_located((By.TAG_NAME, "st-accounts-list")))
+    WdWait(driver, 15).until(ec.visibility_of_element_located((By.TAG_NAME, "st-accounts-list")))
     main_documents = driver.find_element(by=By.CSS_SELECTOR,value='body > md-content')
     last_height = driver.execute_script("return arguments[0].scrollHeight", main_documents)
     sleep(0.2)

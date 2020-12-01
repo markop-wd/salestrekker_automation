@@ -7,6 +7,8 @@ from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
 from datetime import datetime
 
+from main.Permanent.pattern_funcs import md_toast_waiter
+
 import os
 
 main_folder_name = 'DealScreenshots'
@@ -18,22 +20,6 @@ class Screenshot:
         self.driver = driver
         if not os.path.exists(main_folder_name):
             os.mkdir(main_folder_name)
-
-    def toast_remover(self):
-        try:
-            md_toast = self.driver.find_element(by=By.TAG_NAME,value='md-toast')
-        except exceptions.NoSuchElementException:
-            pass
-        else:
-            self.driver.execute_script("arguments[0].remove();", md_toast)
-            try:
-                md_toast2 = self.driver.find_element(by=By.TAG_NAME,value='md-toast')
-            except exceptions.NoSuchElementException:
-                pass
-            else:
-                self.driver.execute_script("arguments[0].remove();", md_toast2)
-
-        WdWait(self.driver, 10).until(ec.invisibility_of_element_located((By.TAG_NAME, 'md-toast')))
 
     def screenshot_helper(self, element_with_scroll, sub_section_name, deal_name, vertical=True):
 
@@ -49,7 +35,7 @@ class Screenshot:
         count = 1
         while scroll_new < (scroll_total - 100):
 
-            self.toast_remover()
+            md_toast_waiter(self.driver)
 
             if vertical:
                 self.driver.execute_script(f"arguments[0].scroll(0,{scroll_new});", element_with_scroll)
@@ -70,17 +56,17 @@ class Screenshot:
         self.driver.get(edit_deal)
         try:
             WdWait(self.driver, 10).until(
-                ec.presence_of_element_located((By.CSS_SELECTOR, 'md-content > md-content')))
+                ec.visibility_of_element_located((By.CSS_SELECTOR, 'md-content > md-content')))
         except exceptions.TimeoutException:
             self.driver.get(edit_deal)
             try:
                 WdWait(self.driver, 15).until(
-                    ec.presence_of_element_located((By.CSS_SELECTOR, 'md-content > md-content')))
+                    ec.visibility_of_element_located((By.CSS_SELECTOR, 'md-content > md-content')))
             except exceptions.TimeoutException:
                 self.driver.get(edit_deal)
                 try:
                     WdWait(self.driver, 30).until(
-                        ec.presence_of_element_located((By.CSS_SELECTOR, 'md-content > md-content')))
+                        ec.visibility_of_element_located((By.CSS_SELECTOR, 'md-content > md-content')))
                 except exceptions.TimeoutException:
                     print('Edit get timeout:', deal)
                     print(edit_deal)
@@ -89,7 +75,7 @@ class Screenshot:
                     return
 
         WdWait(self.driver, 10).until(
-            ec.presence_of_element_located((By.CSS_SELECTOR, 'st-sidebar-block button:nth-child(2)')))
+            ec.visibility_of_element_located((By.CSS_SELECTOR, 'st-sidebar-block button:nth-child(2)')))
         deal_name = (self.driver.find_element(by=By.CSS_SELECTOR,value='header-title > h1').text).split(':', maxsplit=1)[
             -1].lstrip()
 
@@ -115,7 +101,7 @@ class Screenshot:
                     self.driver.execute_script('arguments[0].click();', button)
 
                 content = WdWait(self.driver, 10).until(
-                    ec.presence_of_element_located((By.CSS_SELECTOR, 'body > md-content')))
+                    ec.visibility_of_element_located((By.CSS_SELECTOR, 'body > md-content')))
                 self.screenshot_helper(element_with_scroll=content, sub_section_name=current_separator_text,
                                        deal_name=deal_name)
 
@@ -134,12 +120,12 @@ class Screenshot:
         self.driver.get(deal)
         try:
             WdWait(self.driver, 10).until(
-                ec.presence_of_element_located((By.CSS_SELECTOR, 'md-content > md-content')))
+                ec.visibility_of_element_located((By.CSS_SELECTOR, 'md-content > md-content')))
         except exceptions.TimeoutException:
             self.driver.get(deal)
             try:
                 WdWait(self.driver, 30).until(
-                    ec.presence_of_element_located((By.CSS_SELECTOR, 'md-content > md-content')))
+                    ec.visibility_of_element_located((By.CSS_SELECTOR, 'md-content > md-content')))
             except exceptions.TimeoutException:
                 print('Deal URL timeout:', deal)
                 self.driver.get_screenshot_as_file(f'{deal} - Timeout.png')
@@ -149,11 +135,11 @@ class Screenshot:
 
         try:
             WdWait(self.driver, 10).until(
-                ec.presence_of_element_located((By.CSS_SELECTOR, 'st-sidebar-block button:nth-child(2)')))
+                ec.visibility_of_element_located((By.CSS_SELECTOR, 'st-sidebar-block button:nth-child(2)')))
         except exceptions.TimeoutException:
             try:
                 WdWait(self.driver, 10).until(
-                    ec.presence_of_element_located((By.CSS_SELECTOR, 'st-sidebar-block > div > button')))
+                    ec.visibility_of_element_located((By.CSS_SELECTOR, 'st-sidebar-block > div > button')))
             except exceptions.TimeoutException:
                 print('No Edit deal', self.driver.current_url)
                 return
@@ -169,9 +155,9 @@ class Screenshot:
             except exceptions.ElementClickInterceptedException:
                 self.driver.execute_script('arguments[0].click();', credit_quote)
             WdWait(self.driver, 10).until(
-                ec.presence_of_element_located((By.CSS_SELECTOR, 'md-content > md-content > form-content > form')))
+                ec.visibility_of_element_located((By.CSS_SELECTOR, 'md-content > md-content > form-content > form')))
             content = WdWait(self.driver, 10).until(
-                ec.presence_of_element_located((By.CSS_SELECTOR, 'body > md-content')))
+                ec.visibility_of_element_located((By.CSS_SELECTOR, 'body > md-content')))
             try:
                 self.screenshot_helper(element_with_scroll=content, sub_section_name='Quote:',
                                        deal_name=deal_name)
@@ -181,12 +167,12 @@ class Screenshot:
                 self.driver.get(deal)
                 try:
                     WdWait(self.driver, 10).until(
-                        ec.presence_of_element_located((By.CSS_SELECTOR, 'md-content > md-content')))
+                        ec.visibility_of_element_located((By.CSS_SELECTOR, 'md-content > md-content')))
                 except exceptions.TimeoutException:
                     self.driver.get(deal)
                     try:
                         WdWait(self.driver, 20).until(
-                            ec.presence_of_element_located((By.CSS_SELECTOR, 'md-content > md-content')))
+                            ec.visibility_of_element_located((By.CSS_SELECTOR, 'md-content > md-content')))
                     except exceptions.TimeoutException:
                         print('Deal quote timeout:', deal)
                         return
@@ -195,14 +181,14 @@ class Screenshot:
 
                 try:
                     WdWait(self.driver, 10).until(
-                        ec.presence_of_element_located((By.CSS_SELECTOR, 'st-sidebar-block button:nth-child(2)')))
+                        ec.visibility_of_element_located((By.CSS_SELECTOR, 'st-sidebar-block button:nth-child(2)')))
                 except exceptions.TimeoutException:
                     WdWait(self.driver, 10).until(
-                        ec.presence_of_element_located((By.CSS_SELECTOR, 'st-sidebar-block > div > button')))
+                        ec.visibility_of_element_located((By.CSS_SELECTOR, 'st-sidebar-block > div > button')))
 
         test = self.driver.find_elements(by=By.CSS_SELECTOR,value='st-sidebar-block button')
         test[-1].click()
-        WdWait(self.driver, 20).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-contact')))
+        WdWait(self.driver, 20).until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'st-contact')))
         try:
             for button_count, button in enumerate(
                     self.driver.find_elements(by=By.CSS_SELECTOR,value='st-sidebar-content > st-sidebar-block > div button'),
@@ -226,13 +212,13 @@ class Screenshot:
                 if current_separator == 'Maximum borrowing':
                     try:
                         WdWait(self.driver, 15).until(
-                            ec.presence_of_element_located((By.TAG_NAME, 'st-maximum-borrowing main')))
+                            ec.visibility_of_element_located((By.TAG_NAME, 'st-maximum-borrowing main')))
                     except exceptions.TimeoutException:
                         print('No Max Borrow', deal_name, self.driver.current_url)
                 elif current_separator == 'Review loan products':
                     try:
                         WdWait(self.driver, 15).until(
-                            ec.presence_of_element_located((By.TAG_NAME, 'st-review-loan-products > st-block')))
+                            ec.visibility_of_element_located((By.TAG_NAME, 'st-review-loan-products > st-block')))
                     except exceptions.TimeoutException:
                         print('No Review', deal_name, self.driver.current_url)
                 elif current_separator == 'Finance proposal':
@@ -240,7 +226,7 @@ class Screenshot:
                 elif current_separator == 'Asset commitment schedule':
                     try:
                         content = WdWait(self.driver, 10).until(
-                            ec.presence_of_element_located((By.CSS_SELECTOR, '.sheet > div:nth-child(1)')))
+                            ec.visibility_of_element_located((By.CSS_SELECTOR, '.sheet > div:nth-child(1)')))
                     except exceptions.TimeoutException:
                         pass
                     else:
@@ -251,7 +237,7 @@ class Screenshot:
 
                 elif current_separator == 'Expenses':
                     content = WdWait(self.driver, 10).until(
-                        ec.presence_of_element_located((By.CSS_SELECTOR, 'body > md-content')))
+                        ec.visibility_of_element_located((By.CSS_SELECTOR, 'body > md-content')))
                     for count, household_button in enumerate(
                             self.driver.find_elements(by=By.CSS_SELECTOR,value='st-tabs-list-nav > button'), start=1):
                         if 'active' in household_button.get_attribute('class'):
@@ -266,7 +252,7 @@ class Screenshot:
                     sleep(0.5)
 
                 content = WdWait(self.driver, 10).until(
-                    ec.presence_of_element_located((By.CSS_SELECTOR, 'body > md-content')))
+                    ec.visibility_of_element_located((By.CSS_SELECTOR, 'body > md-content')))
                 self.screenshot_helper(element_with_scroll=content, sub_section_name=current_separator_text,
                                        deal_name=deal_name)
 

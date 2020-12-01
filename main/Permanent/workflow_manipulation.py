@@ -30,10 +30,10 @@ class WorkflowManipulation:
             for wf in all_wfs:
                 self.driver.get(wf)
                 WdWait(self.driver, 15).until(
-                    ec.presence_of_element_located((By.CSS_SELECTOR, 'body > md-content > board')))
+                    ec.visibility_of_element_located((By.CSS_SELECTOR, 'body > md-content > board')))
 
                 element_with_scroll = WdWait(self.driver, 15).until(
-                    ec.presence_of_element_located((By.CSS_SELECTOR, 'body > md-content > board')))
+                    ec.visibility_of_element_located((By.CSS_SELECTOR, 'body > md-content > board')))
 
                 scroll_height_total = self.driver.execute_script("return arguments[0].scrollHeight",
                                                                  element_with_scroll)
@@ -53,9 +53,9 @@ class WorkflowManipulation:
         else:
             self.driver.get(workflow_id)
             WdWait(self.driver, 15).until(
-                ec.presence_of_element_located((By.CSS_SELECTOR, 'body > md-content > board')))
+                ec.visibility_of_element_located((By.CSS_SELECTOR, 'body > md-content > board')))
             element_with_scroll = WdWait(self.driver, 15).until(
-                ec.presence_of_element_located((By.CSS_SELECTOR, 'body > md-content > board')))
+                ec.visibility_of_element_located((By.CSS_SELECTOR, 'body > md-content > board')))
 
             scroll_height_total = self.driver.execute_script("return arguments[0].scrollHeight",
                                                              element_with_scroll)
@@ -98,14 +98,14 @@ class WorkflowManipulation:
 
         self.driver.get(self.main_url + "/settings/workflow/0")
         try:
-            WdWait(self.driver, 5).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
+            WdWait(self.driver, 5).until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
         except exceptions.TimeoutException:
             self.driver.get(self.main_url + "/settings/workflow/0")
             try:
-                WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
+                WdWait(self.driver, 10).until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
             except exceptions.TimeoutException:
                 self.driver.get(self.main_url + "/settings/workflow/0")
-                WdWait(self.driver, 20).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
+                WdWait(self.driver, 20).until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
 
         if add_all_users:
             if not bool(self.all_users):
@@ -206,7 +206,7 @@ class WorkflowManipulation:
 
         # number_of_stages = len(self.driver.find_elements(by=By.CSS_SELECTOR,value='workflow-stages > workflow-stage'))
 
-        WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))
+        WdWait(self.driver, 10).until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))
         WdWait(self.driver, 10).until(ec.invisibility_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))
 
         # TODO - Confirm that the workflow exists
@@ -261,7 +261,7 @@ class WorkflowManipulation:
 
     def workflow_users(self, workflow_id):
         self.driver.get(self.main_url + '/settings/workflow/' + workflow_id)
-        WdWait(self.driver, 5).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
+        WdWait(self.driver, 5).until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
         try:
             return_list = [user.text for user in
                            self.driver.find_elements(by=By.CSS_SELECTOR,value='md-chip div.md-contact-name')]
@@ -282,14 +282,14 @@ class WorkflowManipulation:
         else:
             self.driver.get(self.main_url + "/settings/workflow/" + worklfow_id)
         for user in self.all_users:
-            WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'div:nth-child(6) input')))
+            WdWait(self.driver, 10).until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div:nth-child(6) input')))
             self.driver.find_element(by=By.CSS_SELECTOR,value='div:nth-child(6) input').send_keys(user + Keys.ENTER)
             sleep(0.1)
 
-        WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'div.md-toast-content')))
+        WdWait(self.driver, 10).until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div.md-toast-content')))
         WdWait(self.driver, 10).until(ec.invisibility_of_element_located((By.CSS_SELECTOR, 'div.md-toast-content')))
         try:
-            WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'div.md-toast-content')))
+            WdWait(self.driver, 10).until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div.md-toast-content')))
         except exceptions.TimeoutException:
             pass
 
@@ -339,15 +339,15 @@ class WorkflowManipulation:
         self.driver.get(self.main_url)
         try:
             WdWait(self.driver, 10).until(
-                ec.presence_of_element_located((By.CSS_SELECTOR, 'button[aria-label="Deals"]'))).click()
+                ec.element_to_be_clickable((By.CSS_SELECTOR, 'button[aria-label="Deals"]'))).click()
         except exceptions.TimeoutException:
             workflow = WdWait(self.driver, 10).until(
-                ec.presence_of_element_located((By.CSS_SELECTOR, 'a[aria-label="Deals"]')))
+                ec.visibility_of_element_located((By.CSS_SELECTOR, 'a[aria-label="Deals"]')))
             workflow_list = [workflow.get_attribute('href')]
             return workflow_list
         else:
             workflow_container = WdWait(self.driver, 10).until(
-                ec.presence_of_element_located((By.CSS_SELECTOR, 'md-menu-content.sub-menu > section')))
+                ec.visibility_of_element_located((By.CSS_SELECTOR, 'md-menu-content.sub-menu > section')))
             workflows = workflow_container.find_elements(by=By.CSS_SELECTOR,value='md-menu-item > a')
             workflow_list = [workflow.get_attribute('href') for workflow in workflows]
             return workflow_list

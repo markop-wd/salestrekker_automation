@@ -50,8 +50,8 @@ class WorkerInitializer:
         self.main_org = ''
         self.group = group
         self.hl_workflow_name = 'Automation Workflow Name'
-        with open("perm_vars", "r") as perm_vars_json:
-            perm_vars = json.load(open("perm_vars", "r"))
+        with open("perm_vars", "r") as perm_json:
+            perm_vars = json.load(perm_json)
         self.allowed_workflows = perm_vars['workflows'].split('-')
         self.test_users = perm_vars['test_users']
         self.log_helper = login.LogIn(self.driver, self.ent, self.email, self.password)
@@ -65,21 +65,58 @@ class WorkerInitializer:
 
     def deployment_logic(self, runner_main_org, runner_learn_org):
 
+        contact_types = ["string:018a40bf-027a-4a08-9910-a0cbb058ddab", "string:ef8154b0-7bda-4d1e-a87e-f286c06f7d94",
+                         "string:d583957c-3ee9-4ec2-b041-efa0f8d41875", "string:e542c9e7-ba5c-4ac3-9234-52263b157271",
+                         "string:5fc8a573-5d6f-427e-acd8-a435dff25fd6", "string:2ad70288-34e7-4fb1-9662-fa101389870f",
+                         "string:e7e0844e-af08-4734-9182-cd10d118eaaa", "string:0b39633b-24a8-40e9-b3a5-934538c3cf57",
+                         "string:f017b136-6988-46a8-8a2d-e29e8033673f", "string:90f14042-9110-445e-8e6e-4417bedf06f4",
+                         "string:5772ddbb-f89a-48e4-843b-0cf7d041f785", "string:1c671835-7241-46d0-beaa-de1d7f613d96",
+                         "string:6cd3e44c-6b2c-426f-a4f7-079405a74107", "string:2ed149c6-2b4e-4f28-a6bd-fe7708331b5b",
+                         "string:c2babc6c-a4c5-4deb-99fc-b0780e7b35c1", "string:a181539e-e964-4d67-b3d9-da4b9fdee312",
+                         "string:07c75870-0e66-4b61-b56f-770ccaa551bd", "string:a91d6341-5372-475b-841d-b89c5998ac66",
+                         "string:804b1680-eeaf-4154-aacb-865641000405", "string:1a8a91f8-5666-4ce6-9a78-5cf9a49b5367",
+                         "string:fa625960-e2ab-4699-bab3-57a721f8bce0", "string:a8b080e6-6041-43a2-bce3-b50503019504",
+                         "string:91ca1a29-6fdb-4b65-bcec-fab85892ed56", "string:5ba8db09-da48-4b26-8766-05a8e1d09c88",
+                         "string:f298fa78-3991-4e8c-9319-c14ee9b5c9d1", "string:d24fefd4-ad7d-4d69-a35d-4b1f84bb1b30",
+                         "string:78edd653-2bf9-4a78-8cb9-15f0e44928d9", "string:a8bcbee4-8471-4b51-94e9-b6afbfbe06b2",
+                         "string:30aa7c93-a721-45cc-a4a6-01e16feffff4", "string:489f97cf-2952-4bda-8c0a-8e24856315a8",
+                         "string:91014368-29c2-4a66-8d36-b88f50b70da3", "string:6176d6ef-faec-427a-b52d-da92df39ada6",
+                         "string:67da720d-b94d-4f74-ab29-e109bd780b33", "string:f589a325-f614-4a59-ab49-5720a4fd6756",
+                         "string:dc0947fa-cc42-4504-87f7-f320618e2e3b", "string:4f96e10f-49f5-4634-9af6-e28544e300a8",
+                         "string:748417ed-4f58-46d0-aaac-1a01c072f70b", "string:58ac3382-83c8-4b80-9c96-5eb5be9e604a",
+                         "string:41674e36-4b27-4e77-914e-e9e39d188263", "string:86ecc076-a2cc-46e8-a64c-edddd29ba3fa",
+                         "string:64d5a6dc-e308-476a-8a9f-66f85ac7318f", "string:e2cd11d9-7c67-4e2b-b3f5-5cdcac08ace7",
+                         "string:603d1ca5-82e7-48d2-98b6-885a57315f9e", "string:434ca1cb-edf2-4448-8cb9-bff59f22f6f8",
+                         "string:1f72f021-59be-40cd-8494-30f1c979273b", "string:e8f5dce4-e663-4e77-96ec-08f015f4ca91",
+                         "string:3ac4e392-f4c5-4d1b-b10f-c86692781ca7"]
+
         self.log_helper.log_in()
-        org_funcs.organization_create(self.driver, self.ent, runner_learn_org, runner_main_org)
-        self.doc_helper.document_get(runner_learn_org)
-        self.wf_helper.workflow_get(runner_learn_org)
-        # org_funcs.org_changer(self.driver, runner_learn_org)
-        # org_funcs.org_changer(self.driver, f'Test Organization {date.today()}')
+        print(f'Logged into - {self.ent}')
+
+        hl_workflow = 'https://dev.salestrekker.com/board/179e90ab-ccde-41b3-bbe5-935dc87482eb'
+        af_workflow = 'https://dev.salestrekker.com/board/0d0b2524-c365-4d03-acb4-8d4728596a61'
+
+        # org_funcs.organization_create(self.driver, self.ent, runner_learn_org, runner_main_org)
+
+        # self.doc_helper.document_get(runner_learn_org)
+        # self.wf_helper.workflow_get(runner_learn_org)
+
+        org_funcs.org_changer(self.driver, '# Salestrekker Enterprise')
+
+        created_url = self.deal_create.create_deal(workflow=hl_workflow.split('/')[-1], contact_type='string:018a40bf-027a-4a08-9910-a0cbb058ddab')
+        self.deal_fill.client_profile_input(created_url)
+
+    # print(f'finished {self.ent}')
 
         # for user in self.test_users:
-        #     test_list = self.test_users[user].split('@')
+        #     test_list = user['email'].split('@')
         #     email = test_list[0] + f'+{date.today().strftime("%d%m%y")}@' + test_list[1]
         #     user_manipulation.add_user(self.driver, self.ent, email=email, username=user['username'],
         #                                broker=user['broker'], admin=user['admin'], mentor=user['mentor'])
-
+        #
         # self.doc_helper.document_compare(f'Test Organization {date.today()}')
         # self.wf_helper.workflow_compare(f'Test Organization {date.today()}')
+
         # for workflow in self.allowed_workflows:
         #     self.wf_manipulate.add_workflow(workflow_type=workflow)
 
@@ -257,73 +294,7 @@ class WorkerInitializer:
             hl_workflow = 'https://dev.salestrekker.com/board/179e90ab-ccde-41b3-bbe5-935dc87482eb'
             af_workflow = 'https://dev.salestrekker.com/board/0d0b2524-c365-4d03-acb4-8d4728596a61'
 
-            created_url = self.deal_create.create_deal(workflow=hl_workflow.split('/')[-1])
-            self.deal_fill.client_profile_input(created_url)
-
-            # self.driver.get(
-            #     'https://dev.salestrekker.com/deal/home-loan/179e90ab-ccde-41b3-bbe5-935dc87482eb/d0f3fd00-ecce-4a17-a55d-4c6f31085e1e')
-            # assets_button = WdWait(self.driver, 20).until(
-            #     ec.visibility_of_element_located((By.XPATH, '//span[text()="Assets"]')))
-            # assets_button.click()
-            # for i in [1, 21, 31, 32, 33, 34, 35, 68, 84, 95, 109, 131, 134, 138, 139, 141, 148, 155, 185, 199, 208, 230,
-            #           255, 312, 313, 314, 315, 316, 317, 318, 319, 320, 321, 322, 323, 324, 325, 326, 327, 328, 329,
-            #           330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 341, 342, 343, 344, 345, 346, 347, 348,
-            #           349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367,
-            #           368, 369, 370, 371, 372, 373, 374, 375, 376, 377, 378, 379, 380, 381, 382, 383, 384, 385, 386,
-            #           387, 388, 389, 390, 391, 392, 393, 394, 395, 396, 397, 398, 399, 400, 401, 402, 403, 404, 405,
-            #           406, 407, 408, 409, 410, 411, 412, 413, 414, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424,
-            #           425, 426, 427, 428, 429, 430, 431, 432, 433, 434, 435, 436, 437, 438, 439, 440, 441, 442, 443,
-            #           444, 445, 446, 447, 448, 449, 450, 451, 452, 453, 454, 455, 456, 457, 458, 459, 460, 461, 462,
-            #           463, 464, 465, 466, 467, 468, 469, 470, 471, 472, 473, 474, 475, 476, 477, 478, 479, 480, 481,
-            #           482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500,
-            #           501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 515, 516, 517, 518, 519,
-            #           520, 521, 522, 523, 524, 525, 526, 527, 528, 529, 530, 531, 532, 533, 534, 535, 536, 537, 538,
-            #           539, 540, 541, 542, 543, 544, 545, 546, 547, 548, 549, 550, 551, 552, 553, 554, 555, 556, 557,
-            #           558, 559, 560, 561, 562, 563, 564, 565, 566, 567, 568, 569, 570, 571, 572, 573, 574, 575, 576,
-            #           577, 578, 579, 580, 581, 582, 583, 584, 585, 586, 587, 588, 589, 590, 591, 592, 593, 594, 595,
-            #           596, 597, 598, 599, 600, 601, 602, 603, 604, 605, 606, 607, 608, 609, 610, 611, 612, 613, 614,
-            #           615, 616, 617, 618, 619, 620, 621, 622, 623, 624, 625, 626, 627, 628, 629, 630, 631, 632, 633,
-            #           634, 635, 636, 637, 638, 639, 640, 641, 642, 643, 659, 675, 740, 747, 749, 751, 798, 802, 831]:
-            #     try:
-            #         new_oo_button = self.driver.find_element(by=By.CSS_SELECTOR,
-            #                                      value='button[aria-label="Owner occupier property address"]')
-            #         try:
-            #             new_oo_button.click()
-            #         except exceptions.ElementNotInteractableException:
-            #             time.sleep(2)
-            #             self.driver.execute_script('arguments[0].click();', new_oo_button)
-            #
-            #         input_el = self.driver.find_element(By.CSS_SELECTOR,
-            #                                              'input[aria-label="Search Property (eg. 1 Walker Avenue)"]')
-            #         ul_el_id = 'ul-' + str(input_el.get_attribute('id')).split('-')[-1]
-            #         input_el.send_keys(f'{i} address')
-            #         WdWait(self.driver, 15).until(ec.visibility_of_element_located((By.ID, ul_el_id)))
-            #         li_els = self.driver.find_element(By.ID, ul_el_id).find_elements(by=By.CSS_SELECTOR,
-            #                                                                          value='li span')
-            #
-            #         if len(li_els) == 0:
-            #             input_el.send_keys(Keys.CONTROL + 'a')
-            #             time.sleep(1)
-            #             input_el.send_keys(Keys.DELETE)
-            #
-            #         else:
-            #             self.driver.execute_script("arguments[0].click();", li_els[randrange(0, len(li_els))])
-            #             time.sleep(5)
-            #     except Exception as exc:
-            #         print('address num: ', i)
-            #         traceback.print_exc()
-            #         print(exc)
-            #     finally:
-            #         asset_delete = self.driver.find_element(by=By.CSS_SELECTOR, value='button[aria-label="Remove "]')
-            #         try:
-            #             asset_delete.click()
-            #         except exceptions.ElementClickInterceptedException:
-            #             self.driver.execute_script("arguments[0].click();", asset_delete)
-
-            # created_url = self.deal_create.create_deal(workflow=af_workflow.split('/')[-1], af_type='comm')
-            # self.deal_fill.client_profile_input(created_url)
-            #
-            # created_url = self.deal_create.create_deal(workflow=af_workflow.split('/')[-1],af_type='cons')
+            # created_url = self.deal_create.create_deal(workflow=hl_workflow.split('/')[-1])
             # self.deal_fill.client_profile_input(created_url)
 
         # org_funcs.org_changer(self.driver, '3 Demo N Co')

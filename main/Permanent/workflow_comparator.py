@@ -27,7 +27,7 @@ class WorkflowCheck:
         org_changer(self.driver, org)
 
         self.driver.get(self.main_url + '/settings/workflows')
-        WdWait(self.driver, 30).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
+        WdWait(self.driver, 30).until(ec.visibility_of_element_located((By.TAG_NAME, 'st-list')))
         main_content = self.driver.find_element(by=By.CSS_SELECTOR,value='body > md-content')
 
         last_height = self.driver.execute_script("return arguments[0].scrollHeight", main_content)
@@ -54,7 +54,7 @@ class WorkflowCheck:
         org_changer(self.driver, org)
 
         self.driver.get(self.main_url + '/settings/workflows')
-        WdWait(self.driver, 30).until(ec.presence_of_element_located((By.TAG_NAME, 'st-list')))
+        WdWait(self.driver, 30).until(ec.visibility_of_element_located((By.TAG_NAME, 'st-list')))
         main_content = self.driver.find_element(by=By.CSS_SELECTOR,value='body > md-content')
 
         last_height = self.driver.execute_script("return arguments[0].scrollHeight", main_content)

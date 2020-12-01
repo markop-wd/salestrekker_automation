@@ -8,6 +8,8 @@ from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver import Firefox
 from selenium.common import exceptions
 
+from main.Permanent.pattern_funcs import md_toast_waiter
+
 from time import sleep
 from datetime import datetime
 import json
@@ -20,8 +22,7 @@ import string
 
 class EditDeal:
     def __init__(self, ent, driver: Firefox):
-        # self.current_export_array = []
-        with open("deal_config") as deal_config_json:
+        with open("deal_config.json") as deal_config_json:
             self.deal_config = json.load(deal_config_json)
         self.users_in_workflow = ''
         self.number_of_contacts = None
@@ -30,7 +31,7 @@ class EditDeal:
         self.wf_manipulate = workflow_manipulation.WorkflowManipulation(self.driver, ent)
         self.incrementer = 0
 
-    def create_deal(self, workflow='test', af_type="cons"):
+    def create_deal(self, workflow: str = 'test', af_type="cons", contact_type: str = 'string:018a40bf-027a-4a08-9910-a0cbb058ddab'):
 
         if workflow == 'test':
             self.driver.get(self.main_url)
@@ -67,12 +68,11 @@ class EditDeal:
                                                  value='md-radio-button[aria-label="Consumer"]').click()
 
         self.contact_add()
-        self.contact_input()
+        self.contact_input(contact_type)
         self.deal_info_input()
 
         # Save
-        save_button = WdWait(self.driver, 6).until(ec.element_to_be_clickable((By.CSS_SELECTOR, 'button.save')))
-
+        save_button = WdWait(self.driver, 10).until(ec.element_to_be_clickable((By.CSS_SELECTOR, 'button.save')))
         try:
             save_button.click()
         except exceptions.ElementClickInterceptedException:
@@ -191,7 +191,7 @@ class EditDeal:
         # self.current_export_array.append("No. of clients: " + str(number_of_contacts) + ", ")
 
     # TODO - Get a better way to pass in names
-    def contact_input(self):
+    def contact_input(self, contact_type):
 
         person_names = [['Misty', 'Banks'], ['Karl', 'Berg'], ['Tanisha', 'Obrien'], ['Jasmin', 'Talley'],
                         ['Lexi-Mai', 'Mccray'], ['Chandni', 'Kramer'], ['Musab', 'Cunningham'], ['Spike', 'Dunn'],
@@ -321,43 +321,55 @@ class EditDeal:
                 person_name = person_names[random.randrange(0, len(person_names))]
 
                 person.find_element(by=By.CSS_SELECTOR,
-                                    value='div:nth-child(2) > div:nth-child(1) > md-autocomplete > md-autocomplete-wrap > md-input-container >input').send_keys(
+                                    value='div:nth-child(2) > div:nth-child(1) > md-autocomplete > '
+                                          'md-autocomplete-wrap > md-input-container >input').send_keys(
                     person_name[0])
                 person.find_element(by=By.CSS_SELECTOR,
                                     value='div:nth-child(2) > div:nth-child(2) > md-input-container > input').send_keys(
                     person_name[1])
                 num_prefix = person.find_element(by=By.CSS_SELECTOR,
-                                                 value='div:nth-child(2) > div:nth-child(3) > md-input-container:nth-child(1) > input')
+                                                 value='div:nth-child(2) > div:nth-child(3) > '
+                                                       'md-input-container:nth-child(1) > input')
                 num_prefix.send_keys(Keys.CONTROL + 'a')
-                num_prefix.send_keys('11')
+                num_prefix.send_keys('61')
                 person.find_element(by=By.CSS_SELECTOR,
-                                    value='div:nth-child(2) > div:nth-child(3) > md-input-container:nth-child(2) > input').send_keys(
-                    '123456789')
+                                    value='div:nth-child(2) > div:nth-child(3) > md-input-container:nth-child(2) > '
+                                          'input').send_keys('123456789')
                 person.find_element(by=By.CSS_SELECTOR,
                                     value='div:nth-child(2) > div:nth-child(4) > md-input-container > input').send_keys(
-                    'email@person.real')
+                    f'{person_name[0].lower()}@website.com')
                 current_sel = person.find_element(by=By.CSS_SELECTOR,
-                                                  value='div:nth-child(2) > div:nth-child(4) > st-form-field-container > select')
+                                                  value='div:nth-child(2) > div:nth-child(4) > '
+                                                        'st-form-field-container > select')
 
-                if self.deal_config['contacts']['non_client']['active']:
-                    if count < int(self.deal_config['contacts']['non_client']['no_of_clients']):
-                        try:
-                            Select(current_sel).select_by_index(random.randrange(0, 4))
-                        except exceptions.ElementClickInterceptedException:
-                            WdWait(self.driver, 20).until(
-                                ec.invisibility_of_element_located((By.CSS_SELECTOR, 'md-toast.ng-scope')))
-
-                            Select(current_sel).select_by_index(random.randrange(0, 4))
-                    else:
-                        try:
-                            Select(current_sel).select_by_index(random.randrange(0, len(Select(current_sel).options)))
-                        except exceptions.ElementClickInterceptedException:
-                            Select(current_sel).select_by_index(random.randrange(0, len(Select(current_sel).options)))
-                else:
+                try:
+                    Select(current_sel).select_by_value(contact_type)
+                except exceptions.ElementClickInterceptedException:
+                    md_toast_waiter(self.driver)
                     try:
-                        Select(current_sel).select_by_index(random.randrange(0, 4))
+                        Select(current_sel).select_by_value(contact_type)
                     except exceptions.ElementClickInterceptedException:
-                        Select(current_sel).select_by_index(random.randrange(0, 4))
+                        self.driver.find_element(by=By.TAG_NAME, value='md-backdrop').click()
+
+                # if self.deal_config['contacts']['non_client']['active']:
+                #     if count < int(self.deal_config['contacts']['non_client']['no_of_clients']):
+                #         try:
+                #             Select(current_sel).select_by_index(random.randrange(0, 4))
+                #         except exceptions.ElementClickInterceptedException:
+                #             md_toast_waiter(self.driver)
+                #             Select(current_sel).select_by_index(random.randrange(0, 4))
+                #     else:
+                #         try:
+                #             Select(current_sel).select_by_index(random.randrange(0, len(Select(current_sel).options)))
+                #         except exceptions.ElementClickInterceptedException:
+                #             md_toast_waiter(self.driver)
+                #             Select(current_sel).select_by_index(random.randrange(0, len(Select(current_sel).options)))
+                # else:
+                #     try:
+                #         Select(current_sel).select_by_index(random.randrange(0, 4))
+                #     except exceptions.ElementClickInterceptedException:
+                #         md_toast_waiter(self.driver)
+                #         Select(current_sel).select_by_index(random.randrange(0, 4))
 
         if company_list:
             for count, company in enumerate(company_list):
@@ -376,13 +388,22 @@ class EditDeal:
                 current_sel = company.find_element(by=By.CSS_SELECTOR,
                                                    value='div > div:nth-child(3) > st-form-field-container > select')
 
-                if self.deal_config['contacts']['non_client']['active']:
-                    if count < int(self.deal_config['contacts']['non_client']['no_of_clients']):
-                        Select(current_sel).select_by_index(random.randrange(0, 4))
-                    else:
-                        Select(current_sel).select_by_index(random.randrange(0, len(Select(current_sel).options)))
-                else:
-                    Select(current_sel).select_by_index(random.randrange(0, 4))
+                try:
+                    Select(current_sel).select_by_value(contact_type)
+                except exceptions.ElementClickInterceptedException:
+                    md_toast_waiter(self.driver)
+                    try:
+                        Select(current_sel).select_by_value(contact_type)
+                    except exceptions.ElementClickInterceptedException:
+                        self.driver.find_element(by=By.TAG_NAME, value='md-backdrop').click()
+
+                # if self.deal_config['contacts']['non_client']['active']:
+                #     if count < int(self.deal_config['contacts']['non_client']['no_of_clients']):
+                #         Select(current_sel).select_by_index(random.randrange(0, 4))
+                #     else:
+                #         Select(current_sel).select_by_index(random.randrange(0, len(Select(current_sel).options)))
+                # else:
+                #     Select(current_sel).select_by_index(random.randrange(0, 4))
 
     def deal_info_input(self):
 
@@ -399,8 +420,6 @@ class EditDeal:
             f'{datetime.now()}')
 
         # self.select_deal_owner(main_info_block, 'Salestrekker Help Desk')
-
-        sleep(2)
 
         # # Team Members
         # team_members_field = main_info_block.find_element(by=By.CSS_SELECTOR,value='div > md-chips input')
@@ -531,7 +550,7 @@ class MultipleDealCreator:
         with open(industry_path, 'r') as industry_codes:
             self.industries = json.load(industry_codes)
 
-        with open("deal_config") as deal_config_json:
+        with open("deal_config.json") as deal_config_json:
             self.deal_config = json.load(deal_config_json)
 
         self.users_in_workflow = ''
@@ -540,28 +559,9 @@ class MultipleDealCreator:
         self.main_url = 'https://' + ent + '.salestrekker.com'
         self.wf_manipulate = workflow_manipulation.WorkflowManipulation(self.driver, ent)
         self.address_repeat = 0
-        self.address_placeholders = ['Search Property (eg. 1 Walker Avenue)','Search current address','Search employer address','Search next of kin address','Search mailing address','Search previous address']
-
-    def md_toast_waiter(self):
-        try:
-            WdWait(self.driver, 5).until(
-                ec.invisibility_of_element((By.CSS_SELECTOR, 'md-toast.ng-scope')))
-        except exceptions.TimeoutException:
-            pass
-        while True:
-            sleep(3)
-            try:
-                md_toast = self.driver.find_element(by=By.TAG_NAME, value='md-toast')
-            except exceptions.NoSuchElementException:
-                break
-            else:
-                self.driver.execute_script("arguments[0].remove();", md_toast)
-                try:
-                    md_toast2 = self.driver.find_element(by=By.TAG_NAME, value='md-toast')
-                except exceptions.NoSuchElementException:
-                    break
-                else:
-                    self.driver.execute_script("arguments[0].remove();", md_toast2)
+        self.address_placeholders = ['Search Property (eg. 1 Walker Avenue)', 'Search current address',
+                                     'Search employer address', 'Search next of kin address', 'Search mailing address',
+                                     'Search previous address']
 
     def selector(self, select_element, index='random'):
         try:
@@ -584,12 +584,12 @@ class MultipleDealCreator:
             try:
                 current_sel.select_by_index(index)
             except exceptions.ElementClickInterceptedException:
-                self.md_toast_waiter()
+                md_toast_waiter(self.driver)
                 try:
                     current_sel.select_by_index(index)
                 except exceptions.ElementClickInterceptedException:
                     print('removing header')
-                    self.md_toast_waiter()
+                    md_toast_waiter(self.driver)
 
                     try:
                         header = self.driver.find_element(by=By.CSS_SELECTOR, value='st-header.new.ng-scope')
@@ -619,25 +619,26 @@ class MultipleDealCreator:
                 try:
                     current_sel.select_by_index(index)
                 except exceptions.ElementClickInterceptedException:
-                    self.md_toast_waiter()
+                    md_toast_waiter(self.driver)
                     try:
                         current_sel.select_by_index(index)
                     except exceptions.ElementClickInterceptedException:
                         print('removing header')
-                        self.md_toast_waiter()
+                        md_toast_waiter(self.driver)
                         header = self.driver.find_element(by=By.CSS_SELECTOR, value='st-header.new.ng-scope')
                         self.driver.execute_script("arguments[0].remove();", header)
                         current_sel.select_by_index(index)
 
     def select_el_handler(self, content):
 
-        self.md_toast_waiter()
+        md_toast_waiter(self.driver)
 
         for select_el in content.find_elements(by=By.TAG_NAME, value='select'):
             try:
                 if select_el.get_attribute('ng-model') == '$ctrl.address.country':
                     self.selector(select_el, index='1')
-                elif select_el.get_attribute('ng-model') in ['$ctrl.employment.isCurrent','$ctrl.employment.type','$ctrl.employment.status','$ctrl.employment.basis']:
+                elif select_el.get_attribute('ng-model') in ['$ctrl.employment.isCurrent', '$ctrl.employment.type',
+                                                             '$ctrl.employment.status', '$ctrl.employment.basis']:
                     continue
                 else:
                     self.selector(select_el)
@@ -680,7 +681,7 @@ class MultipleDealCreator:
                     try:
                         Select(employment_status).select_by_index(random.randrange(0, 2))
                     except exceptions.ElementClickInterceptedException:
-                        self.md_toast_waiter()
+                        md_toast_waiter(self.driver)
                         try:
                             Select(employment_status).select_by_index(random.randrange(0, 2))
                         except exceptions.ElementClickInterceptedException:
@@ -693,7 +694,7 @@ class MultipleDealCreator:
                     try:
                         Select(employment_type).select_by_index(random.randrange(1, 5))
                     except exceptions.ElementClickInterceptedException:
-                        self.md_toast_waiter()
+                        md_toast_waiter(self.driver)
                         try:
                             Select(employment_type).select_by_index(random.randrange(1, 5))
                         except exceptions.ElementClickInterceptedException:
@@ -706,7 +707,7 @@ class MultipleDealCreator:
                     try:
                         Select(employment_priority).select_by_index(random.randrange(1, 3))
                     except exceptions.ElementClickInterceptedException:
-                        self.md_toast_waiter()
+                        md_toast_waiter(self.driver)
                         try:
                             Select(employment_priority).select_by_index(random.randrange(1, 3))
                         except exceptions.ElementClickInterceptedException:
@@ -724,7 +725,7 @@ class MultipleDealCreator:
                         try:
                             num_basis_options = len(Select(basis).options)
                         except exceptions.ElementClickInterceptedException:
-                            self.md_toast_waiter()
+                            md_toast_waiter(self.driver)
                             try:
                                 num_basis_options = len(Select(basis).options)
                             except exceptions.ElementClickInterceptedException:
@@ -735,7 +736,7 @@ class MultipleDealCreator:
                         try:
                             Select(basis).select_by_index(random.randrange(1, num_basis_options))
                         except exceptions.ElementClickInterceptedException:
-                            self.md_toast_waiter()
+                            md_toast_waiter(self.driver)
                             try:
                                 Select(basis).select_by_index(random.randrange(1, num_basis_options))
                             except exceptions.ElementClickInterceptedException:
@@ -743,31 +744,30 @@ class MultipleDealCreator:
                                 self.driver.execute_script("arguments[0].remove();", header)
                                 Select(basis).select_by_index(random.randrange(1, num_basis_options))
 
-    def address_selector(self, input_el):
+    def ul_list_selector(self, input_el, input_text):
         self.address_repeat += 1
-        input_el.send_keys(f'{random.randrange(0, 1000)} address')
+        input_el.send_keys(input_text)
         ul_el_id = 'ul-' + str(input_el.get_attribute('id')).split('-')[-1]
         try:
             WdWait(self.driver, 15).until(ec.visibility_of_element_located((By.ID, ul_el_id)))
         except exceptions.TimeoutException:
-            print('No address returned after 15 seconds')
+            print('No list returned after 15 seconds')
             if self.address_repeat > 4:
-                print('No address list returned after 4 timeout attempts.')
+                print('No list returned after 4 timeout attempts.')
             else:
-                self.address_selector(input_el)
+                self.ul_list_selector(input_el, input_text)
         else:
             li_els = self.driver.find_element(By.ID, ul_el_id).find_elements(by=By.CSS_SELECTOR,
                                                                              value='li span')
-
             if len(li_els) == 0:
                 input_el.send_keys(Keys.CONTROL + 'a')
                 sleep(0.1)
                 input_el.send_keys(Keys.DELETE)
                 sleep(0.2)
                 if self.address_repeat > 4:
-                    print('Address not returning after 4 attempts')
+                    print('List not returning after 4 attempts')
                 else:
-                    self.address_selector(input_el)
+                    self.ul_list_selector(input_el, input_text)
             else:
                 self.driver.execute_script("arguments[0].click();", li_els[random.randrange(0, len(li_els))])
 
@@ -839,7 +839,7 @@ class MultipleDealCreator:
                     elif ng_model == '$mdAutocompleteCtrl.scope.searchText':
                         input_aria_label = input_el.get_attribute('aria-label')
                         if input_aria_label in self.address_placeholders:
-                            self.address_selector(input_el)
+                            self.ul_list_selector(input_el, f'{random.randrange(1, 1000)} address')
 
                         elif input_aria_label == 'Employer ABN':
                             input_el.send_keys(str(random.randrange(10000000000, 100000000000)))
@@ -849,11 +849,11 @@ class MultipleDealCreator:
 
                         elif input_aria_label == 'ABS occupation code':
                             occupation = self.occupations[random.randrange(0, len(self.occupations) - 1)]
-                            input_el.send_keys(occupation['value'] + ' ' + occupation['id'])
+                            self.ul_list_selector(input_el, occupation['id'])
 
                         elif input_aria_label == 'ANZSCO industry code':
                             industry = self.industries[random.randrange(0, len(self.industries) - 1)]
-                            input_el.send_keys(industry['value'] + ' ' + industry['id'])
+                            self.ul_list_selector(input_el, industry['id'])
 
                     elif ng_change == '$ctrl.saveAddress()':
                         continue
@@ -940,7 +940,8 @@ class MultipleDealCreator:
         test[-1].click()
         WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'st-contact')))
         contact_buttons = self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                    value='st-sidebar-content > st-sidebar-block:first-of-type > div > button')
+                                                    value='st-sidebar-content > st-sidebar-block:first-of-type > div '
+                                                          '> button')
 
         for button_count, contact_button in enumerate(contact_buttons, start=1):
             self.address_repeat = 0
@@ -1206,4 +1207,3 @@ class MultipleDealCreator:
                     self.input_el_handler(content)
 
                     self.md_select_handler(content)
-
