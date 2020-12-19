@@ -26,7 +26,7 @@
       "learn": "Z. Learn Platform Connect"
     },
     "nlgconnect" : {
-      "main": "NLG Leasing Pty Ltd",
+      "main": ".NLG Leasing Pty Ltd",
       "learn": "Z. Learn NLG Connect"
     },
     "app" : {
@@ -34,7 +34,7 @@
       "learn": "Test Group"
     },
     "gemnz" : {
-      "main": "Gem New Zealand",
+      "main": "Astute New Zealand",
       "learn": "0. Learn Gem"
     },
     "ynet": {
@@ -49,38 +49,38 @@
 
   "workflows": "None-Asset Finance-Commercial Loan-Conveyancing-Home Loan-Insurance-Personal Loan-Real Estate",
 
-  "test_users": [
-    {
-      "username": "Matthew Test",
-      "email": "matthew@salestrekker.com",
-      "broker": true,
-      "admin": true,
-      "mentor": false
-    },
+  "test_users": {
+    "matthew": {
+        "username": "Matthew Test",
+        "email": "matthew@salestrekker.com",
+        "broker": true,
+        "admin": true,
+        "mentor": false
+      },
 
-    {
-      "username": "Maya Test",
-      "email": "maya@salestrekker.com",
-      "broker": true,
-      "admin": true,
-      "mentor": false
-    },
+      "maya": {
+        "username": "Maya Test",
+        "email": "maya@salestrekker.com",
+        "broker": true,
+        "admin": true,
+        "mentor": false
+      },
 
-    {
-      "username": "Phillip Test",
-      "email":  "phillip@salestrekker.com",
-      "broker": true,
-      "admin": true,
-      "mentor": false
-    },
+      "phillip": {
+        "username": "Phillip Test",
+        "email":  "phillip@salestrekker.com",
+        "broker": true,
+        "admin": true,
+        "mentor": false
+      },
 
-    {
-      "username": "Zac Test",
-      "email": "zac@salestrekker.com",
-      "broker": true,
-      "admin": true,
-      "mentor": false
-    }
-  ]
+      "zac": {
+        "username": "Zac Test",
+        "email": "zac@salestrekker.com",
+        "broker": true,
+        "admin": true,
+        "mentor": false
+      }
+}
 }
 

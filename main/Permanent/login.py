@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver import Firefox
 
 
-# TODO - Add assertions that certain elements are in place - this is a good starting point for code improvement
+# TODO - Add assertions that certain elements are in place - this is a good starting point for tests
 # TODO - Switch the element clicker for the one in the pattern funcs
 # TODO - Make custom exceptions for handling the below
 

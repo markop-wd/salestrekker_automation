@@ -1,2 +1,2 @@
 # InitTest
-This should be the definitive ordered tests
+Salestrekker functions - to be changed into tests
