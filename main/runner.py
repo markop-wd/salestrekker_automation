@@ -2,9 +2,9 @@
 The background logic of handling reports, threads, exceptions
 """
 import concurrent.futures
-from selenium.webdriver import Firefox
-from selenium.webdriver.firefox.options import Options
-from webdriver_manager.firefox import GeckoDriverManager
+from selenium.webdriver import Chrome
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 
 from datetime import date, datetime
 import json
@@ -22,9 +22,7 @@ with open("details.json") as details:
     info = json.load(details)
 
 options = Options()
-
-
-# options.headless = True
+options.add_experimental_option("detach", True)
 
 
 # TODO - Extract into a report creating module
@@ -49,7 +47,7 @@ def csv_writer(write_dict: dict, ent_name: str):
             rundown.write('\n')
 
 
-def main_runner(ent):
+def main_runner(ent, email="matthew@salestrekker.com"):
     try:
         mkdir(f'Reports/{date.today()}')
     except FileExistsError:
@@ -62,14 +60,19 @@ def main_runner(ent):
 
     completed = {}
 
-    driver = Firefox(executable_path=GeckoDriverManager().install(), options=options)
+    driver = Chrome(executable_path=ChromeDriverManager().install())
+
+    driver_ids = {"url": driver.command_executor._url, "id": driver.session_id}
+    with open("new_session.json", "w") as new:
+        json.dump(driver_ids, new)
+
     driver.maximize_window()
 
     try:
         worker(driver=driver, ent=ent, runner_main_org=ents_info[ent]['main'],
                runner_learn_org=ents_info[ent]['learn'],
-               email='helpdesk@salestrekker.com',
-               password=info[ent]['pass'])
+               email=email,
+               password=info[ent][email])
 
     except http_execs.NewConnectionError:
         completed['time'] = datetime.now().strftime('%H:%M:%S')
@@ -98,21 +101,28 @@ def main_runner(ent):
         completed['traceback'] = ''
         completed['current url'] = ''
     finally:
-        driver.quit()
+        # driver.quit()
         csv_writer(completed, ent)
 
 
 if __name__ == '__main__':
+    # main_runner('dev', email='matthew@salestrekker.com')
+    main_runner('dev', email='matthew+291220@salestrekker.com')
+
+    # email_date = date.today().strftime("%d%m%y")
+    # main_runner('dev', email=f'matthew+{email_date}@salestrekker.com')
+
     # main_runner('dev')
 
-    # all_ents = [
-    #     'ynet', 'vownet', 'gem', 'gemnz', 'platform', 'nlgconnect', 'app',
-    #     'ioutsource', 'chief', 'sfg'
-    # ]
+    all_ents = [
+        'ynet', 'vownet', 'gem', 'gemnz', 'platform', 'nlgconnect', 'app',
+        'ioutsource', 'chief', 'sfg'
+    ]
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
-        future_runner = {executor.submit(main_runner, 'dev'): _ for _ in
-                         range(3)}
+    # with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
+    #     future_runner = {executor.submit(main_runner, ent): ent for ent in
+    #                      all_ents}
 
     # for ent in all_ents:
     #     main_runner(ent)
+    #

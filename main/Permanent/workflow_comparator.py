@@ -4,7 +4,7 @@ from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
 from datetime import datetime, date
 
-from selenium.webdriver import Firefox
+from selenium.webdriver import Chrome
 
 from time import sleep
 
@@ -12,7 +12,7 @@ from main.Permanent.org_funcs import org_changer
 
 
 class WorkflowCheck:
-    def __init__(self, driver: Firefox, ent):
+    def __init__(self, driver: Chrome, ent):
         self.driver = driver
         self.ent = ent
         self.workflow_list = []

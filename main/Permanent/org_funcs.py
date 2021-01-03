@@ -3,7 +3,7 @@ from selenium.common import exceptions
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver import Firefox
+from selenium.webdriver import Chrome
 from selenium.webdriver.remote.webelement import WebElement
 
 from datetime import date
@@ -14,7 +14,7 @@ from main.Permanent.user_manipulation import get_current_username
 
 # TODO - Rewrite and ensure more stability on this one
 # TODO - Write custom exceptions on this one
-def org_changer(driver: Firefox, org_name):
+def org_changer(driver: Chrome, org_name):
     assert "salestrekker" in driver.current_url, 'invalid url'
     assert "authenticate" not in driver.current_url, 'you are at a login page'
 
@@ -115,12 +115,11 @@ def org_changer(driver: Firefox, org_name):
         else:
             _organization_change(driver, org_el, org_name)
 
+    # else:
+    # print('Already in that organisation, moving on')
 
-    else:
-        print('Already in that organisation, moving on')
 
-
-def _organization_change(driver: Firefox, org_el: WebElement, org_name: str):
+def _organization_change(driver: Chrome, org_el: WebElement, org_name: str):
     """
     when the organisation is found click the element and wait for the new organisation to appear
     :return:
@@ -150,7 +149,7 @@ def _organization_change(driver: Firefox, org_el: WebElement, org_name: str):
                     org_changer(driver, org_name)
 
 
-def _check_current_org(driver: Firefox, org_name: str) -> bool:
+def _check_current_org(driver: Chrome, org_name: str) -> bool:
     _toolbar_check(driver)
 
     try:
@@ -195,7 +194,7 @@ def _toolbar_check(driver, wait_time=30):
             raise exceptions.TimeoutException('Could not find the navbar via the toolbar_checker')
 
 
-def organization_create(driver: Firefox, ent, parent_group, ent_group,
+def organization_create(driver: Chrome, ent, parent_group, ent_group,
                         new_org=f'Test Organization {date.today()}'):
     main_url = "https://" + ent + ".salestrekker.com"
 

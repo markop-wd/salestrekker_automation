@@ -3,6 +3,7 @@ When something out of the ordinary has to be done
 Instead of programming in the main business logic just implement it here and import it there
 """
 import random
+import threading
 import traceback
 import string
 from time import sleep
@@ -13,8 +14,7 @@ from selenium.common import exceptions
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
 
-from selenium.webdriver import Firefox
-from webdriver_manager.firefox import GeckoDriverManager
+from selenium.webdriver import Chrome
 
 from main.Permanent.login import LogIn
 from main.mail import mail_get
@@ -23,6 +23,88 @@ from main.mail import mail_get
 def random_string_create(char_nums: int = 10):
     result_str = ''.join(random.choice(string.ascii_letters) for i in range(char_nums))
     return result_str
+
+# TODO
+def accreditation_fill(driver: Chrome, ent: str, all_new: bool = True):
+    if driver.current_url != f"https://{ent}.salestrekker.com/settings/my-accreditations":
+        driver.get(f"https://{ent}.salestrekker.com/settings/my-accreditations")
+    WdWait(driver, 50).until(ec.visibility_of_element_located((By.TAG_NAME, 'st-block-form-content')))
+
+    if all_new:
+        try:
+            for delete_button in driver.find_elements(by=By.CSS_SELECTOR, value='button.delete'):
+                try:
+                    driver.execute_script("arguments[0].click();", delete_button)
+                except exceptions.ElementClickInterceptedException:
+                    element_clicker(driver=driver, web_element=delete_button)
+                    # driver.execute_script("arguments[0].click();", delete_button)
+        except exceptions.NoSuchElementException:
+            pass
+
+        add_new = driver.find_element(by=By.CSS_SELECTOR, value='button[aria-label="Add new lender accreditation"]')
+        element_clicker(driver=driver, web_element=add_new)
+        md_select = driver.find_element(by=By.CSS_SELECTOR, value='md-select[ng-change="pickLender('
+                                                                  'lenderAccreditation)"]')
+        element_clicker(driver=driver, web_element=md_select)
+        md_select_id = str(md_select.get_attribute('id'))
+        md_select_container_id = str(int(md_select_id.split("_")[-1]) + 1)
+
+        all_lenders = driver.find_elements(by=By.CSS_SELECTOR,
+                                           value=f'#select_container_{md_select_container_id} md-option')
+
+        element_clicker(driver=driver, web_element=all_lenders[0])
+
+        number_lenders = range(len(all_lenders) - 1)
+
+        print(number_lenders)
+
+        for _ in number_lenders:
+            driver.execute_script("arguments[0].click();", add_new)
+
+        broker_ids = driver.find_elements(by=By.CSS_SELECTOR,
+                                          value='input[ng-model="lenderAccreditation.brokerIdPrimary"]')
+
+        # TODO TODO TODO TODO TODO TODO
+        def id_input(input_list: list):
+
+            for broker_id in input_list:
+                broker_id.send_keys('1234')
+
+        def chunks(split_list, parts):
+            """ Yield n successive chunks from l.
+            """
+            newn = int(len(split_list) / parts)
+            for i in range(0, parts - 1):
+                yield split_list[i * newn:i * newn + newn]
+            yield split_list[parts * newn - newn:]
+
+        chunky = chunks(broker_ids, 4)
+        for count, i in enumerate(chunky):
+            threading.Thread(target=id_input, args=(i,),daemon=True).start()
+
+        threading.Thread(target=id_input, args=())
+        # TODO TODO TODO TODO TODO TODO
+
+        all_bre = driver.find_elements(by=By.CSS_SELECTOR,
+                                       value='md-select[ng-change="pickLender(lenderAccreditation)"]')
+
+        for count, element in enumerate(all_bre):
+            if count == 0:
+                continue
+            elif count == 11:
+                break
+
+            # driver.execute_script("arguments[0].click();", element)
+            element_clicker(driver=driver, web_element=element)
+            md_select_id = str(element.get_attribute('id'))
+            md_select_container_id = str(int(md_select_id.split("_")[-1]) + 1)
+            to_click = \
+                driver.find_elements(by=By.CSS_SELECTOR, value=f'#select_container_{md_select_container_id} md-option')[
+                    count]
+            driver.execute_script("arguments[0].click();", to_click)
+            # helper_funcs.element_clicker(driver=driver, web_element=to_click)
+
+        md_toast_wait(driver=driver)
 
 
 def password_string_create(char_nums: int = 10):
@@ -37,7 +119,7 @@ def password_string_create(char_nums: int = 10):
     return result_str
 
 
-def user_setup_raw(driver: Firefox, ent: str):
+def user_setup_raw(driver: Chrome, ent: str):
     """
     This is a basic version of setting up a user for the first time
     # TODO Improve this version and connect it to the LogIn class
@@ -49,7 +131,7 @@ def user_setup_raw(driver: Firefox, ent: str):
     mail_dict = mail_get(ent)
     if mail_dict['email'] and mail_dict['password']:
         LogIn(driver, ent, mail_dict['email'], mail_dict['password']).log_in()
-        print(f'Logged into - {ent}')
+        # print(f'Logged into - {ent}')
         try:
             driver.find_element(by=By.CSS_SELECTOR, value='input[name="phoneNumber"]')
 
@@ -88,20 +170,24 @@ def user_setup_raw(driver: Firefox, ent: str):
                                    'div[ng-if="Model.AUTH.isPasswordChangeRequired()"] button'))) \
             .click()
 
-        WdWait(driver, 20).until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'board#board')))
-        input(f'{ent} finish')
+        # TODO - Better, robust waits
+        WdWait(driver, 50).until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'board#board')))
+        # driver.get("https://"+ent+".salestrekker.com/settings/my-accreditations")
+        # WdWait(driver, 50).until(ec.visibility_of_element_located((By.TAG_NAME, 'st-block-form-content')))
+        # input(f'{ent} finish')
+        return mail_dict['email'], new_password
     else:
         print('Oj dios mio no email information')
 
 
-def md_toast_waiter(driver: Firefox):
+def md_toast_remover(driver: Chrome):
     try:
         driver.find_element(by=By.TAG_NAME, value='md-toast')
     except exceptions.NoSuchElementException:
         try:
             WdWait(driver, 3).until(ec.invisibility_of_element_located((By.TAG_NAME, 'md-toast')))
         except exceptions.TimeoutException:
-            md_toast_waiter(driver)
+            md_toast_remover(driver)
     else:
         while True:
             try:
@@ -119,7 +205,24 @@ def md_toast_waiter(driver: Firefox):
                 sleep(3)
 
 
-def element_clicker(driver: Firefox, web_element: WebElement = None, css_selector: str = ''):
+def md_toast_wait(driver: Chrome):
+    try:
+        WdWait(driver, 15).until(ec.invisibility_of_element_located((By.TAG_NAME, 'md-toast')))
+    except exceptions.NoSuchElementException:
+        sleep(5)
+        try:
+            WdWait(driver, 15).until(ec.invisibility_of_element_located((By.TAG_NAME, 'md-toast')))
+        except exceptions.NoSuchElementException:
+            pass
+        else:
+            sleep(5)
+    except exceptions.TimeoutException:
+        pass
+    else:
+        sleep(5)
+
+
+def element_clicker(driver: Chrome, web_element: WebElement = None, css_selector: str = ''):
     if css_selector:
         try:
             element = WdWait(driver, 10).until(
@@ -137,22 +240,25 @@ def element_clicker(driver: Firefox, web_element: WebElement = None, css_selecto
             try:
                 element.click()
             except exceptions.ElementClickInterceptedException:
-                md_toast_waiter(driver)
+                md_toast_remover(driver)
                 driver.execute_script('arguments[0].click();', element)
             except Exception as e:
                 print(traceback.format_exc())
                 raise e
+
     elif web_element:
         try:
             web_element.click()
         except exceptions.ElementClickInterceptedException:
-            md_toast_waiter(driver)
-            driver.execute_script('arguments[0].click();', web_element)
+            try:
+                driver.execute_script('arguments[0].click();', web_element)
+            except exceptions.JavascriptException:
+                md_toast_remover(driver)
         except Exception as e:
             print(traceback.format_exc())
             raise e
 
 
 if __name__ == '__main__':
-    # user_setup_raw(Firefox(executable_path=GeckoDriverManager().install()), ent='dev')
+    # user_setup_raw(Chrome(executable_path=GeckoDriverManager().install()), ent='dev')
     print(password_string_create())

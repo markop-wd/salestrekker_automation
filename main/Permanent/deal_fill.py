@@ -5,10 +5,10 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait as WdWait
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support import expected_conditions as ec
-from selenium.webdriver import Firefox
+from selenium.webdriver import Chrome
 from selenium.common import exceptions
 
-from main.Permanent.helper_funcs import random_string_create, md_toast_waiter
+from main.Permanent.helper_funcs import random_string_create, md_toast_remover
 
 from time import sleep
 from datetime import datetime
@@ -20,7 +20,7 @@ from pathlib import Path
 
 class MultipleDealCreator:
 
-    def __init__(self, ent, driver: Firefox):
+    def __init__(self, ent, driver: Chrome):
         # self.current_export_array = []
         occupation_path = Path(__file__).parent.resolve() / "../assets/occupations.json"
         with open(occupation_path) as occupation_codes:
@@ -66,12 +66,12 @@ class MultipleDealCreator:
             try:
                 current_sel.select_by_index(index)
             except exceptions.ElementClickInterceptedException:
-                md_toast_waiter(self.driver)
+                md_toast_remover(self.driver)
                 try:
                     current_sel.select_by_index(index)
                 except exceptions.ElementClickInterceptedException:
                     print('removing header')
-                    md_toast_waiter(self.driver)
+                    md_toast_remover(self.driver)
 
                     try:
                         header = self.driver.find_element(by=By.CSS_SELECTOR,
@@ -103,12 +103,12 @@ class MultipleDealCreator:
                 try:
                     current_sel.select_by_index(index)
                 except exceptions.ElementClickInterceptedException:
-                    md_toast_waiter(self.driver)
+                    md_toast_remover(self.driver)
                     try:
                         current_sel.select_by_index(index)
                     except exceptions.ElementClickInterceptedException:
                         print('removing header')
-                        md_toast_waiter(self.driver)
+                        md_toast_remover(self.driver)
                         header = self.driver.find_element(by=By.CSS_SELECTOR,
                                                           value='st-header.new.ng-scope')
                         self.driver.execute_script("arguments[0].remove();", header)
@@ -116,7 +116,7 @@ class MultipleDealCreator:
 
     def select_el_handler(self, content):
 
-        md_toast_waiter(self.driver)
+        md_toast_remover(self.driver)
 
         for select_el in content.find_elements(by=By.TAG_NAME, value='select'):
             try:
@@ -169,7 +169,7 @@ class MultipleDealCreator:
                     try:
                         Select(employment_status).select_by_index(random.randrange(0, 2))
                     except exceptions.ElementClickInterceptedException:
-                        md_toast_waiter(self.driver)
+                        md_toast_remover(self.driver)
                         try:
                             Select(employment_status).select_by_index(random.randrange(0, 2))
                         except exceptions.ElementClickInterceptedException:
@@ -183,7 +183,7 @@ class MultipleDealCreator:
                     try:
                         Select(employment_type).select_by_index(random.randrange(1, 5))
                     except exceptions.ElementClickInterceptedException:
-                        md_toast_waiter(self.driver)
+                        md_toast_remover(self.driver)
                         try:
                             Select(employment_type).select_by_index(random.randrange(1, 5))
                         except exceptions.ElementClickInterceptedException:
@@ -197,7 +197,7 @@ class MultipleDealCreator:
                     try:
                         Select(employment_priority).select_by_index(random.randrange(1, 3))
                     except exceptions.ElementClickInterceptedException:
-                        md_toast_waiter(self.driver)
+                        md_toast_remover(self.driver)
                         try:
                             Select(employment_priority).select_by_index(random.randrange(1, 3))
                         except exceptions.ElementClickInterceptedException:
@@ -216,7 +216,7 @@ class MultipleDealCreator:
                         try:
                             num_basis_options = len(Select(basis).options)
                         except exceptions.ElementClickInterceptedException:
-                            md_toast_waiter(self.driver)
+                            md_toast_remover(self.driver)
                             try:
                                 num_basis_options = len(Select(basis).options)
                             except exceptions.ElementClickInterceptedException:
@@ -228,7 +228,7 @@ class MultipleDealCreator:
                         try:
                             Select(basis).select_by_index(random.randrange(1, num_basis_options))
                         except exceptions.ElementClickInterceptedException:
-                            md_toast_waiter(self.driver)
+                            md_toast_remover(self.driver)
                             try:
                                 Select(basis).select_by_index(
                                     random.randrange(1, num_basis_options))
@@ -426,8 +426,13 @@ class MultipleDealCreator:
 
         test = self.driver.find_elements(by=By.CSS_SELECTOR, value='st-sidebar-block button')
         test[-1].click()
-        WdWait(self.driver, 10).until(
-            ec.presence_of_element_located((By.CSS_SELECTOR, 'st-contact')))
+        try:
+            WdWait(self.driver, 10).until(
+                ec.presence_of_element_located((By.CSS_SELECTOR, 'st-contact')))
+        except exceptions.TimeoutException:
+            WdWait(self.driver, 20).until(
+                ec.presence_of_element_located((By.CSS_SELECTOR, 'st-contact')))
+
         contact_buttons = self.driver.find_elements(by=By.CSS_SELECTOR,
                                                     value='st-sidebar-content > st-sidebar-block:first-of-type > div '
                                                           '> button')
@@ -671,6 +676,7 @@ class MultipleDealCreator:
                     self.md_select_handler(content)
 
                 elif separator == 'Other advisers':
+                    # TODO - Fix other adviser adding
                     other_advisers = self.driver.find_elements(by=By.CSS_SELECTOR,
                                                                value='div.mt0 button')
                     for other_adviser in other_advisers:
@@ -680,6 +686,8 @@ class MultipleDealCreator:
                             continue
                         except exceptions.ElementClickInterceptedException:
                             self.driver.execute_script("arguments[0].click();", other_adviser)
+                        except exceptions.StaleElementReferenceException:
+                            continue
                         else:
                             sleep(0.01)
                             other_adviser.click()

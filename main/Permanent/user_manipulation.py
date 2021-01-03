@@ -3,13 +3,13 @@ from selenium.common import exceptions
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver import Firefox
+from selenium.webdriver import Chrome
 
 import json
 from time import sleep
 
 
-def add_user(driver: Firefox, ent: str, email: str, username: str, broker: bool = True,
+def add_user(driver: Chrome, ent: str, email: str, username: str, broker: bool = True,
              admin: bool = True, mentor: bool = False):
     main_url = "https://" + ent + ".salestrekker.com"
     first_name = username.split(' ')[0]
@@ -66,7 +66,7 @@ def add_user(driver: Firefox, ent: str, email: str, username: str, broker: bool 
         ec.invisibility_of_element_located(
             (By.CSS_SELECTOR, 'span.md-toast-text > span:first-child')))
     user = return_user(driver, username, email)
-
+    # TODO - Make a validation first before clicking it and make better checks that it's done
     if broker:
         mortgage_broker_switch = user.find_element(by=By.CSS_SELECTOR,
                                                    value='md-switch[aria-label="User is Mortgage Broker"]')
@@ -136,7 +136,7 @@ def return_user(driver, username, email):
                 return user
 
 
-def return_all_users(driver: Firefox, ent):
+def return_all_users(driver: Chrome, ent):
     if driver.current_url != f"https://{ent}.salestrekker.com/settings/users":
         driver.get("https://" + ent + ".salestrekker.com/settings/users")
 

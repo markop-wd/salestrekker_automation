@@ -5,11 +5,14 @@ from selenium.common import exceptions
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
 from datetime import date, datetime
-from selenium.webdriver import Firefox
+from selenium.webdriver import Chrome
 
 import random
 from time import sleep
+import pathlib
 
+from main import filelock
+from main.Permanent import user_manipulation
 from main.Permanent.user_manipulation import return_all_users, get_current_username
 from selenium.webdriver.common.keys import Keys
 
@@ -73,7 +76,7 @@ def get_deals(driver, ent: str, all_deals=True, workflow_id=''):
         return all_deals_list
 
 
-def add_workflow(driver: Firefox, ent: str, workflow_type='Home Loan',
+def add_workflow(driver: Chrome, ent: str, workflow_type='Home Loan',
                  add_all_users=True, wf_owner='', workflow_name=''):
     main_url = "https://" + ent + ".salestrekker.com"
 
@@ -99,7 +102,7 @@ def add_workflow(driver: Firefox, ent: str, workflow_type='Home Loan',
 
     driver.get(main_url + "/settings/workflow/0")
     try:
-        WdWait(driver, 10).until(
+        WdWait(driver, 20).until(
             ec.visibility_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
     except exceptions.TimeoutException:
         driver.get(main_url + "/settings/workflow/0")
@@ -113,37 +116,54 @@ def add_workflow(driver: Firefox, ent: str, workflow_type='Home Loan',
 
     org_name = driver.find_element(by=By.CSS_SELECTOR, value='st-avatar[organization] > img').get_attribute('alt')
 
-    # try:
-    #     date_updated = load_dict['ent']['org_name']['date']
-    # except KeyError:
-    #     all_users = user_manipulation.return_all_users(driver, ent)
-    #     load_dict[ent].update({org_name: {"users": all_users, "date": str(datetime.today())}})
-    #     with open("current_vars.json", "w") as writing:
-    #         json.dump(load_dict, writing)
-    #
-    # else:
-    #     dict_date = datetime.strptime(date_updated, '%Y-%m-%d').date()
-    #     if dict_date < date.today():
-    #         load_dict[ent][org_name].update({"users": all_users, "date": str(datetime.today())})
-    #         with open("current_vars.json", "w") as writing:
-    #             json.dump(load_dict, writing)
-
     if add_all_users:
-        with open("../current_vars.json") as json_file:
-            load_dict = json.load(json_file)
-            try:
-                all_users = load_dict[ent][org_name]['users']
-            except KeyError:
-                all_users = None
+        # Lock the file before accessing it (due to multithreading issues)
+        fl = filelock.FileLock("current_vars.json")
+        with fl:
+            with open('current_vars.json', "r") as json_file:
+                load_dict = json.load(json_file)
+                # If we don't have a date we don't have anything and if we do we want to save it
+                try:
+                    date_updated = load_dict[ent][org_name]['date']
+                except KeyError:
+                    # Missing the date and the whole entry get all users and fill them in the dict
+                    all_users = user_manipulation.return_all_users(driver, ent)
+                    load_dict[ent].update({org_name: {"users": all_users, "date": str(datetime.today())}})
+                    to_dump = load_dict
+                    # json.dump(load_dict, json_file)
+                    # add_users_to_workflow(driver=driver, ent=ent, users=all_users)
 
-        if not all_users:
-            add_users_to_workflow(driver=driver, ent=ent)
-        else:
-            for user in all_users:
-                driver.find_element(by=By.CSS_SELECTOR,
-                                    value='div:nth-child(6) input').send_keys(
-                    user + Keys.ENTER)
-            sleep(0.1)
+                else:
+                    # We have the date compare it against today if it's before today get all users again
+                    # dict_date = datetime.strptime(date_updated, '%Y-%m-%d').date()
+                    dict_date = datetime.strptime(date_updated.split(' ')[0], '%Y-%m-%d').date()
+                    if dict_date < date.today():
+                        all_users = user_manipulation.return_all_users(driver, ent)
+                        load_dict[ent][org_name].update({"users": all_users, "date": str(datetime.today())})
+                        to_dump = load_dict
+                        # json.dump(load_dict, json_file)
+                        # add_users_to_workflow(driver=driver, ent=ent, users=all_users)
+                    else:
+                        # The date is today so just extract the users
+                        to_dump = False
+                        all_users = load_dict[ent][org_name]['users']
+
+        if to_dump:
+            with fl:
+                with open('current_vars.json', "w") as json_file:
+                    json.dump(to_dump, json_file)
+
+        add_users_to_workflow(driver=driver, ent=ent, users=all_users)
+
+        # if not all_users:
+        #     add_users_to_workflow(driver=driver, ent=ent)
+        # else:
+        #     for user in all_users:
+        #         driver.find_element(by=By.CSS_SELECTOR,
+        #                             value='div:nth-child(6) input').send_keys(
+        #             user + Keys.ENTER)
+        #     sleep(0.1)
+
     else:
         user = get_current_username(driver)
         driver.find_element(by=By.CSS_SELECTOR, value='div:nth-child(6) input').send_keys(
@@ -312,10 +332,14 @@ def add_users_to_workflow(driver, ent: str, workflow_id='New', users="All"):
     if users == 'All':
         all_users = return_all_users(driver, ent)
     else:
-        all_users = users.split('-')
+        if type(users) == str:
+            all_users = users.split('-')
+        else:
+            all_users = users
 
     if workflow_id == 'New':
-        driver.get(main_url + "/settings/workflow/0")
+        if driver.current_url != f'{main_url}/settings/workflow/0':
+            driver.get(main_url + "/settings/workflow/0")
     else:
         driver.get(main_url + "/settings/workflow/" + workflow_id)
     for user in all_users:
@@ -329,11 +353,12 @@ def add_users_to_workflow(driver, ent: str, workflow_id='New', users="All"):
         ec.visibility_of_element_located((By.CSS_SELECTOR, 'div.md-toast-content')))
     WdWait(driver, 10).until(
         ec.invisibility_of_element_located((By.CSS_SELECTOR, 'div.md-toast-content')))
-    try:
-        WdWait(driver, 10).until(
-            ec.visibility_of_element_located((By.CSS_SELECTOR, 'div.md-toast-content')))
-    except exceptions.TimeoutException:
-        pass
+
+    # try:
+    #     WdWait(driver, 5).until(
+    #         ec.visibility_of_element_located((By.CSS_SELECTOR, 'div.md-toast-content')))
+    # except exceptions.TimeoutException:
+    #     pass
 
 
 def workflow_users(driver, ent, workflow_id):

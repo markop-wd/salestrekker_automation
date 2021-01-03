@@ -5,10 +5,10 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait as WdWait
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support import expected_conditions as ec
-from selenium.webdriver import Firefox
+from selenium.webdriver import Chrome
 from selenium.common import exceptions
 
-from main.Permanent.helper_funcs import md_toast_waiter, element_clicker
+from main.Permanent.helper_funcs import md_toast_remover, element_clicker
 
 from time import sleep
 from datetime import datetime
@@ -19,7 +19,7 @@ import random
 #
 
 class EditDeal:
-    def __init__(self, ent: str, driver: Firefox):
+    def __init__(self, ent: str, driver: Chrome):
         with open("deal_config.json") as deal_config_json:
             deal_config = json.load(deal_config_json)
 
@@ -472,21 +472,21 @@ class EditDeal:
                         try:
                             Select(current_sel).select_by_index(random.randrange(0, 4))
                         except exceptions.ElementClickInterceptedException:
-                            md_toast_waiter(self.driver)
+                            md_toast_remover(self.driver)
                             Select(current_sel).select_by_index(random.randrange(0, 4))
                     else:
                         try:
                             Select(current_sel).select_by_index(
                                 random.randrange(0, len(Select(current_sel).options)))
                         except exceptions.ElementClickInterceptedException:
-                            md_toast_waiter(self.driver)
+                            md_toast_remover(self.driver)
                             Select(current_sel).select_by_index(
                                 random.randrange(0, len(Select(current_sel).options)))
                 else:
                     try:
                         Select(current_sel).select_by_index(random.randrange(0, 4))
                     except exceptions.ElementClickInterceptedException:
-                        md_toast_waiter(self.driver)
+                        md_toast_remover(self.driver)
                         Select(current_sel).select_by_index(random.randrange(0, 4))
 
         if company_list:
@@ -521,21 +521,21 @@ class EditDeal:
                         try:
                             Select(current_sel).select_by_index(random.randrange(0, 4))
                         except exceptions.ElementClickInterceptedException:
-                            md_toast_waiter(self.driver)
+                            md_toast_remover(self.driver)
                             Select(current_sel).select_by_index(random.randrange(0, 4))
                     else:
                         try:
                             Select(current_sel).select_by_index(
                                 random.randrange(0, len(Select(current_sel).options)))
                         except exceptions.ElementClickInterceptedException:
-                            md_toast_waiter(self.driver)
+                            md_toast_remover(self.driver)
                             Select(current_sel).select_by_index(
                                 random.randrange(0, len(Select(current_sel).options)))
                 else:
                     try:
                         Select(current_sel).select_by_index(random.randrange(0, 4))
                     except exceptions.ElementClickInterceptedException:
-                        md_toast_waiter(self.driver)
+                        md_toast_remover(self.driver)
                         Select(current_sel).select_by_index(random.randrange(0, 4))
 
     def _deal_info_input(self, date: str):

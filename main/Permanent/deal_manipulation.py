@@ -7,7 +7,7 @@ from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
 from datetime import datetime
 
-from main.Permanent.helper_funcs import md_toast_waiter
+from main.Permanent.helper_funcs import md_toast_remover
 
 import os
 
@@ -35,7 +35,7 @@ class Screenshot:
         count = 1
         while scroll_new < (scroll_total - 100):
 
-            md_toast_waiter(self.driver)
+            md_toast_remover(self.driver)
 
             if vertical:
                 self.driver.execute_script(f"arguments[0].scroll(0,{scroll_new});", element_with_scroll)

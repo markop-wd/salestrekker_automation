@@ -2,7 +2,7 @@ from selenium.webdriver.support.wait import WebDriverWait as WdWait
 from selenium.common import exceptions
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
-from selenium.webdriver import Firefox
+from selenium.webdriver import Chrome
 
 from datetime import datetime, date
 from time import sleep
@@ -11,7 +11,7 @@ from main.Permanent.org_funcs import org_changer
 
 
 class DocumentCheck:
-    def __init__(self, driver: Firefox, ent):
+    def __init__(self, driver: Chrome, ent):
         self.ent = ent
         self.driver = driver
         self.document_list = []

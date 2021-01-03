@@ -2,7 +2,7 @@ from selenium.webdriver.support.wait import WebDriverWait as WdWait
 from selenium.common import exceptions
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
-from selenium.webdriver import Firefox
+from selenium.webdriver import Chrome
 
 
 # TODO - Add assertions that certain elements are in place - this is a good starting point for tests
@@ -11,7 +11,7 @@ from selenium.webdriver import Firefox
 
 class LogIn:
 
-    def __init__(self, driver: Firefox, ent, email, password):
+    def __init__(self, driver: Chrome, ent, email, password):
         self.driver = driver
         self.ent = ent
         self.email = email
