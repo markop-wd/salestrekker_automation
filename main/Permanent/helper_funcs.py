@@ -24,6 +24,7 @@ def random_string_create(char_nums: int = 10):
     result_str = ''.join(random.choice(string.ascii_letters) for i in range(char_nums))
     return result_str
 
+
 # TODO
 def accreditation_fill(driver: Chrome, ent: str, all_new: bool = True):
     if driver.current_url != f"https://{ent}.salestrekker.com/settings/my-accreditations":
@@ -79,8 +80,14 @@ def accreditation_fill(driver: Chrome, ent: str, all_new: bool = True):
             yield split_list[parts * newn - newn:]
 
         chunky = chunks(broker_ids, 4)
-        for count, i in enumerate(chunky):
-            threading.Thread(target=id_input, args=(i,),daemon=True).start()
+        threads = list()
+        for i in chunky:
+            x = threading.Thread(target=id_input, args=(i,))
+            threads.append(x)
+            x.start()
+
+        for index, thread in enumerate(threads):
+            thread.join()
 
         threading.Thread(target=id_input, args=())
         # TODO TODO TODO TODO TODO TODO
@@ -89,11 +96,6 @@ def accreditation_fill(driver: Chrome, ent: str, all_new: bool = True):
                                        value='md-select[ng-change="pickLender(lenderAccreditation)"]')
 
         for count, element in enumerate(all_bre):
-            if count == 0:
-                continue
-            elif count == 11:
-                break
-
             # driver.execute_script("arguments[0].click();", element)
             element_clicker(driver=driver, web_element=element)
             md_select_id = str(element.get_attribute('id'))
@@ -257,6 +259,31 @@ def element_clicker(driver: Chrome, web_element: WebElement = None, css_selector
         except Exception as e:
             print(traceback.format_exc())
             raise e
+
+
+def unique_strings(nwords: int, pool: str = string.ascii_letters) -> str:
+    """Generate a string of unique words.
+
+    nwords: Number of words
+    pool: Iterable of characters to choose from
+
+    For a highly optimized version:
+    https://stackoverflow.com/a/48421303/7954504
+
+    Modified version from the RealPython website
+    """
+
+    seen = set()
+
+    # An optimization for tightly-bound loops:
+    # Bind these methods outside of a loop
+    join = ''.join
+    add = seen.add
+
+    while len(seen) < nwords:
+        token = join(random.choices(pool, k=random.randrange(1, 9)))
+        add(token)
+    return " ".join(seen)
 
 
 if __name__ == '__main__':

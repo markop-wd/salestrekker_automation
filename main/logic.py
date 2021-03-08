@@ -7,8 +7,11 @@ import concurrent.futures
 from time import sleep
 
 from selenium.common import exceptions
-from selenium.webdriver import Chrome,Chrome
+from selenium.webdriver import Chrome
 from selenium.webdriver.common.by import By
+
+import Permanent.client_portal.login
+from Permanent.client_portal.portal_fill import PortalFill
 
 from Permanent.login import LogIn
 from Permanent.deal_create import EditDeal
@@ -20,16 +23,77 @@ from mail import mail_get
 import filelock
 
 
-def worker(driver: Chrome, ent: str, email: str = 'matthew@salestrekker.com', password: str = '',
-           runner_main_org: str = '',
-           runner_learn_org: str = ''):
+def worker(driver: Chrome, ent: str, password: str, runner_main_org: str,
+           runner_learn_org: str, email: str = 'helpdesk@salestrekker.com'):
     with open("perm_vars.json", "r") as perm_json:
         perm_vars = json.load(perm_json)
 
     test_users = perm_vars['test_users']
     allowed_workflows = perm_vars['workflows'].split('-')
 
+    LogIn(driver, ent, email, password).log_in()
 
+    # org_funcs.organization_create(driver, ent, runner_learn_org, runner_main_org)
+    # LogIn(driver, ent, email, password).log_in()
+    # org_funcs.org_changer(driver, f'Test Organization {date.today()}')
+    #
+    # matthew_user = test_users['matthew']
+    # email_split = matthew_user['email'].split('@')
+    # email = email_split[0] + f'+{date.today().strftime("%d%m%y")}@' + email_split[1]
+    # user_manipulation.add_user(driver, ent, email=email,
+    #                            username=matthew_user['username'])
+    #
+    # user_manipulation.add_user(driver, ent, email=matthew_user['email'],
+    #                            username=matthew_user['username'])
+    #
+    # for workflow in allowed_workflows:
+    #     workflow_manipulation.add_workflow(driver=driver, ent=ent, workflow_type=workflow, wf_owner='Matthew Test')
+    #
+    # new_email, new_password = helper_funcs.user_setup_raw(driver, ent)
+    # with open('details.json', 'r') as details:
+    #     json_details = json.load(details)
+    #     json_details[
+    #     ent][new_email] = new_password
+    # with open('details.json', 'w') as details:
+    #     json.dump(json_details, details)
+    #
+    # helper_funcs.accreditation_fill(driver, ent)
+
+    # org_funcs.org_changer(driver, f'Test Organization {date.today()}')
+
+    # driver.get(f"https://{ent}.salestrekker.com/settings/import-data")
+
+    # input("Heyo")
+
+    # hl_workflow = hl_workflows[ent]
+    workflow = 'https://dev.salestrekker.com/board/ceda438a-1da8-4356-9518-ac7c3bc7823f'
+
+    deal_create = EditDeal(ent, driver)
+    deal_fill = MultipleDealCreator(ent, driver)
+
+    # new_deal_hl = deal_create.run(workflow=workflow.split('/')[-1], deal_owner_name='Salestrekker Help Desk')
+    new_deal_hl = deal_create.run(workflow=workflow.split('/')[-1], deal_owner_name='Matthew Test', af_type='cons')
+    deal_fill.client_profile_input(new_deal_hl)
+
+    new_deal_af = deal_create.run(workflow=workflow.split('/')[-1], deal_owner_name='Matthew Test', af_type='comm')
+    deal_fill.client_profile_input(new_deal_af)
+
+
+    # new_deal_hl = deal_create.run(workflow=hl_workflows[ent].split('/')[-1], deal_owner_name='Matthew Test')
+    # deal_create.run(workflow=hl_workflows[ent].split('/')[-1], deal_owner_name='Matthew Test')
+
+    # # new_deal_af = deal_create.run(workflow=af_workflows[ent].split('/')[-1], deal_owner_name='Matthew Test')
+    # deal_create.run(workflow=af_workflows[ent].split('/')[-1], deal_owner_name='Matthew Test', af_type='comm')
+
+    # # print(hl, new_deal)
+
+    # deal_fill.client_profile_input("https://dev.salestrekker.com/fact-find/58b2bcee-d020-4beb-a2fb-326def7b5a48/198c95c7-b607-45b0-abef-8404825e8483")
+
+    print(f'finished {ent}')
+
+
+def worker_main(driver: Chrome, ent: str, password: str, runner_main_org: str,
+                runner_learn_org: str, email: str = 'helpdesk@salestrekker.com'):
     # hl_workflows = {
     #     "gem": "https://gem.salestrekker.com/board/ba299909-8eb3-4f72-803e-809ee5197e15",
     #     "ynet": "https://ynet.salestrekker.com/board/c1e72ff3-70a3-4425-a7e4-9dc3a15d0f9f",
@@ -41,112 +105,41 @@ def worker(driver: Chrome, ent: str, email: str = 'matthew@salestrekker.com', pa
     #     "ioutsource": "https://ioutsource.salestrekker.com/board/f749f86b-07d2-404e-aabe-509c8a7578b7",
     #     "sfg": "https://sfg.salestrekker.com/board/cf28e583-0033-4efe-82f1-a31158baa4e2",
     #     "chief": "https://chief.salestrekker.com/board/50894293-ddef-4cd1-84a2-f490ee5f80df"}
+    with open("perm_vars.json", "r") as perm_json:
+        perm_vars = json.load(perm_json)
 
-    driver.implicitly_wait(35)
-    #
-    # new_email, new_password = helper_funcs.user_setup_raw(driver, ent)
-    # with open('details.json', 'r') as details:
-    #     json_details = json.load(details)
-    #     json_details[ent][new_email] = new_password
-    # with open('details.json', 'w') as details:
-    #     json.dump(json_details, details)
+    test_users = perm_vars['test_users']
+    allowed_workflows = perm_vars['workflows'].split('-')
+
+    driver.implicitly_wait(20)
 
     LogIn(driver, ent, email, password).log_in()
-    driver.get("https://dev.salestrekker.com/settings/my-accreditations")
 
-    # # TODO
-#     driver.get("https://" + ent + ".salestrekker.com/settings/my-accreditations")
-#     # WdWait(driver, 50).until(ec.visibility_of_element_located((By.TAG_NAME, 'st-block-form-content')))
+    org_funcs.organization_create(driver, ent, runner_learn_org, runner_main_org)
 
-#     try:
-#         for delete_button in driver.find_elements(by=By.CSS_SELECTOR, value='button.delete'):
-#             try:
-#                 driver.execute_script("arguments[0].click();", delete_button)
-#             except exceptions.ElementClickInterceptedException:
-#                 helper_funcs.element_clicker(driver=driver,web_element=delete_button)
-#                 # driver.execute_script("arguments[0].click();", delete_button)
-#     except exceptions.NoSuchElementException:
-#         pass
+    document_check = DocumentCheck(driver, ent)
+    workflow_check = WorkflowCheck(driver, ent)
 
-#     add_new = driver.find_element(by=By.CSS_SELECTOR, value='button[aria-label="Add new lender accreditation"]')
-#     helper_funcs.element_clicker(driver=driver, web_element=add_new)
-#     md_select = driver.find_element(by=By.CSS_SELECTOR, value='md-select[ng-change="pickLender(lenderAccreditation)"]')
-#     helper_funcs.element_clicker(driver=driver, web_element=md_select)
-#     md_select_id = str(md_select.get_attribute('id'))
-#     md_select_container_id = str(int(md_select_id.split("_")[-1]) + 1)
+    document_check.document_get(runner_learn_org)
+    workflow_check.workflow_get(runner_learn_org)
 
-#     all_els = driver.find_elements(by=By.CSS_SELECTOR, value=f'#select_container_{md_select_container_id} md-option')
-#
-#     helper_funcs.element_clicker(driver=driver, web_element=all_els[0])
-#
-#     # number_els = range(len(all_els) - 1)
-#
-#     number_els = range(10)
-#
-#     for _ in number_els:
-#         driver.execute_script("arguments[0].click();", add_new)
-#         # helper_funcs.element_clicker(driver=driver, web_element=add_new)
-#
-#     for element in driver.find_elements(by=By.CSS_SELECTOR, value='input[ng-model="lenderAccreditation.brokerIdPrimary"]'):
-#         try:
-#             driver.execute_script("arguments[0].value=1234;", element)
-#             sleep(1)
-#
-#         except exceptions.ElementClickInterceptedException:
-#             element.send_keys('1234')
-#
-#     all_bre = driver.find_elements(by=By.CSS_SELECTOR,
-#                                    value='md-select[ng-change="pickLender(lenderAccreditation)"]')
-#
-#     for count, element in enumerate(all_bre):
-#         if count == 0:
-#             continue
-#         elif count == 11:
-#             break
-#
-#         # driver.execute_script("arguments[0].click();", element)
-#         helper_funcs.element_clicker(driver=driver, web_element=element)
-#         md_select_id = str(element.get_attribute('id'))
-#         md_select_container_id = str(int(md_select_id.split("_")[-1]) + 1)
-#         to_click = driver.find_elements(by=By.CSS_SELECTOR, value=f'#select_container_{md_select_container_id} md-option')[count]
-#         driver.execute_script("arguments[0].click();", to_click)
-#         # helper_funcs.element_clicker(driver=driver, web_element=to_click)
-#
-#     helper_funcs.md_toast_wait(driver=driver)
-
-    # sleep(20)
-
-
-    # new_email, new_password = helper_funcs.user_setup_raw(driver, ent)
-    # with open('details.json', 'r') as details:
-    #     json_details = json.load(details)
-    #     json_details[ent][new_email] = new_password
-    # with open('details.json', 'w') as details:
-    #     json.dump(json_details, details)
-
-# TODO
-
-    # org_funcs.organization_create(driver, ent, runner_learn_org, runner_main_org)
-
-    # # # TODO - just run documentcheck and give it the the learn org and the new org name at same time
-    # document_check = DocumentCheck(driver, ent)
-    # workflow_check = WorkflowCheck(driver, ent)
-    # document_check.document_get(runner_learn_org)
-    # workflow_check.workflow_get(runner_learn_org)
-
-    # sleep(60)
-
-    # org_funcs.org_changer(driver, runner_learn_org)
+    sleep(90)
     # org_funcs.org_changer(driver, f'Test Organization {date.today()}')
 
-    # document_check.document_compare(f'Test Organization {date.today()}')
-    # workflow_check.workflow_compare(f'Test Organization {date.today()}')
+    document_check.document_compare(f'Test Organization {date.today()}')
+    workflow_check.workflow_compare(f'Test Organization {date.today()}')
 
-    # matthew_user = test_users['matthew']
-    # email_split = matthew_user['email'].split('@')
+    matthew_user = test_users['matthew']
+    email_split = matthew_user['email'].split('@')
+    email = email_split[0] + f'+{date.today().strftime("%d%m%y")}@' + email_split[1]
+    user_manipulation.add_user(driver, ent, email=email,
+                               username=matthew_user['username'])
+
+    # phillip_user = test_users['phillip']
+    # email_split = phillip_user['email'].split('@')
     # email = email_split[0] + f'+{date.today().strftime("%d%m%y")}@' + email_split[1]
     # user_manipulation.add_user(driver, ent, email=email,
-    #                            username=matthew_user['username'])
+    #                            username=phillip_user['username'])
 
     # # for user in test_users:
     # #     test_list = user['email'].split('@')
@@ -156,20 +149,35 @@ def worker(driver: Chrome, ent: str, email: str = 'matthew@salestrekker.com', pa
     # #                                broker=user['broker'], admin=user['admin'],
     # #                                mentor=user['mentor'])
 
-    # for workflow in allowed_workflows:
-    #     workflow_manipulation.add_workflow(driver=driver,ent=ent, workflow_type=workflow, wf_owner='Matthew Test')
+    for workflow in allowed_workflows:
+        workflow_manipulation.add_workflow(driver=driver, ent=ent, workflow_type=workflow, wf_owner='Matthew Test')
 
-    # hl_workflow = hl_workflows[ent]
-    hl_workflow = 'https://dev.salestrekker.com/board/5041acbd-a041-4d7e-ae1b-2e2a4fa5fe45'
+    new_email, new_password = helper_funcs.user_setup_raw(driver, ent)
+    with open('details.json', 'r') as details:
+        json_details = json.load(details)
+        json_details[ent][new_email] = new_password
+    with open('details.json', 'w') as details:
+        json.dump(json_details, details)
 
-    #
-    # deal_create = EditDeal(ent, driver)
-    #
-    # deal_fill = MultipleDealCreator(ent, driver)
-    #
-    # new_deal = deal_create.run(workflow=hl_workflow.split('/')[-1], deal_owner_name='Matthew Test')
-    #
-    # deal_fill.client_profile_input(new_deal)
+    helper_funcs.accreditation_fill(driver, ent)
+
+    sleep(5)
+
+
+def cp_worker(driver: Chrome, pin: str, link: str):
+    driver.implicitly_wait(10)
+
+    Permanent.client_portal.login.LogIn(driver, link, pin).log_in()
+    driver.get(link.split('authenticate')[0])
+    portal_runner = PortalFill(driver)
+    portal_runner.main()
+    driver.refresh()
+    sleep(20)
+    portal_runner.screenshot()
+
+
+def api(driver: Chrome, ent: str, password: str, email: str = 'helpdesk@salestrekker.com'):
+
+    LogIn(driver, ent, email, password).log_in()
 
     print(f'finished {ent}')
-

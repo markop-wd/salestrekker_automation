@@ -1,3 +1,5 @@
+import string
+
 from main.Permanent import workflow_manipulation
 
 from selenium.webdriver.common.by import By
@@ -17,6 +19,7 @@ import random
 # import traceback
 # from pathlib import Path
 #
+
 
 class EditDeal:
     def __init__(self, ent: str, driver: Chrome):
@@ -88,6 +91,7 @@ class EditDeal:
         self._deal_info_input(settlement_date)
 
         # Save
+        sleep(5)
         save_button = WdWait(self.driver, 10).until(
             ec.element_to_be_clickable((By.CSS_SELECTOR, 'button.save')))
         try:
@@ -140,7 +144,6 @@ class EditDeal:
                 add_contact.click()
             except exceptions.ElementClickInterceptedException:
                 self.driver.execute_script('arguments[0].click();', add_contact)
-
             add_contact_container_id = add_contact.get_attribute('aria-owns')
             contact_type_container = WdWait(self.driver, 5).until(
                 ec.presence_of_element_located((By.ID, add_contact_container_id)))
@@ -450,14 +453,14 @@ class EditDeal:
                 num_prefix.send_keys('61')
                 person.find_element(by=By.CSS_SELECTOR,
                                     value='div:nth-child(2) > div:nth-child(3) > md-input-container:nth-child(2) > '
-                                          'input').send_keys('123456789')
+                                          'input').send_keys("".join(random.sample(string.digits, 9)))
                 person.find_element(by=By.CSS_SELECTOR,
                                     value='div:nth-child(2) > div:nth-child(4) > md-input-container > input').send_keys(
                     f'{person_name[0].lower()}@website.com')
                 current_sel = person.find_element(by=By.CSS_SELECTOR,
                                                   value='div:nth-child(2) > div:nth-child(4) > '
                                                         'st-form-field-container > select')
-                #
+
                 # try:
                 #     Select(current_sel).select_by_value(contact_type)
                 # except exceptions.ElementClickInterceptedException:
@@ -500,7 +503,7 @@ class EditDeal:
                 num_prefix.send_keys('22')
                 company.find_element(by=By.CSS_SELECTOR,
                                      value='div:nth-child(2) > div:nth-child(2) > md-input-container:nth-child(2) > input').send_keys(
-                    '987654321')
+                    "".join(random.sample(string.digits, 9)))
                 company.find_element(by=By.CSS_SELECTOR,
                                      value='div:nth-child(2) > div:nth-child(3) input').send_keys(
                     'email@company.real')
