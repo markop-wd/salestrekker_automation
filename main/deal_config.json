@@ -1,20 +1,19 @@
-
 {
   "contacts": {
-      "number_of_contacts": {
-    "random": false,
-    "rand_val": {
-      "min": 1,
-      "max": 3
+    "number_of_contacts": {
+      "random": false,
+      "rand_val": {
+        "min": 2,
+        "max": 4
+      },
+      "value": 4
     },
-    "value": 4
-  },
-  "contact_types": "mixed",
-  "non_client":
-{
-  "active": false,
-  "no_of_clients": 2
-}
+    "contact_types": "mixed",
+    "non_client": {
+      "active": false,
+      "no_of_clients": 2
+    },
+    "employment": {"num": 3}
   },
   "deal_info": {
     "random": false,
