@@ -68,9 +68,9 @@ def main_runner(ent, email="helpdesk@salestrekker.com", cp_pin: str = '', cp_lin
 
     driver = Chrome(executable_path=ChromeDriverManager().install())
 
-    driver_ids = {"url": driver.command_executor._url, "id": driver.session_id}
-    with open("new_session.json", "w") as new:
-        json.dump(driver_ids, new)
+    # driver_ids = {"url": driver.command_executor._url, "id": driver.session_id}
+    # with open("new_session.json", "w") as new:
+    #     json.dump(driver_ids, new)
 
     driver.maximize_window()
 
@@ -79,7 +79,7 @@ def main_runner(ent, email="helpdesk@salestrekker.com", cp_pin: str = '', cp_lin
             ent = cp_link.split('-')[0].split('/')[-1]
             cp_worker(driver=driver, pin=cp_pin, link=cp_link)
         else:
-            worker(driver=driver, ent=ent, password=info[ent][email], runner_main_org=ents_info[ent]['main'],
+            worker_main(driver=driver, ent=ent, password=info[ent][email], runner_main_org=ents_info[ent]['main'],
                    runner_learn_org=ents_info[ent]['learn'], email=email)
             # api(driver=driver, ent=ent, password=info[ent][email], email=email)
 
@@ -133,15 +133,19 @@ if __name__ == '__main__':
          "cp_pin": "302847"}
     ]
 
+    with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
+        future_runner = {executor.submit(main_runner, ent): ent for ent in
+                         all_ents}
+
     # import_ents = [
     #     'platform', 'sfg'
     # ]
 
     # def wrapper(p):
-    #     return main_runner(email="matthew+270121@salestrekker.com", ent=p)
+    #     return main_runner(email="matthew+120321@salestrekker.com", ent=p)
     #
     # with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
-    #     test_runner = {executor.submit(wrapper, array): array for array in import_ents}
+    #     test_runner = {executor.submit(wrapper, 'dev'): i for i in range(3)}
 
     # main_runner(**consumer_list[2])
 
@@ -161,11 +165,11 @@ if __name__ == '__main__':
     # main_runner('ioutsource', email='helpdesk@salestrekker.com')
     # main_runner('dev', email='matthew+291220@salestrekker.com')
 
-    main_runner('dev')
+    # main_runner('dev')
 
     # with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
-    #     future_runner = {executor.submit(main_runner, ent): ent for ent in
-    #                      all_ents}
+    #     future_runner = {executor.submit(main_runner, 'dev'): i for i in
+    #                      range(3)}
 
     # email_date = date.today().strftime("%d%m%y")
     # for ent in import_ents:

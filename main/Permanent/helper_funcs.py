@@ -44,23 +44,23 @@ def accreditation_fill(driver: Chrome, ent: str, all_new: bool = True):
 
         add_new = driver.find_element(by=By.CSS_SELECTOR, value='button[aria-label="Add new lender accreditation"]')
         element_clicker(driver=driver, web_element=add_new)
-        md_select = driver.find_element(by=By.CSS_SELECTOR, value='md-select[ng-change="pickLender('
-                                                                  'lenderAccreditation)"]')
-        element_clicker(driver=driver, web_element=md_select)
-        md_select_id = str(md_select.get_attribute('id'))
-        md_select_container_id = str(int(md_select_id.split("_")[-1]) + 1)
+        # # md_select = driver.find_element(by=By.CSS_SELECTOR, value='md-select[ng-change="pickLender('
+        # #                                                           'lenderAccreditation)"]')
+        # # element_clicker(driver=driver, web_element=md_select)
+        # md_select_id = str(md_select.get_attribute('id'))
+        # md_select_container_id = str(int(md_select_id.split("_")[-1]) + 1)
 
-        all_lenders = driver.find_elements(by=By.CSS_SELECTOR,
-                                           value=f'#select_container_{md_select_container_id} md-option')
+        # all_lenders = driver.find_elements(by=By.CSS_SELECTOR,
+        #                                    value=f'#select_container_{md_select_container_id} md-option')
+        #
+        # element_clicker(driver=driver, web_element=all_lenders[0])
+        #
+        # number_lenders = range(len(all_lenders) - 1)
+        #
+        # print(number_lenders)
 
-        element_clicker(driver=driver, web_element=all_lenders[0])
-
-        number_lenders = range(len(all_lenders) - 1)
-
-        print(number_lenders)
-
-        for _ in number_lenders:
-            driver.execute_script("arguments[0].click();", add_new)
+        # for _ in number_lenders:
+        #     driver.execute_script("arguments[0].click();", add_new)
 
         broker_ids = driver.find_elements(by=By.CSS_SELECTOR,
                                           value='input[ng-model="lenderAccreditation.brokerIdPrimary"]')
@@ -92,19 +92,19 @@ def accreditation_fill(driver: Chrome, ent: str, all_new: bool = True):
         threading.Thread(target=id_input, args=())
         # TODO TODO TODO TODO TODO TODO
 
-        all_bre = driver.find_elements(by=By.CSS_SELECTOR,
-                                       value='md-select[ng-change="pickLender(lenderAccreditation)"]')
-
-        for count, element in enumerate(all_bre):
-            # driver.execute_script("arguments[0].click();", element)
-            element_clicker(driver=driver, web_element=element)
-            md_select_id = str(element.get_attribute('id'))
-            md_select_container_id = str(int(md_select_id.split("_")[-1]) + 1)
-            to_click = \
-                driver.find_elements(by=By.CSS_SELECTOR, value=f'#select_container_{md_select_container_id} md-option')[
-                    count]
-            driver.execute_script("arguments[0].click();", to_click)
-            # helper_funcs.element_clicker(driver=driver, web_element=to_click)
+        # all_bre = driver.find_elements(by=By.CSS_SELECTOR,
+        #                                value='md-select[ng-change="pickLender(lenderAccreditation)"]')
+        #
+        # for count, element in enumerate(all_bre):
+        #     # driver.execute_script("arguments[0].click();", element)
+        #     element_clicker(driver=driver, web_element=element)
+        #     md_select_id = str(element.get_attribute('id'))
+        #     md_select_container_id = str(int(md_select_id.split("_")[-1]) + 1)
+        #     to_click = \
+        #         driver.find_elements(by=By.CSS_SELECTOR, value=f'#select_container_{md_select_container_id} md-option')[
+        #             count]
+        #     driver.execute_script("arguments[0].click();", to_click)
+        #     # helper_funcs.element_clicker(driver=driver, web_element=to_click)
 
         md_toast_wait(driver=driver)
 
@@ -130,6 +130,7 @@ def user_setup_raw(driver: Chrome, ent: str):
     :return:
     """
     driver.maximize_window()
+
     mail_dict = mail_get(ent)
     if mail_dict['email'] and mail_dict['password']:
         LogIn(driver, ent, mail_dict['email'], mail_dict['password']).log_in()
@@ -144,11 +145,11 @@ def user_setup_raw(driver: Chrome, ent: str):
                 ec.visibility_of_element_located((
                     By.CSS_SELECTOR, 'input[name="phoneNumber"]'))).send_keys('123456789')
 
-            WdWait(driver, 10).until(
-                ec.visibility_of_element_located((
-                    By.CSS_SELECTOR,
-                    'input[ng-model="CurrentAccount.user.address.street"]'))) \
-                .send_keys('street')
+            # WdWait(driver, 10).until(
+            #     ec.visibility_of_element_located((
+            #         By.CSS_SELECTOR,
+            #         'input[ng-model="CurrentAccount.user.address.street"]'))) \
+            #     .send_keys('street')
 
             driver.find_element(by=By.CSS_SELECTOR,
                                 value='a[ui-sref=".password-and-security"]').click()
@@ -197,14 +198,18 @@ def md_toast_remover(driver: Chrome):
             except exceptions.NoSuchElementException:
                 break
             else:
-                driver.execute_script("arguments[0].remove();", md_toast)
                 try:
-                    md_toast2 = driver.find_element(by=By.TAG_NAME, value='md-toast')
-                except exceptions.NoSuchElementException:
-                    break
+                    driver.execute_script("arguments[0].remove();", md_toast)
+                except exceptions.StaleElementReferenceException:
+                    pass
                 else:
-                    driver.execute_script("arguments[0].remove();", md_toast2)
-                sleep(3)
+                    try:
+                        md_toast2 = driver.find_element(by=By.TAG_NAME, value='md-toast')
+                    except exceptions.NoSuchElementException:
+                        break
+                    else:
+                        driver.execute_script("arguments[0].remove();", md_toast2)
+                    sleep(3)
 
 
 def md_toast_wait(driver: Chrome):

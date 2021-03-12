@@ -152,112 +152,109 @@ class MultipleDealCreator:
     def employment_handler(self):
 
         self._first_employment()
-        employ_num = self.deal_config["contacts"]["employment"]["num"] - 1
-        if employ_num > 0:
+        employ_num = self.deal_config["contacts"]["employment"]["num"]
 
+        for i in range(employ_num):
             try:
                 employment = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                      value='st-block-form-header > button[ng-click="$ctrl.employmentAdd('
-                                                            '$event)"]')
+                                                      value='st-block-form-header > button[ng-click="$ctrl.employmentAdd($event)"]')
             except exceptions.NoSuchElementException:
-                print('No employment element, something\'s gone off.')
-
+                print('No employment element, something\'s gone off. Handler')
             else:
-                for i in range(employ_num):
-                    try:
-                        employment.click()
-                    except exceptions.ElementClickInterceptedException:
-                        self.driver.execute_script('arguments[0].click();', employment)
-
-            for count, employment_status in enumerate(self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                                                value='select[ng-change="$ctrl.toggleEmployment()"]')):
-                if count == 0:
-                    continue
                 try:
-                    Select(employment_status).select_by_index(random.randrange(0, 2))
+                    employment.click()
                 except exceptions.ElementClickInterceptedException:
-                    md_toast_remover(self.driver)
-                    try:
-                        Select(employment_status).select_by_index(random.randrange(0, 2))
-                    except exceptions.ElementClickInterceptedException:
-                        header = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                          value='st-header.new.ng-scope')
-                        self.driver.execute_script("arguments[0].remove();", header)
-                        Select(employment_status).select_by_index(random.randrange(0, 2))
+                    self.driver.execute_script('arguments[0].click();', employment)
 
-            for count, employment_type in enumerate(self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                                              value='select[ng-change="$ctrl.toggleEmploymentType()"]')):
-                if count == 0:
-                    continue
-                try:
-                    Select(employment_type).select_by_index(random.randrange(1, 5))
-                except exceptions.ElementClickInterceptedException:
-                    md_toast_remover(self.driver)
-                    try:
-                        Select(employment_type).select_by_index(random.randrange(1, 5))
-                    except exceptions.ElementClickInterceptedException:
-                        header = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                          value='st-header.new.ng-scope')
-                        self.driver.execute_script("arguments[0].remove();", header)
-                        Select(employment_type).select_by_index(random.randrange(1, 5))
-
-            for count, employment_priority in enumerate(self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                                                  value='select[ng-model="$ctrl.employment.status"]')):
-                if count == 0:
-                    continue
-                try:
-                    Select(employment_priority).select_by_index(random.randrange(1, 3))
-                except exceptions.ElementClickInterceptedException:
-                    md_toast_remover(self.driver)
-                    try:
-                        Select(employment_priority).select_by_index(random.randrange(1, 3))
-                    except exceptions.ElementClickInterceptedException:
-                        header = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                          value='st-header.new.ng-scope')
-                        self.driver.execute_script("arguments[0].remove();", header)
-                        Select(employment_priority).select_by_index(random.randrange(1, 3))
-
-            try:
-                employment_basis = self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                             value='select[ng-model="$ctrl.employment.basis"]')
-            except exceptions.NoSuchElementException:
-                pass
-            else:
-                for count,basis in enumerate(employment_basis):
+                for count, employment_status in enumerate(self.driver.find_elements(by=By.CSS_SELECTOR,
+                                                                                    value='select[ng-change="$ctrl.toggleEmployment()"]')):
                     if count == 0:
                         continue
                     try:
-                        num_basis_options = len(Select(basis).options)
+                        Select(employment_status).select_by_index(random.randrange(0, 2))
                     except exceptions.ElementClickInterceptedException:
                         md_toast_remover(self.driver)
                         try:
-                            num_basis_options = len(Select(basis).options)
+                            Select(employment_status).select_by_index(random.randrange(0, 2))
                         except exceptions.ElementClickInterceptedException:
                             header = self.driver.find_element(by=By.CSS_SELECTOR,
                                                               value='st-header.new.ng-scope')
                             self.driver.execute_script("arguments[0].remove();", header)
-                            num_basis_options = len(Select(basis).options)
+                            Select(employment_status).select_by_index(random.randrange(0, 2))
 
+                for count, employment_type in enumerate(self.driver.find_elements(by=By.CSS_SELECTOR,
+                                                                                  value='select[ng-change="$ctrl.toggleEmploymentType()"]')):
+                    if count == 0:
+                        continue
                     try:
-                        Select(basis).select_by_index(random.randrange(1, num_basis_options))
+                        Select(employment_type).select_by_index(random.randrange(1, 5))
                     except exceptions.ElementClickInterceptedException:
                         md_toast_remover(self.driver)
                         try:
-                            Select(basis).select_by_index(
-                                random.randrange(1, num_basis_options))
+                            Select(employment_type).select_by_index(random.randrange(1, 5))
                         except exceptions.ElementClickInterceptedException:
                             header = self.driver.find_element(by=By.CSS_SELECTOR,
                                                               value='st-header.new.ng-scope')
                             self.driver.execute_script("arguments[0].remove();", header)
-                            Select(basis).select_by_index(
-                                random.randrange(1, num_basis_options))
+                            Select(employment_type).select_by_index(random.randrange(1, 5))
+
+                for count, employment_priority in enumerate(self.driver.find_elements(by=By.CSS_SELECTOR,
+                                                                                      value='select[ng-model="$ctrl.employment.status"]')):
+                    if count == 0:
+                        continue
+                    try:
+                        Select(employment_priority).select_by_index(random.randrange(1, 3))
+                    except exceptions.ElementClickInterceptedException:
+                        md_toast_remover(self.driver)
+                        try:
+                            Select(employment_priority).select_by_index(random.randrange(1, 3))
+                        except exceptions.ElementClickInterceptedException:
+                            header = self.driver.find_element(by=By.CSS_SELECTOR,
+                                                              value='st-header.new.ng-scope')
+                            self.driver.execute_script("arguments[0].remove();", header)
+                            Select(employment_priority).select_by_index(random.randrange(1, 3))
+
+                try:
+                    employment_basis = self.driver.find_elements(by=By.CSS_SELECTOR,
+                                                                 value='select[ng-model="$ctrl.employment.basis"]')
+                except exceptions.NoSuchElementException:
+                    pass
+                else:
+                    for count, basis in enumerate(employment_basis):
+                        if count == 0:
+                            continue
+                        try:
+                            num_basis_options = len(Select(basis).options)
+                        except exceptions.ElementClickInterceptedException:
+                            md_toast_remover(self.driver)
+                            try:
+                                num_basis_options = len(Select(basis).options)
+                            except exceptions.ElementClickInterceptedException:
+                                header = self.driver.find_element(by=By.CSS_SELECTOR,
+                                                                  value='st-header.new.ng-scope')
+                                self.driver.execute_script("arguments[0].remove();", header)
+                                num_basis_options = len(Select(basis).options)
+
+                        try:
+                            Select(basis).select_by_index(random.randrange(1, num_basis_options))
+                        except exceptions.ElementClickInterceptedException:
+                            md_toast_remover(self.driver)
+                            try:
+                                Select(basis).select_by_index(
+                                    random.randrange(1, num_basis_options))
+                            except exceptions.ElementClickInterceptedException:
+                                header = self.driver.find_element(by=By.CSS_SELECTOR,
+                                                                  value='st-header.new.ng-scope')
+                                self.driver.execute_script("arguments[0].remove();", header)
+                                Select(basis).select_by_index(
+                                    random.randrange(1, num_basis_options))
 
     def _first_employment(self):
         try:
             employment = self.driver.find_element(by=By.CSS_SELECTOR,
                                                   value='st-block-form-header > button[ng-click="$ctrl.employmentAdd($event)"]')
         except exceptions.NoSuchElementException:
-            print('No employment element, something\'s gone off.')
+            print('No employment element, something\'s gone off. First employment')
         else:
             try:
                 employment.click()
@@ -284,16 +281,16 @@ class MultipleDealCreator:
                 employ_type = self.driver.find_element(by=By.CSS_SELECTOR,
                                                        value='select[ng-change="$ctrl.toggleEmploymentType()"]')
                 try:
-                    Select(employ_type).select_by_index(random.randrange(1, 5))
+                    Select(employ_type).select_by_index(random.randrange(1, 3))
                 except exceptions.ElementClickInterceptedException:
                     md_toast_remover(self.driver)
                     try:
-                        Select(employ_type).select_by_index(random.randrange(1, 5))
+                        Select(employ_type).select_by_index(random.randrange(1, 3))
                     except exceptions.ElementClickInterceptedException:
                         header = self.driver.find_element(by=By.CSS_SELECTOR,
                                                           value='st-header.new.ng-scope')
                         self.driver.execute_script("arguments[0].remove();", header)
-                        Select(employ_type).select_by_index(random.randrange(1, 5))
+                        Select(employ_type).select_by_index(random.randrange(1, 3))
 
                 employ_priority = self.driver.find_element(by=By.CSS_SELECTOR,
                                                            value='select[ng-model="$ctrl.employment.status"]')
@@ -338,6 +335,7 @@ class MultipleDealCreator:
                             random.randrange(1, num_basis_options))
 
     def ul_list_selector(self, input_el, input_text):
+        sleep(5)
         self.address_repeat += 1
         input_el.send_keys(input_text)
         ul_el_id = 'ul-' + str(input_el.get_attribute('id')).split('-')[-1]
@@ -348,6 +346,7 @@ class MultipleDealCreator:
             if self.address_repeat > 4:
                 print('No list returned after 4 timeout attempts.')
             else:
+                sleep(5)
                 self.ul_list_selector(input_el, input_text)
         else:
             li_els = self.driver.find_element(By.ID, ul_el_id).find_elements(by=By.CSS_SELECTOR,
@@ -433,7 +432,7 @@ class MultipleDealCreator:
                     elif ng_model == '$mdAutocompleteCtrl.scope.searchText':
                         input_aria_label = input_el.get_attribute('aria-label')
                         if input_aria_label in self.address_placeholders:
-                            self.ul_list_selector(input_el, f'{random.randrange(1, 1000)} address')
+                            self.ul_list_selector(input_el, f'{random.randrange(1, 200)} oi')
 
                         elif input_aria_label == 'Employer ABN':
                             input_el.send_keys(str(random.randrange(10000000000, 100000000000)))
@@ -466,31 +465,36 @@ class MultipleDealCreator:
     def md_select_handler(self, content):
         for md_select in content.find_elements(by=By.TAG_NAME, value='md-select'):
             try:
-                md_select.click()
-            except exceptions.ElementClickInterceptedException:
-                self.driver.execute_script("arguments[0].click();", md_select)
-            except exceptions.ElementNotInteractableException:
-                continue
-            md_select_id = str(md_select.get_attribute('id'))
-            md_select_container_id = str(int(md_select_id.split("_")[-1]) + 1)
-            WdWait(self.driver, 5).until(
-                ec.element_to_be_clickable((By.ID, 'select_container_' + md_select_container_id)))
-            md_select_container = self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                            value='#select_container_' + md_select_container_id + ' md-option')
+                try:
+                    md_select.click()
+                except exceptions.ElementClickInterceptedException:
+                    self.driver.execute_script("arguments[0].click();", md_select)
+                except exceptions.ElementNotInteractableException:
+                    continue
+                md_select_id = str(md_select.get_attribute('id'))
+                md_select_container_id = str(int(md_select_id.split("_")[-1]) + 1)
+                WdWait(self.driver, 5).until(
+                    ec.element_to_be_clickable((By.ID, 'select_container_' + md_select_container_id)))
+                md_select_container = self.driver.find_elements(by=By.CSS_SELECTOR,
+                                                                value='#select_container_' + md_select_container_id + ' md-option')
 
-            try:
-                to_click = random.randrange(0, len(md_select_container))
-            except ValueError:
-                continue
-            try:
-                md_select_container[to_click].click()
-            except exceptions.ElementNotInteractableException:
-                pass
-            except exceptions.ElementClickInterceptedException:
-                self.driver.execute_script("arguments[0].click();", md_select_container[to_click])
+                try:
+                    to_click = random.randrange(0, len(md_select_container))
+                except ValueError:
+                    continue
+                try:
+                    md_select_container[to_click].click()
+                except exceptions.ElementNotInteractableException:
+                    pass
+                except exceptions.ElementClickInterceptedException:
+                    self.driver.execute_script("arguments[0].click();", md_select_container[to_click])
+                except:
+                    traceback.print_stack()
+                    traceback.print_exc()
             except:
                 traceback.print_stack()
                 traceback.print_exc()
+                continue
 
     def checkbox_handler(self, content):
         for checkbox in content.find_elements(by=By.TAG_NAME, value='md-checkbox'):

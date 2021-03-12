@@ -1,6 +1,7 @@
 """
 Main business logic
 """
+import random
 from datetime import date, datetime
 import json
 import concurrent.futures
@@ -36,7 +37,8 @@ def worker(driver: Chrome, ent: str, password: str, runner_main_org: str,
     # org_funcs.organization_create(driver, ent, runner_learn_org, runner_main_org)
     # LogIn(driver, ent, email, password).log_in()
     # org_funcs.org_changer(driver, f'Test Organization {date.today()}')
-    #
+    # org_funcs.org_changer(driver, 'Deploy 3006')
+
     # matthew_user = test_users['matthew']
     # email_split = matthew_user['email'].split('@')
     # email = email_split[0] + f'+{date.today().strftime("%d%m%y")}@' + email_split[1]
@@ -66,18 +68,20 @@ def worker(driver: Chrome, ent: str, password: str, runner_main_org: str,
     # input("Heyo")
 
     # hl_workflow = hl_workflows[ent]
-    workflow = 'https://dev.salestrekker.com/board/ceda438a-1da8-4356-9518-ac7c3bc7823f'
+
+    workflows = ['https://dev.salestrekker.com/settings/workflow/64c691a1-14a9-4552-a4f8-bc21cdfffee6',
+                 'https://dev.salestrekker.com/settings/workflow/d61756d6-2572-4f10-86ae-7560dc040a4d']
+    owners = ['Maya Test', 'Matthew Test', 'Zac Test', 'Phillip Test']
+    af_workflow = 'https://dev.salestrekker.com/board/30b94e85-3d1f-491e-a558-6172c618451d'
+    # for workflow in workflows:
+    #     workflow_manipulation.add_users_to_workflow(driver, ent, workflow, owners)
 
     deal_create = EditDeal(ent, driver)
     deal_fill = MultipleDealCreator(ent, driver)
-
-    # new_deal_hl = deal_create.run(workflow=workflow.split('/')[-1], deal_owner_name='Salestrekker Help Desk')
-    new_deal_hl = deal_create.run(workflow=workflow.split('/')[-1], deal_owner_name='Matthew Test', af_type='cons')
-    deal_fill.client_profile_input(new_deal_hl)
-
-    new_deal_af = deal_create.run(workflow=workflow.split('/')[-1], deal_owner_name='Matthew Test', af_type='comm')
-    deal_fill.client_profile_input(new_deal_af)
-
+    for _ in range(5):
+        new_deal_hl = deal_create.run(workflow=af_workflow.split('/')[-1], deal_owner_name='Matthew Test')
+        if random.choice([1, 2, 3, 4]) == 2:
+            deal_fill.client_profile_input(new_deal_hl)
 
     # new_deal_hl = deal_create.run(workflow=hl_workflows[ent].split('/')[-1], deal_owner_name='Matthew Test')
     # deal_create.run(workflow=hl_workflows[ent].split('/')[-1], deal_owner_name='Matthew Test')
@@ -115,51 +119,57 @@ def worker_main(driver: Chrome, ent: str, password: str, runner_main_org: str,
 
     LogIn(driver, ent, email, password).log_in()
 
-    org_funcs.organization_create(driver, ent, runner_learn_org, runner_main_org)
+    org_funcs.org_changer(driver, runner_main_org)
+    org_funcs.org_changer(driver, runner_learn_org)
 
-    document_check = DocumentCheck(driver, ent)
-    workflow_check = WorkflowCheck(driver, ent)
 
-    document_check.document_get(runner_learn_org)
-    workflow_check.workflow_get(runner_learn_org)
 
-    sleep(90)
-    # org_funcs.org_changer(driver, f'Test Organization {date.today()}')
+    # org_funcs.organization_create(driver, ent, runner_learn_org, runner_main_org)
+    #
+    # document_check = DocumentCheck(driver, ent)
+    # workflow_check = WorkflowCheck(driver, ent)
+    #
+    # document_check.document_get(runner_learn_org)
+    # workflow_check.workflow_get(runner_learn_org)
+    #
+    # sleep(120)
+    # # LogIn(driver, ent, email, password).log_in()
+    # # org_funcs.org_changer(driver, f'Test Organization {date.today()}')
+    #
+    # document_check.document_compare(f'Test Organization {date.today()}')
+    # workflow_check.workflow_compare(f'Test Organization {date.today()}')
+    #
+    # # matthew_user = test_users['matthew']
+    # # email_split = matthew_user['email'].split('@')
+    # # email = email_split[0] + f'+{date.today().strftime("%d%m%y")}@' + email_split[1]
+    # # user_manipulation.add_user(driver, ent, email=email,
+    # #                            username=matthew_user['username'])
+    # #
+    # # phillip_user = test_users['phillip']
+    # # email_split = phillip_user['email'].split('@')
+    # # email = email_split[0] + f'+{date.today().strftime("%d%m%y")}@' + email_split[1]
+    # # user_manipulation.add_user(driver, ent, email=email,
+    # #                            username=phillip_user['username'])
+    #
+    # for name, values in test_users.items():
+    #     test_list = values['email'].split('@')
+    #     email = test_list[0] + f'+{date.today().strftime("%d%m%y")}@' + test_list[1]
+    #     user_manipulation.add_user(driver, ent,
+    #                                email=email, username=values['username'],
+    #                                broker=values['broker'], admin=values['admin'],
+    #                                mentor=values['mentor'])
+    #
+    # for workflow in allowed_workflows:
+    #     workflow_manipulation.add_workflow(driver=driver, ent=ent, workflow_type=workflow, wf_owner='Matthew Test')
+    #
+    # new_email, new_password = helper_funcs.user_setup_raw(driver, ent)
+    # with open('details.json', 'r') as details:
+    #     json_details = json.load(details)
+    #     json_details[ent][new_email] = new_password
+    # with open('details.json', 'w') as details:
+    #     json.dump(json_details, details)
 
-    document_check.document_compare(f'Test Organization {date.today()}')
-    workflow_check.workflow_compare(f'Test Organization {date.today()}')
-
-    matthew_user = test_users['matthew']
-    email_split = matthew_user['email'].split('@')
-    email = email_split[0] + f'+{date.today().strftime("%d%m%y")}@' + email_split[1]
-    user_manipulation.add_user(driver, ent, email=email,
-                               username=matthew_user['username'])
-
-    # phillip_user = test_users['phillip']
-    # email_split = phillip_user['email'].split('@')
-    # email = email_split[0] + f'+{date.today().strftime("%d%m%y")}@' + email_split[1]
-    # user_manipulation.add_user(driver, ent, email=email,
-    #                            username=phillip_user['username'])
-
-    # # for user in test_users:
-    # #     test_list = user['email'].split('@')
-    # #     email = test_list[0] + f'+{date.today().strftime("%d%m%y")}@' + test_list[1]
-    # #     user_manipulation.add_user(driver, ent,
-    # #                                email=email, username=user['username'],
-    # #                                broker=user['broker'], admin=user['admin'],
-    # #                                mentor=user['mentor'])
-
-    for workflow in allowed_workflows:
-        workflow_manipulation.add_workflow(driver=driver, ent=ent, workflow_type=workflow, wf_owner='Matthew Test')
-
-    new_email, new_password = helper_funcs.user_setup_raw(driver, ent)
-    with open('details.json', 'r') as details:
-        json_details = json.load(details)
-        json_details[ent][new_email] = new_password
-    with open('details.json', 'w') as details:
-        json.dump(json_details, details)
-
-    helper_funcs.accreditation_fill(driver, ent)
+    # helper_funcs.accreditation_fill(driver, ent)
 
     sleep(5)
 
@@ -177,7 +187,6 @@ def cp_worker(driver: Chrome, pin: str, link: str):
 
 
 def api(driver: Chrome, ent: str, password: str, email: str = 'helpdesk@salestrekker.com'):
-
     LogIn(driver, ent, email, password).log_in()
 
     print(f'finished {ent}')
