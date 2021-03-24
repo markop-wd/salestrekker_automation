@@ -130,7 +130,12 @@ def worker_main(driver: Chrome, ent: str, password: str, runner_main_org: str,
 
     org_funcs.organization_create(driver, ent, runner_learn_org, runner_main_org)
 
+    document_check = DocumentCheck(driver, ent)
+    workflow_check = WorkflowCheck(driver, ent)
 
+    # Gets the names of the documents and workflows in the Learn organization (as that is the main group and everything in the new org is inherited from it.
+    document_check.document_get(runner_learn_org)
+    workflow_check.workflow_get(runner_learn_org)
 
     # Sleep here is as the document inheritance is not instant, but takes some time
     sleep(120)
