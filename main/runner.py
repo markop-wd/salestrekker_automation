@@ -1,5 +1,5 @@
 """
-The background logic of handling reports, threads, exceptions
+This encapsulatese the logic.py with the reports, threads and exceptions.
 """
 import concurrent.futures
 from selenium.webdriver import Chrome
