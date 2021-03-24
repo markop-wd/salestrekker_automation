@@ -182,8 +182,6 @@ def worker_main(driver: Chrome, ent: str, password: str, runner_main_org: str,
 
     sleep(5)
 
-    document_check = DocumentCheck(driver, ent)
-    workflow_check = WorkflowCheck(driver, ent)
 
 def cp_worker(driver: Chrome, pin: str, link: str):
 
@@ -198,9 +196,6 @@ def cp_worker(driver: Chrome, pin: str, link: str):
     sleep(20)
     portal_runner.screenshot()
 
-    # Gets the names of the documents and workflows in the Learn organization (as that is the main group and everything in the new org is inherited from it.
-    document_check.document_get(runner_learn_org)
-    workflow_check.workflow_get(runner_learn_org)
 
 def api(driver: Chrome, ent: str, password: str, email: str = 'helpdesk@salestrekker.com'):
 
