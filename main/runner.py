@@ -16,12 +16,15 @@ from urllib3 import exceptions as http_execs
 from logic import worker, cp_worker, worker_main, api
 from main.Permanent.login import LogIn
 
+# Perm vars contain learn and main org names for each ent, users to be added, types of workflows etc.
 with open("perm_vars.json") as perm_json:
     ents_info = json.load(perm_json)['ents_info']
 
+# Details are the logins stored
 with open("details.json") as details:
     info = json.load(details)
 
+# Detach it so the program can end but the Chrome will remain open until you quit
 options = Options()
 options.add_experimental_option("detach", True)
 
@@ -54,6 +57,9 @@ def csv_writer(write_dict: dict, ent_name: str):
 
 
 def main_runner(ent, email="helpdesk@salestrekker.com", cp_pin: str = '', cp_link: str = ''):
+    """
+    This is the main caller and it also is the endpoint of the exceptions I have not handled in the logic iteslf, if any it will store them in a report.
+    """
     try:
         mkdir(f'Reports/{date.today()}')
     except FileExistsError:
@@ -75,14 +81,17 @@ def main_runner(ent, email="helpdesk@salestrekker.com", cp_pin: str = '', cp_lin
     driver.maximize_window()
 
     try:
+        # If I give him a client portal pin and link it is obvious I should call cp_worker instead of main worker
         if bool(cp_pin) and bool(cp_link):
             ent = cp_link.split('-')[0].split('/')[-1]
             cp_worker(driver=driver, pin=cp_pin, link=cp_link)
         else:
+            # If no cp link or pin then call the main worker with parameters you get from perm vars and details
             worker_main(driver=driver, ent=ent, password=info[ent][email], runner_main_org=ents_info[ent]['main'],
-                   runner_learn_org=ents_info[ent]['learn'], email=email)
+                        runner_learn_org=ents_info[ent]['learn'], email=email)
             # api(driver=driver, ent=ent, password=info[ent][email], email=email)
 
+    # Exception catching and storing the exceptions, time when it happened and the traceback for reporting and also include a screenshot.
     except http_execs.NewConnectionError:
         completed['time'] = datetime.now().strftime('%H:%M:%S')
         completed['completed'] = False
@@ -111,12 +120,16 @@ def main_runner(ent, email="helpdesk@salestrekker.com", cp_pin: str = '', cp_lin
         completed['current url'] = ''
         # driver.get_screenshot_as_file("test.png")
     finally:
+        # Finally quit the driver and write the report
         driver.quit()
         csv_writer(completed, ent)
         # return completed
 
 
 if __name__ == '__main__':
+
+    # This is what gets called first and then calls the runner function and is still being worked on and changed regularly.
+
     consumer_list = [
         {"ent": "platform", "cp_link": "https://platform-cp.salestrekker.com/authenticate/ZxQ4L3w2Cc6D",
          "cp_pin": "361089"},
