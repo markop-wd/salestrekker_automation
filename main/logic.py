@@ -24,6 +24,8 @@ from mail import mail_get
 import filelock
 
 
+
+# This is the worker that I modify to fit special scenarios - e.g. when I want to create 10 empty deals I write the logic here
 def worker(driver: Chrome, ent: str, password: str, runner_main_org: str,
            runner_learn_org: str, email: str = 'helpdesk@salestrekker.com'):
     with open("perm_vars.json", "r") as perm_json:
@@ -95,9 +97,11 @@ def worker(driver: Chrome, ent: str, password: str, runner_main_org: str,
 
     print(f'finished {ent}')
 
-
+# The logic here is mostly static and includes the main rundown. Login, create an organization, add users, the workflows, add all types of deals
 def worker_main(driver: Chrome, ent: str, password: str, runner_main_org: str,
                 runner_learn_org: str, email: str = 'helpdesk@salestrekker.com'):
+
+    # The workflows here just serve as a placeholder
     # hl_workflows = {
     #     "gem": "https://gem.salestrekker.com/board/ba299909-8eb3-4f72-803e-809ee5197e15",
     #     "ynet": "https://ynet.salestrekker.com/board/c1e72ff3-70a3-4425-a7e4-9dc3a15d0f9f",
@@ -109,6 +113,8 @@ def worker_main(driver: Chrome, ent: str, password: str, runner_main_org: str,
     #     "ioutsource": "https://ioutsource.salestrekker.com/board/f749f86b-07d2-404e-aabe-509c8a7578b7",
     #     "sfg": "https://sfg.salestrekker.com/board/cf28e583-0033-4efe-82f1-a31158baa4e2",
     #     "chief": "https://chief.salestrekker.com/board/50894293-ddef-4cd1-84a2-f490ee5f80df"}
+
+    # Perm vars contain all the main and learn organization names, types of workflows, which users to add and with which permissions
     with open("perm_vars.json", "r") as perm_json:
         perm_vars = json.load(perm_json)
 
@@ -119,62 +125,61 @@ def worker_main(driver: Chrome, ent: str, password: str, runner_main_org: str,
 
     LogIn(driver, ent, email, password).log_in()
 
-    org_funcs.org_changer(driver, runner_main_org)
-    org_funcs.org_changer(driver, runner_learn_org)
+    org_funcs.organization_create(driver, ent, runner_learn_org, runner_main_org)
 
 
 
-    # org_funcs.organization_create(driver, ent, runner_learn_org, runner_main_org)
-    #
-    # document_check = DocumentCheck(driver, ent)
-    # workflow_check = WorkflowCheck(driver, ent)
-    #
-    # document_check.document_get(runner_learn_org)
-    # workflow_check.workflow_get(runner_learn_org)
-    #
-    # sleep(120)
-    # # LogIn(driver, ent, email, password).log_in()
-    # # org_funcs.org_changer(driver, f'Test Organization {date.today()}')
-    #
-    # document_check.document_compare(f'Test Organization {date.today()}')
-    # workflow_check.workflow_compare(f'Test Organization {date.today()}')
-    #
-    # # matthew_user = test_users['matthew']
-    # # email_split = matthew_user['email'].split('@')
-    # # email = email_split[0] + f'+{date.today().strftime("%d%m%y")}@' + email_split[1]
-    # # user_manipulation.add_user(driver, ent, email=email,
-    # #                            username=matthew_user['username'])
-    # #
-    # # phillip_user = test_users['phillip']
-    # # email_split = phillip_user['email'].split('@')
-    # # email = email_split[0] + f'+{date.today().strftime("%d%m%y")}@' + email_split[1]
-    # # user_manipulation.add_user(driver, ent, email=email,
-    # #                            username=phillip_user['username'])
-    #
-    # for name, values in test_users.items():
-    #     test_list = values['email'].split('@')
-    #     email = test_list[0] + f'+{date.today().strftime("%d%m%y")}@' + test_list[1]
-    #     user_manipulation.add_user(driver, ent,
-    #                                email=email, username=values['username'],
-    #                                broker=values['broker'], admin=values['admin'],
-    #                                mentor=values['mentor'])
-    #
-    # for workflow in allowed_workflows:
-    #     workflow_manipulation.add_workflow(driver=driver, ent=ent, workflow_type=workflow, wf_owner='Matthew Test')
-    #
-    # new_email, new_password = helper_funcs.user_setup_raw(driver, ent)
-    # with open('details.json', 'r') as details:
-    #     json_details = json.load(details)
-    #     json_details[ent][new_email] = new_password
-    # with open('details.json', 'w') as details:
-    #     json.dump(json_details, details)
+    # Sleep here is as the document inheritance is not instant, but takes some time
+    sleep(120)
 
-    # helper_funcs.accreditation_fill(driver, ent)
+    # org_funcs.org_changer(driver, f'Test Organization {date.today()}')
+
+    # Compare the document and workflow names in the new organization with the ones from Learn (that you extracted previously)
+    document_check.document_compare(f'Test Organization {date.today()}')
+    workflow_check.workflow_compare(f'Test Organization {date.today()}')
+
+    # This is if I only want to add myself to the organization
+    # matthew_user = test_users['matthew']
+    # email_split = matthew_user['email'].split('@')
+    # email = email_split[0] + f'+{date.today().strftime("%d%m%y")}@' + email_split[1]
+    # user_manipulation.add_user(driver, ent, email=email,
+    #                            username=matthew_user['username'])
+    #
+
+    # Add all users defined in perm_var.json to the organization you are currently in (new org by the current logic)
+    for name, values in test_users.items():
+        # First split the email then append the current date to before the @ - so instead of phillip@salestrekker.com this will create phillip+240321@salestrekker.com
+        email_split = values['email'].split('@')
+        email_with_date = email_split[0] + f'+{date.today().strftime("%d%m%y")}@' + email_split[1]
+
+        user_manipulation.add_user(driver, ent,
+                                   email=email_with_date, username=values['username'],
+                                   broker=values['broker'], admin=values['admin'],
+                                   mentor=values['mentor'])
+
+    # Add all workflows defined in perm_vars.json
+    for workflow in allowed_workflows:
+        workflow_manipulation.add_workflow(driver=driver, ent=ent, workflow_type=workflow, wf_owner='Matthew Test')
+
+    # Navigate to the st.receive@gmail.com (to which I set a forwarding of new user emails to) and get the username and password and store those in details.json
+    new_email, new_password = helper_funcs.user_setup_raw(driver, ent)
+    with open('details.json', 'r') as details:
+        json_details = json.load(details)
+        json_details[ent][new_email] = new_password
+    with open('details.json', 'w') as details:
+        json.dump(json_details, details)
+
+    # Fill in new accrediations - this needs to be fixed as it's not working anymore
+    helper_funcs.accreditation_fill(driver, ent)
 
     sleep(5)
 
+    document_check = DocumentCheck(driver, ent)
+    workflow_check = WorkflowCheck(driver, ent)
 
 def cp_worker(driver: Chrome, pin: str, link: str):
+
+    # Client portal handling logic
     driver.implicitly_wait(10)
 
     Permanent.client_portal.login.LogIn(driver, link, pin).log_in()
@@ -185,8 +190,13 @@ def cp_worker(driver: Chrome, pin: str, link: str):
     sleep(20)
     portal_runner.screenshot()
 
+    # Gets the names of the documents and workflows in the Learn organization (as that is the main group and everything in the new org is inherited from it.
+    document_check.document_get(runner_learn_org)
+    workflow_check.workflow_get(runner_learn_org)
 
 def api(driver: Chrome, ent: str, password: str, email: str = 'helpdesk@salestrekker.com'):
+
+    # Create an API that you can access online and give it commands instead of running the app on your computer - still in testing phase.
     LogIn(driver, ent, email, password).log_in()
 
     print(f'finished {ent}')
