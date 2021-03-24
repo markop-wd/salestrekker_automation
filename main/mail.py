@@ -1,3 +1,8 @@
+"""
+This is what will read the new account e-mail and extract username and password from it.
+
+I used a st.receive@gmail.com that I made it has nothing important on except those accounts that are all in separate organizations that have no access to others orgs.
+"""
 import email
 import imaplib
 import re
