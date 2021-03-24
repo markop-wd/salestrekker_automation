@@ -1,5 +1,8 @@
 """
-Main business logic
+Main business logic.
+This is where you call all of the modules/functions and organize them. 
+
+Once there is a GUI this should be repurposed so that buttons call their respective functions.
 """
 import random
 from datetime import date, datetime
