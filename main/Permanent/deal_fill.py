@@ -8,11 +8,12 @@ from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver import Chrome
 from selenium.common import exceptions
 
-from main.Permanent.helper_funcs import random_string_create, md_toast_remover
+from main.Permanent.helper_funcs import random_string_create, md_toast_remover, AddressInput
 
 from time import sleep
 from datetime import datetime
 import json
+import string
 import random
 import traceback
 from pathlib import Path
@@ -33,6 +34,7 @@ class MultipleDealCreator:
         with open("deal_config.json") as deal_config_json:
             self.deal_config = json.load(deal_config_json)
 
+        self.address_input = AddressInput()
         self.users_in_workflow = ''
         self.number_of_contacts = None
         self.driver = driver
@@ -43,7 +45,8 @@ class MultipleDealCreator:
                                      'Search current address',
                                      'Search employer address', 'Search next of kin address',
                                      'Search mailing address',
-                                     'Search previous address']
+                                     'Search previous address',
+                                     'Search post settlement address']
 
     def selector(self, select_element, index='random'):
         try:
@@ -336,18 +339,13 @@ class MultipleDealCreator:
 
     def ul_list_selector(self, input_el, input_text):
         sleep(5)
-        self.address_repeat += 1
         input_el.send_keys(input_text)
         ul_el_id = 'ul-' + str(input_el.get_attribute('id')).split('-')[-1]
         try:
             WdWait(self.driver, 15).until(ec.visibility_of_element_located((By.ID, ul_el_id)))
         except exceptions.TimeoutException:
             print('No list returned after 15 seconds')
-            if self.address_repeat > 4:
-                print('No list returned after 4 timeout attempts.')
-            else:
-                sleep(5)
-                self.ul_list_selector(input_el, input_text)
+
         else:
             li_els = self.driver.find_element(By.ID, ul_el_id).find_elements(by=By.CSS_SELECTOR,
                                                                              value='li span')
@@ -356,10 +354,6 @@ class MultipleDealCreator:
                 sleep(0.1)
                 input_el.send_keys(Keys.DELETE)
                 sleep(0.2)
-                if self.address_repeat > 4:
-                    print('List not returning after 4 attempts')
-                else:
-                    self.ul_list_selector(input_el, input_text)
             else:
                 self.driver.execute_script("arguments[0].click();",
                                            li_els[random.randrange(0, len(li_els))])
@@ -369,6 +363,8 @@ class MultipleDealCreator:
         try:
             for input_el in content.find_elements(by=By.TAG_NAME, value='input'):
                 self.address_repeat = 0
+                if input_el.get_attribute('aria-label') == 'Employer name':
+                    print('woop woop')
 
                 value_test = input_el.get_attribute('value')
 
@@ -405,7 +401,7 @@ class MultipleDealCreator:
                     except exceptions.ElementNotInteractableException:
                         continue
 
-                elif not value_test:
+                elif not value_test or value_test == ' ':
                     ng_model = input_el.get_attribute('ng-model')
                     ng_change = input_el.get_attribute('ng-change')
 
@@ -432,7 +428,14 @@ class MultipleDealCreator:
                     elif ng_model == '$mdAutocompleteCtrl.scope.searchText':
                         input_aria_label = input_el.get_attribute('aria-label')
                         if input_aria_label in self.address_placeholders:
-                            self.ul_list_selector(input_el, f'{random.randrange(1, 200)} oi')
+                            address_input = AddressInput()
+                            if not address_input.ul_list_selector(self.driver, input_el,
+                                                                  f'{random.randrange(1, 100)} oi'):
+                                address_input.address_repeat = 0
+                                address_input.ul_list_selector(self.driver, input_el,
+                                                               f'{random.randrange(1, 50)} te')
+
+                            # self.ul_list_selector(input_el, f'{random.randrange(1, 200)} oi')
 
                         elif input_aria_label == 'Employer ABN':
                             input_el.send_keys(str(random.randrange(10000000000, 100000000000)))
@@ -450,9 +453,16 @@ class MultipleDealCreator:
                                 random.randrange(0, len(self.industries) - 1)]
                             self.ul_list_selector(input_el, industry['id'])
 
+                        elif input_aria_label == 'Employer name':
+                            self.ul_list_selector(input_el, random_string_create(3).lower())
+
                     elif ng_change == '$ctrl.saveAddress()':
                         continue
 
+                    elif ng_model in ['$ctrl.contact.person.contact.work', '$ctrl.contact.person.contact.home']:
+                        input_el.send_keys("".join(random.sample(string.digits, 9)))
+                    elif ng_model == '$ctrl.contact.person.contact.secondaryEmail':
+                        input_el.send_keys('secondary@email.com')
                     else:
                         try:
                             input_el.send_keys(random_string_create())
@@ -581,7 +591,6 @@ class MultipleDealCreator:
                                                 value='st-sidebar-content > st-sidebar-block > div > div > button')
         except exceptions.NoSuchElementException:
             print('No div > button')
-            pass
         else:
             separators = []
 

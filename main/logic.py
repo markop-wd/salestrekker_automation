@@ -27,22 +27,22 @@ from mail import mail_get
 import filelock
 
 
-
 # This is the worker that I modify to fit special scenarios - e.g. when I want to create 10 empty deals I write the logic here
 def worker(driver: Chrome, ent: str, password: str, runner_main_org: str,
            runner_learn_org: str, email: str = 'helpdesk@salestrekker.com'):
     with open("perm_vars.json", "r") as perm_json:
         perm_vars = json.load(perm_json)
 
-    test_users = perm_vars['test_users']
-    allowed_workflows = perm_vars['workflows'].split('-')
+    # test_users = perm_vars['test_users']
+    # allowed_workflows = perm_vars['workflows'].split('-')
 
     LogIn(driver, ent, email, password).log_in()
 
     # org_funcs.organization_create(driver, ent, runner_learn_org, runner_main_org)
     # LogIn(driver, ent, email, password).log_in()
-    # org_funcs.org_changer(driver, f'Test Organization {date.today()}')
-    # org_funcs.org_changer(driver, 'Deploy 3006')
+    org_funcs.org_changer(driver, f'Test Organization {date.today()}')
+    # org_funcs.org_changer(driver, runner_main_org)
+    # org_funcs.org_changer(driver, 'Test Organization 2021-03-10')
 
     # matthew_user = test_users['matthew']
     # email_split = matthew_user['email'].split('@')
@@ -50,12 +50,39 @@ def worker(driver: Chrome, ent: str, password: str, runner_main_org: str,
     # user_manipulation.add_user(driver, ent, email=email,
     #                            username=matthew_user['username'])
     #
+    # for name, values in test_users.items():
+    #     # First split the email then append the current date to before the @ - so instead of phillip@salestrekker.com this will create phillip+240321@salestrekker.com
+    #     email_split = values['email'].split('@')
+    #     email_with_date = email_split[0] + f'+{date.today().strftime("%d%m%y")}@' + email_split[1]
+    #
+    #     user_manipulation.add_user(driver, ent,
+    #                                email=email_with_date, username=values['username'],
+    #                                broker=False, admin=False,
+    #                                mentor=False)
+    #
+    # for name, values in test_users.items():
+    #
+    #     user_manipulation.add_user(driver, ent,
+    #                                email=values['email'], username=values['username'],
+    #                                broker=True, admin=True,
+    #                                mentor=False)
+
     # user_manipulation.add_user(driver, ent, email=matthew_user['email'],
     #                            username=matthew_user['username'])
-    #
+    hl_workflow = ''
     # for workflow in allowed_workflows:
     #     workflow_manipulation.add_workflow(driver=driver, ent=ent, workflow_type=workflow, wf_owner='Matthew Test')
-    #
+
+    for workflow in workflow_manipulation.get_all_workflows(driver, ent):
+        if "Test WF - Home Loan" in workflow['name']:
+            hl_workflow = workflow['link']
+
+    if hl_workflow:
+        deal_create = EditDeal(ent, driver)
+        deal_fill = MultipleDealCreator(ent, driver)
+        deal_link = deal_create.run(workflow=hl_workflow.split('/')[-1], deal_owner_name='Marko P')
+        deal_fill.client_profile_input(deal_link)
+
     # new_email, new_password = helper_funcs.user_setup_raw(driver, ent)
     # with open('details.json', 'r') as details:
     #     json_details = json.load(details)
@@ -63,7 +90,7 @@ def worker(driver: Chrome, ent: str, password: str, runner_main_org: str,
     #     ent][new_email] = new_password
     # with open('details.json', 'w') as details:
     #     json.dump(json_details, details)
-    #
+
     # helper_funcs.accreditation_fill(driver, ent)
 
     # org_funcs.org_changer(driver, f'Test Organization {date.today()}')
@@ -73,22 +100,29 @@ def worker(driver: Chrome, ent: str, password: str, runner_main_org: str,
     # input("Heyo")
 
     # hl_workflow = hl_workflows[ent]
+    # hl_workflow = 'https://dev.salestrekker.com/board/d61756d6-2572-4f10-86ae-7560dc040a4d'
 
-    workflows = ['https://dev.salestrekker.com/settings/workflow/64c691a1-14a9-4552-a4f8-bc21cdfffee6',
-                 'https://dev.salestrekker.com/settings/workflow/d61756d6-2572-4f10-86ae-7560dc040a4d']
-    owners = ['Maya Test', 'Matthew Test', 'Zac Test', 'Phillip Test']
-    af_workflow = 'https://dev.salestrekker.com/board/30b94e85-3d1f-491e-a558-6172c618451d'
+    # workflows = ['https://dev.salestrekker.com/settings/workflow/64c691a1-14a9-4552-a4f8-bc21cdfffee6',
+    #              'https://dev.salestrekker.com/settings/workflow/d61756d6-2572-4f10-86ae-7560dc040a4d']
+    # owners = ['Maya Test', 'Matthew Test', 'Zac Test', 'Phillip Test']
+    # af_workflow = 'https://dev.salestrekker.com/board/30b94e85-3d1f-491e-a558-6172c618451d'
     # for workflow in workflows:
     #     workflow_manipulation.add_users_to_workflow(driver, ent, workflow, owners)
 
-    deal_create = EditDeal(ent, driver)
-    deal_fill = MultipleDealCreator(ent, driver)
-    for _ in range(5):
-        new_deal_hl = deal_create.run(workflow=af_workflow.split('/')[-1], deal_owner_name='Matthew Test')
-        if random.choice([1, 2, 3, 4]) == 2:
-            deal_fill.client_profile_input(new_deal_hl)
+    # deal_create = EditDeal(ent, driver)
+    # deal_fill = MultipleDealCreator(ent, driver)
+    # deal_link = deal_create.run(workflow=hl_workflow.split('/')[-1], deal_owner_name='Marko P')
+    # deal_fill.client_profile_input(deal_link)
 
-    # new_deal_hl = deal_create.run(workflow=hl_workflows[ent].split('/')[-1], deal_owner_name='Matthew Test')
+    # for _ in range(3):
+    #     new_deal_hl = deal_create.run(workflow=hl_workflow.split('/')[-1], deal_owner_name='Marko P')
+    #     deal_fill.client_profile_input(new_deal_hl)
+
+    # for _ in range(5):
+    #     new_deal_hl = deal_create.run(workflow=af_workflow.split('/')[-1], deal_owner_name='Matthew Test')
+    #     if random.choice([1, 2, 3, 4]) == 2:
+    #         deal_fill.client_profile_input(new_deal_hl)
+
     # deal_create.run(workflow=hl_workflows[ent].split('/')[-1], deal_owner_name='Matthew Test')
 
     # # new_deal_af = deal_create.run(workflow=af_workflows[ent].split('/')[-1], deal_owner_name='Matthew Test')
@@ -97,8 +131,16 @@ def worker(driver: Chrome, ent: str, password: str, runner_main_org: str,
     # # print(hl, new_deal)
 
     # deal_fill.client_profile_input("https://dev.salestrekker.com/fact-find/58b2bcee-d020-4beb-a2fb-326def7b5a48/198c95c7-b607-45b0-abef-8404825e8483")
+    # new_email, new_password = helper_funcs.user_setup_raw(driver, ent)
+    # with open('details.json', 'r') as details:
+    #     json_details = json.load(details)
+    #     json_details[ent][new_email] = new_password
+    # with open('details.json', 'w') as details:
+    #     json.dump(json_details, details)
 
+    sleep(5)
     print(f'finished {ent}')
+
 
 # The logic here is mostly static and includes the main rundown. Login, create an organization, add users, the workflows, add all types of deals
 def worker_main(driver: Chrome, ent: str, password: str, runner_main_org: str,
@@ -162,6 +204,14 @@ def worker_main(driver: Chrome, ent: str, password: str, runner_main_org: str,
 
         user_manipulation.add_user(driver, ent,
                                    email=email_with_date, username=values['username'],
+                                   broker=False, admin=False,
+                                   mentor=False)
+
+    driver.refresh()
+    sleep(5)
+    for name, values in test_users.items():
+        user_manipulation.add_user(driver, ent,
+                                   email=values['email'], username=values['username'],
                                    broker=values['broker'], admin=values['admin'],
                                    mentor=values['mentor'])
 
@@ -178,7 +228,7 @@ def worker_main(driver: Chrome, ent: str, password: str, runner_main_org: str,
         json.dump(json_details, details)
 
     # Fill in new accrediations - this needs to be fixed as it's not working anymore
-    helper_funcs.accreditation_fill(driver, ent)
+    # helper_funcs.accreditation_fill(driver, ent)
 
     sleep(5)
 

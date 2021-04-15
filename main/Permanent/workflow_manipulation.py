@@ -269,11 +269,14 @@ def add_workflow(driver: Chrome, ent: str, workflow_type='Home Loan',
         workflow_name)
 
     # number_of_stages = len(driver.find_elements(by=By.CSS_SELECTOR,value='workflow-stages > workflow-stage'))
-
-    WdWait(driver, 10).until(
-        ec.visibility_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))
-    WdWait(driver, 10).until(
-        ec.invisibility_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))
+    try:
+        WdWait(driver, 10).until(
+            ec.visibility_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))
+    except exceptions.TimeoutException:
+        sleep(7)
+    else:
+        WdWait(driver, 10).until(
+            ec.invisibility_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))
 
     # TODO - Confirm that the workflow exists
 
@@ -436,5 +439,9 @@ def get_all_workflows(driver, ent):
             ec.visibility_of_element_located(
                 (By.CSS_SELECTOR, 'md-menu-content.sub-menu > section')))
         workflows = workflow_container.find_elements(by=By.CSS_SELECTOR, value='md-menu-item > a')
-        workflow_list = [workflow.get_attribute('href') for workflow in workflows]
+        workflow_list = [{"name": workflow.find_element(by=By.TAG_NAME, value="span").text,
+                          "link": workflow.get_attribute('href')} for workflow in workflows]
         return workflow_list
+
+def get_all_workflows_api():
+    pass

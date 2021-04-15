@@ -45,7 +45,7 @@ class EditDeal:
 
     def run(self, workflow: str = 'test', af_type: str = "cons",
             settlement_date: str = f'{datetime.now().strftime("%d/%m/%Y")}',
-            deal_owner_name: str = '', add_all_team: bool = False):
+            deal_owner_name: str = '', add_all_team: bool = False, client_email=""):
 
         if workflow == 'test':
             self.driver.get(self.main_url)
@@ -87,7 +87,7 @@ class EditDeal:
                                                  value='md-radio-button[aria-label="Consumer"]').click()
 
         self._contact_add()
-        self._contact_input()
+        self._contact_input(client_email)
         self._deal_info_input(settlement_date)
 
         # Save
@@ -132,7 +132,6 @@ class EditDeal:
     def _contact_add(self):
 
         incrementer = 0
-
         for contact in range(self.number_of_contacts):
             add_contact = WdWait(self.driver, 10).until(
                 ec.presence_of_element_located((By.CSS_SELECTOR,
@@ -148,20 +147,10 @@ class EditDeal:
             contact_type_container = WdWait(self.driver, 5).until(
                 ec.presence_of_element_located((By.ID, add_contact_container_id)))
 
-            if self.contacts['contact_types'] == 'mixed':
+            if self.contacts['contact_types']['types'] == 'mixed':
+                no_of_companies = self.contacts['contact_types']['no_of_companies']
 
-                # rand_val = random.randrange(0, 2)
-
-                if incrementer < 2:
-
-                    contact_type = contact_type_container.find_elements(by=By.TAG_NAME,
-                                                                        value='button')
-                    try:
-                        contact_type[0].click()
-                    except exceptions.ElementClickInterceptedException:
-                        self.driver.execute_script('arguments[0].click();', contact_type[0])
-                    incrementer += 1
-                else:
+                if 0 < no_of_companies != incrementer:
                     contact_type = contact_type_container.find_elements(by=By.TAG_NAME,
                                                                         value='button')
                     try:
@@ -170,16 +159,15 @@ class EditDeal:
                         self.driver.execute_script('arguments[0].click();', contact_type[1])
 
                     incrementer += 1
+                else:
+                    contact_type = contact_type_container.find_elements(by=By.TAG_NAME,
+                                                                        value='button')
+                    try:
+                        contact_type[0].click()
+                    except exceptions.ElementClickInterceptedException:
+                        self.driver.execute_script('arguments[0].click();', contact_type[0])
 
-                    # type_of_cont = contact_type[rand_val].get_attribute('ng-click')
-                    #
-                    # if type_of_cont == 'contactAdd(false)':
-                    #     self.current_export_array.append('Person ')
-                    #
-                    # if type_of_cont == 'contactAdd(true)':
-                    #     self.current_export_array.append('Company ')
-
-            elif self.contacts['contact_types'] == 'company':
+            elif self.contacts['contact_types']['types'] == 'company':
                 contact_type = contact_type_container.find_elements(by=By.TAG_NAME, value='button')
                 for contact_button in contact_type:
                     if contact_button.find_element(by=By.TAG_NAME, value='span').text == 'Company':
@@ -193,7 +181,7 @@ class EditDeal:
                     raise Exception
                     pass
 
-            elif self.contacts['contact_types'] == 'person':
+            elif self.contacts['contact_types']['types'] == 'person':
                 contact_type = contact_type_container.find_elements(by=By.TAG_NAME, value='button')
                 for contact_button in contact_type:
                     sleep(1)
@@ -212,7 +200,7 @@ class EditDeal:
         # self.current_export_array.append("No. of clients: " + str(number_of_contacts) + ", ")
 
     # TODO - Get a better way to pass in names
-    def _contact_input(self):
+    def _contact_input(self, client_email):
 
         person_names = [['Misty', 'Banks'], ['Karl', 'Berg'], ['Tanisha', 'Obrien'],
                         ['Jasmin', 'Talley'],
@@ -439,6 +427,12 @@ class EditDeal:
             for count, person in enumerate(person_list):
                 person_name = person_names[random.randrange(0, len(person_names))]
 
+                if not client_email:
+                    client_email_input = f'{person_name[0].lower()}@{person_name[1].lower()}.com'
+                else:
+                    _mejl_split = client_email.split('@')
+                    _person_name_merge = person_name[0].lower()+person_name[1].lower()
+                    client_email_input = f'{_mejl_split[0]}+{_person_name_merge}@{_mejl_split[1]}'
                 person.find_element(by=By.CSS_SELECTOR,
                                     value='div:nth-child(2) > div:nth-child(1) > md-autocomplete > '
                                           'md-autocomplete-wrap > md-input-container >input').send_keys(
@@ -455,8 +449,7 @@ class EditDeal:
                                     value='div:nth-child(2) > div:nth-child(3) > md-input-container:nth-child(2) > '
                                           'input').send_keys("".join(random.sample(string.digits, 9)))
                 person.find_element(by=By.CSS_SELECTOR,
-                                    value='div:nth-child(2) > div:nth-child(4) > md-input-container > input').send_keys(
-                    f'{person_name[0].lower()}@website.com')
+                                    value='div:nth-child(2) > div:nth-child(4) > md-input-container > input').send_keys(client_email_input)
                 current_sel = person.find_element(by=By.CSS_SELECTOR,
                                                   value='div:nth-child(2) > div:nth-child(4) > '
                                                         'st-form-field-container > select')
@@ -480,11 +473,11 @@ class EditDeal:
                     else:
                         try:
                             Select(current_sel).select_by_index(
-                                random.randrange(0, len(Select(current_sel).options)))
+                                random.randrange(4, len(Select(current_sel).options)))
                         except exceptions.ElementClickInterceptedException:
                             md_toast_remover(self.driver)
                             Select(current_sel).select_by_index(
-                                random.randrange(0, len(Select(current_sel).options)))
+                                random.randrange(4, len(Select(current_sel).options)))
                 else:
                     try:
                         Select(current_sel).select_by_index(random.randrange(0, 4))
@@ -494,9 +487,15 @@ class EditDeal:
 
         if company_list:
             for count, company in enumerate(company_list):
+                company_name = company_names[random.randrange(0, len(company_names))]
+                company_name_short = company_name.split(' ')[0].lower()
+                if not client_email:
+                    client_email_input = f'{company_name_short}@entity.com'
+                else:
+                    _mejl_split = client_email.split('@')
+                    client_email_input = f'{_mejl_split[0]}+{company_name_short}@{_mejl_split[1]}'
                 company.find_element(by=By.CSS_SELECTOR,
-                                     value='div:nth-child(2) > div:nth-child(1) > md-autocomplete > md-autocomplete-wrap > md-input-container >input').send_keys(
-                    company_names[random.randrange(0, len(company_names))])
+                                     value='div:nth-child(2) > div:nth-child(1) > md-autocomplete > md-autocomplete-wrap > md-input-container >input').send_keys(company_name)
                 num_prefix = company.find_element(by=By.CSS_SELECTOR,
                                                   value='div:nth-child(2) > div:nth-child(2) > md-input-container:nth-child(1) > input')
                 num_prefix.send_keys(Keys.CONTROL + 'a')
@@ -505,8 +504,7 @@ class EditDeal:
                                      value='div:nth-child(2) > div:nth-child(2) > md-input-container:nth-child(2) > input').send_keys(
                     "".join(random.sample(string.digits, 9)))
                 company.find_element(by=By.CSS_SELECTOR,
-                                     value='div:nth-child(2) > div:nth-child(3) input').send_keys(
-                    'email@company.real')
+                                     value='div:nth-child(2) > div:nth-child(3) input').send_keys(client_email_input)
                 current_sel = company.find_element(by=By.CSS_SELECTOR,
                                                    value='div > div:nth-child(3) > st-form-field-container > select')
 
@@ -553,7 +551,7 @@ class EditDeal:
         # main_info_block.find_element(by=By.CSS_SELECTOR,value='div:nth-child(1) > md-input-container > input').send_keys(str(datetime.today()))
         main_info_block.find_element(by=By.CSS_SELECTOR,
                                      value='div:nth-child(1) > md-input-container > input').send_keys(
-            f'{datetime.now()}')
+            f'MergeTest {datetime.now()}')
 
         # self.select_deal_owner(main_info_block, 'Salestrekker Help Desk')
 

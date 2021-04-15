@@ -32,6 +32,10 @@ all_ents = [
     'ynet', 'vownet', 'gem', 'gemnz', 'platform', 'nlgconnect', 'app',
     'ioutsource', 'chief', 'sfg'
 ]
+login_ents = [
+    'ynet', 'gem', 'gemnz', 'platform', 'nlgconnect', 'app',
+    'ioutsource', 'chief', 'sfg'
+]
 
 
 # TODO - Extract into a report creating module
@@ -87,8 +91,8 @@ def main_runner(ent, email="helpdesk@salestrekker.com", cp_pin: str = '', cp_lin
             cp_worker(driver=driver, pin=cp_pin, link=cp_link)
         else:
             # If no cp link or pin then call the main worker with parameters you get from perm vars and details
-            worker_main(driver=driver, ent=ent, password=info[ent][email], runner_main_org=ents_info[ent]['main'],
-                        runner_learn_org=ents_info[ent]['learn'], email=email)
+            worker(driver=driver, ent=ent, password=info[ent][email], runner_main_org=ents_info[ent]['main'],
+                   runner_learn_org=ents_info[ent]['learn'], email=email)
             # api(driver=driver, ent=ent, password=info[ent][email], email=email)
 
     # Exception catching and storing the exceptions, time when it happened and the traceback for reporting and also include a screenshot.
@@ -127,28 +131,27 @@ def main_runner(ent, email="helpdesk@salestrekker.com", cp_pin: str = '', cp_lin
 
 
 if __name__ == '__main__':
-
     # This is what gets called first and then calls the runner function and is still being worked on and changed regularly.
 
-    consumer_list = [
-        {"ent": "platform", "cp_link": "https://platform-cp.salestrekker.com/authenticate/ZxQ4L3w2Cc6D",
-         "cp_pin": "361089"},
-        {"ent": "sfg", "cp_link": "https://sfg-cp.salestrekker.com/authenticate/eqDHXfq64AO4", "cp_pin": "061642"},
-        {"ent": "nlgconnect", "cp_link": "https://nlgconnect-cp.salestrekker.com/authenticate/RsHs97Fv9HqJ",
-         "cp_pin": "358065"}
-    ]
+    # consumer_list = [
+    #     {"ent": "platform", "cp_link": "https://platform-cp.salestrekker.com/authenticate/ZxQ4L3w2Cc6D",
+    #      "cp_pin": "361089"},
+    #     {"ent": "sfg", "cp_link": "https://sfg-cp.salestrekker.com/authenticate/eqDHXfq64AO4", "cp_pin": "061642"},
+    #     {"ent": "nlgconnect", "cp_link": "https://nlgconnect-cp.salestrekker.com/authenticate/RsHs97Fv9HqJ",
+    #      "cp_pin": "358065"}
+    # ]
+    #
+    # commercial_list = [
+    #     {"ent": "platform", "cp_link": "https://platform-cp.salestrekker.com/authenticate/pdKGdnOInyI0",
+    #      "cp_pin": "045101"},
+    #     {"ent": "sfg", "cp_link": "https://sfg-cp.salestrekker.com/authenticate/1AOFWGF6RW16", "cp_pin": "573635"},
+    #     {"ent": "nlgconnect", "cp_link": "https://nlgconnect-cp.salestrekker.com/authenticate/Ha0ybv-_tjtp",
+    #      "cp_pin": "302847"}
+    # ]
 
-    commercial_list = [
-        {"ent": "platform", "cp_link": "https://platform-cp.salestrekker.com/authenticate/pdKGdnOInyI0",
-         "cp_pin": "045101"},
-        {"ent": "sfg", "cp_link": "https://sfg-cp.salestrekker.com/authenticate/1AOFWGF6RW16", "cp_pin": "573635"},
-        {"ent": "nlgconnect", "cp_link": "https://nlgconnect-cp.salestrekker.com/authenticate/Ha0ybv-_tjtp",
-         "cp_pin": "302847"}
-    ]
-
-    with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
-        future_runner = {executor.submit(main_runner, ent): ent for ent in
-                         all_ents}
+    # with concurrent.futures.ProcessPoolExecutor(max_workers=2) as executor:
+    #     future_runner = {executor.submit(main_runner, ent): ent for ent in
+    #                      all_ents}
 
     # import_ents = [
     #     'platform', 'sfg'
@@ -178,7 +181,7 @@ if __name__ == '__main__':
     # main_runner('ioutsource', email='helpdesk@salestrekker.com')
     # main_runner('dev', email='matthew+291220@salestrekker.com')
 
-    # main_runner('dev')
+    main_runner('dev')
 
     # with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
     #     future_runner = {executor.submit(main_runner, 'dev'): i for i in

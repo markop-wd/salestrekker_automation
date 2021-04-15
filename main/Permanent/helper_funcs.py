@@ -8,6 +8,7 @@ import traceback
 import string
 from time import sleep
 
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.wait import WebDriverWait as WdWait
 from selenium.common import exceptions
@@ -130,29 +131,33 @@ def user_setup_raw(driver: Chrome, ent: str):
     :return:
     """
     driver.maximize_window()
+    add_input = AddressInput()
 
     mail_dict = mail_get(ent)
     if mail_dict['email'] and mail_dict['password']:
         LogIn(driver, ent, mail_dict['email'], mail_dict['password']).log_in()
-        # print(f'Logged into - {ent}')
         try:
             driver.find_element(by=By.CSS_SELECTOR, value='input[name="phoneNumber"]')
 
         except exceptions.NoSuchElementException:
             pass
         else:
-            WdWait(driver, 10).until(
+            phone_num_el = WdWait(driver, 10).until(
                 ec.visibility_of_element_located((
-                    By.CSS_SELECTOR, 'input[name="phoneNumber"]'))).send_keys('123456789')
+                    By.CSS_SELECTOR, 'input[name="phoneNumber"]')))
+            phone_num_el.send_keys(Keys.CONTROL + "A")
+            sleep(0.1)
+            phone_num_el.send_keys(Keys.DELETE)
+            phone_num_el.send_keys('0412341234')
 
-            # WdWait(driver, 10).until(
-            #     ec.visibility_of_element_located((
-            #         By.CSS_SELECTOR,
-            #         'input[ng-model="CurrentAccount.user.address.street"]'))) \
-            #     .send_keys('street')
+            address_el = WdWait(driver, 10).until(
+                ec.visibility_of_element_located((
+                    By.CSS_SELECTOR,
+                    'input[aria-label="Search address"]')))
+            add_input.ul_list_selector(driver, address_el, f'{random.randrange(1, 100)} ae')
 
-            driver.find_element(by=By.CSS_SELECTOR,
-                                value='a[ui-sref=".password-and-security"]').click()
+        sleep(5)
+        element_clicker(driver, css_selector='a[ui-sref=".password-and-security"]')
 
         WdWait(driver, 10).until(
             ec.visibility_of_element_located((By.CSS_SELECTOR, 'input[type="password"]')))
@@ -182,6 +187,43 @@ def user_setup_raw(driver: Chrome, ent: str):
     else:
         print('Oj dios mio no email information')
 
+
+class AddressInput:
+    def __init__(self):
+        self.address_repeat = 0
+
+    def ul_list_selector(self, driver: Chrome, input_el, input_text):
+        sleep(5)
+        self.address_repeat += 1
+        input_el.send_keys(input_text)
+        ul_el_id = 'ul-' + str(input_el.get_attribute('id')).split('-')[-1]
+        try:
+            WdWait(driver, 15).until(ec.visibility_of_element_located((By.ID, ul_el_id)))
+        except exceptions.TimeoutException:
+            print('No list returned after 15 seconds')
+            if self.address_repeat > 1:
+                print('No list returned after 2 timeout attempts.')
+                return False
+            else:
+                sleep(5)
+                self.ul_list_selector(driver, input_el, input_text)
+        else:
+            li_els = driver.find_element(By.ID, ul_el_id).find_elements(by=By.CSS_SELECTOR,
+                                                                        value='li span')
+            if len(li_els) == 0:
+                input_el.send_keys(Keys.CONTROL + 'a')
+                input_el.send_keys(Keys.BACKSPACE)
+                sleep(0.2)
+                if self.address_repeat > 1:
+                    print('List not returning after 2 attempts')
+                    return False
+                else:
+                    self.ul_list_selector(driver, input_el, input_text)
+            else:
+                driver.execute_script("arguments[0].click();",
+                                      li_els[random.randrange(0, len(li_els))])
+
+                return True
 
 def md_toast_remover(driver: Chrome):
     try:
