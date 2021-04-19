@@ -36,6 +36,7 @@ login_ents = [
     'ynet', 'gem', 'gemnz', 'platform', 'nlgconnect', 'app',
     'ioutsource', 'chief', 'sfg'
 ]
+my_test_ents = ['sfg', 'platform', 'nlgconnect']
 
 
 # TODO - Extract into a report creating module
@@ -148,10 +149,27 @@ if __name__ == '__main__':
     #     {"ent": "nlgconnect", "cp_link": "https://nlgconnect-cp.salestrekker.com/authenticate/Ha0ybv-_tjtp",
     #      "cp_pin": "302847"}
     # ]
+    #
+    # cp_list = [
+    #     {"ent": "sfg", "cp_link": "https://sfg-cp.salestrekker.com/authenticate/z5gG8DXyT0w7",
+    #      "cp_pin": "125005"},
+    #     {"ent": "sfg", "cp_link": "https://sfg-cp.salestrekker.com/authenticate/Btg7PnH-0UOE", "cp_pin": "874198"},
+    #     {"ent": "sfg", "cp_link": "https://sfg-cp.salestrekker.com/authenticate/o0b8tw3ShvWu",
+    #      "cp_pin": "464358"},
+    #     {"ent": "platform", "cp_link": "https://platform-cp.salestrekker.com/authenticate/ebrRu5pwxzVf", "cp_pin": "184025"},
+    #     {"ent": "platform", "cp_link": "https://platform-cp.salestrekker.com/authenticate/aAwI2Hpmtz6k",
+    #      "cp_pin": "479620"},
+    #     {"ent": "platform", "cp_link": "https://platform-cp.salestrekker.com/authenticate/vt2zy3SznD4x", "cp_pin": "958749"},
+    #     {"ent": "nlgconnect", "cp_link": "https://nlgconnect-cp.salestrekker.com/authenticate/M0UlvEZb926b",
+    #      "cp_pin": "863857"},
+    #     {"ent": "nlgconnect", "cp_link": "https://nlgconnect-cp.salestrekker.com/authenticate/oRiZbp6WRtRl", "cp_pin": "658114"},
+    #     {"ent": "nlgconnect", "cp_link": "https://nlgconnect-cp.salestrekker.com/authenticate/bx61k5KHK7UR",
+    #      "cp_pin": "268132"}
+    # ]
 
-    # with concurrent.futures.ProcessPoolExecutor(max_workers=2) as executor:
+    # with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
     #     future_runner = {executor.submit(main_runner, ent): ent for ent in
-    #                      all_ents}
+    #                      my_test_ents}
 
     # import_ents = [
     #     'platform', 'sfg'
@@ -174,14 +192,15 @@ if __name__ == '__main__':
     #     return main_runner(**p)
     #
     # with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
-    #     test_runner = {executor.submit(wrapper, array): array for array in consumer_list}
+    #     test_runner = {executor.submit(wrapper, array): array for array in cp_list}
 
     # main_runner(cp_link='https://dev-cp.salestrekker.com/authenticate/lk2Bga1LUxod', cp_pin='800790')
 
     # main_runner('ioutsource', email='helpdesk@salestrekker.com')
     # main_runner('dev', email='matthew+291220@salestrekker.com')
 
-    main_runner('dev')
+    main_runner('sfg')
+    # main_runner('nlgconnect')
 
     # with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
     #     future_runner = {executor.submit(main_runner, 'dev'): i for i in

@@ -40,10 +40,10 @@ def worker(driver: Chrome, ent: str, password: str, runner_main_org: str,
 
     # org_funcs.organization_create(driver, ent, runner_learn_org, runner_main_org)
     # LogIn(driver, ent, email, password).log_in()
-    org_funcs.org_changer(driver, f'Test Organization {date.today()}')
+    org_funcs.org_changer(driver, 'Test Organization 2021-04-16')
     # org_funcs.org_changer(driver, runner_main_org)
     # org_funcs.org_changer(driver, 'Test Organization 2021-03-10')
-
+    # sleep(5000)
     # matthew_user = test_users['matthew']
     # email_split = matthew_user['email'].split('@')
     # email = email_split[0] + f'+{date.today().strftime("%d%m%y")}@' + email_split[1]
@@ -69,19 +69,30 @@ def worker(driver: Chrome, ent: str, password: str, runner_main_org: str,
 
     # user_manipulation.add_user(driver, ent, email=matthew_user['email'],
     #                            username=matthew_user['username'])
-    hl_workflow = ''
+    # hl_workflow = ''
     # for workflow in allowed_workflows:
     #     workflow_manipulation.add_workflow(driver=driver, ent=ent, workflow_type=workflow, wf_owner='Matthew Test')
+    #
 
+    af_workflow = ''
+    hl_workflow = ''
     for workflow in workflow_manipulation.get_all_workflows(driver, ent):
+        if "Test WF - Asset Finance" in workflow['name']:
+            af_workflow = workflow['link']
         if "Test WF - Home Loan" in workflow['name']:
             hl_workflow = workflow['link']
 
-    if hl_workflow:
+    if af_workflow or hl_workflow:
         deal_create = EditDeal(ent, driver)
         deal_fill = MultipleDealCreator(ent, driver)
-        deal_link = deal_create.run(workflow=hl_workflow.split('/')[-1], deal_owner_name='Marko P')
-        deal_fill.client_profile_input(deal_link)
+        # hd_username = user_manipulation.get_current_username(driver)
+
+        # if af_workflow:
+        #     deal_create.run(workflow=af_workflow, deal_owner_name=hd_username, af_type='cons', client_email='matthew@salestrekker.com')
+        #     deal_create.run(workflow=af_workflow, deal_owner_name=hd_username, af_type='comm', client_email='matthew@salestrekker.com')
+        if hl_workflow:
+            link = deal_create.run(workflow=hl_workflow, deal_owner_name='Phillip Djukanovic', client_email='matthew@salestrekker.com')
+            deal_fill.client_profile_input(link)
 
     # new_email, new_password = helper_funcs.user_setup_raw(driver, ent)
     # with open('details.json', 'r') as details:
@@ -180,7 +191,7 @@ def worker_main(driver: Chrome, ent: str, password: str, runner_main_org: str,
     workflow_check.workflow_get(runner_learn_org)
 
     # Sleep here is as the document inheritance is not instant, but takes some time
-    sleep(120)
+    sleep(160)
 
     # org_funcs.org_changer(driver, f'Test Organization {date.today()}')
 
@@ -219,13 +230,37 @@ def worker_main(driver: Chrome, ent: str, password: str, runner_main_org: str,
     for workflow in allowed_workflows:
         workflow_manipulation.add_workflow(driver=driver, ent=ent, workflow_type=workflow, wf_owner='Matthew Test')
 
+    driver.refresh()
+    hl_workflow = ''
+    af_workflow = ''
+    for workflow in workflow_manipulation.get_all_workflows(driver, ent):
+        if "Test WF - Home Loan" in workflow['name']:
+            hl_workflow = workflow['link']
+        elif "Test WF - Home Loan" in workflow['name']:
+            af_workflow = workflow['link']
+
+    if hl_workflow or af_workflow:
+        deal_create = EditDeal(ent, driver)
+        deal_fill = MultipleDealCreator(ent, driver)
+        hd_username = user_manipulation.get_current_username(driver)
+        if hl_workflow:
+            deal_link = deal_create.run(workflow=hl_workflow.split('/')[-1], deal_owner_name=hd_username)
+            deal_fill.client_profile_input(deal_link)
+        if af_workflow:
+            deal_link = deal_create.run(workflow=hl_workflow.split('/')[-1], deal_owner_name=hd_username, af_type='cons')
+            deal_fill.client_profile_input(deal_link)
+
+            deal_link = deal_create.run(workflow=hl_workflow.split('/')[-1], deal_owner_name=hd_username, af_type='comm')
+            deal_fill.client_profile_input(deal_link)
+
+
     # Navigate to the st.receive@gmail.com (to which I set a forwarding of new user emails to) and get the username and password and store those in details.json
-    new_email, new_password = helper_funcs.user_setup_raw(driver, ent)
-    with open('details.json', 'r') as details:
-        json_details = json.load(details)
-        json_details[ent][new_email] = new_password
-    with open('details.json', 'w') as details:
-        json.dump(json_details, details)
+    # new_email, new_password = helper_funcs.user_setup_raw(driver, ent)
+    # with open('details.json', 'r') as details:
+    #     json_details = json.load(details)
+    #     json_details[ent][new_email] = new_password
+    # with open('details.json', 'w') as details:
+    #     json.dump(json_details, details)
 
     # Fill in new accrediations - this needs to be fixed as it's not working anymore
     # helper_funcs.accreditation_fill(driver, ent)

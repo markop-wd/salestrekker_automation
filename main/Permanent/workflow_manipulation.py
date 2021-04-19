@@ -13,6 +13,7 @@ import pathlib
 
 from main import filelock
 from main.Permanent import user_manipulation
+from main.Permanent.helper_funcs import md_toast_wait
 from main.Permanent.user_manipulation import return_all_users, get_current_username
 from selenium.webdriver.common.keys import Keys
 
@@ -352,6 +353,8 @@ def add_users_to_workflow(driver, ent: str, workflow_id='New', users="All"):
             user + Keys.ENTER)
         sleep(0.1)
 
+    # md_toast_wait(driver, second_sleep=5)
+    # md_toast_wait(driver)
     WdWait(driver, 10).until(
         ec.visibility_of_element_located((By.CSS_SELECTOR, 'div.md-toast-content')))
     WdWait(driver, 10).until(

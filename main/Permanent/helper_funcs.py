@@ -189,6 +189,11 @@ def user_setup_raw(driver: Chrome, ent: str):
 
 
 class AddressInput:
+    """
+    This is just a hacky way to input addresses,
+    needs to be rewritten as the function calls itself, if no address is found, then steps out in a messy way
+    TODO - Change so the input is generated in this class rather than inputting it outside
+    """
     def __init__(self):
         self.address_repeat = 0
 
@@ -200,9 +205,9 @@ class AddressInput:
         try:
             WdWait(driver, 15).until(ec.visibility_of_element_located((By.ID, ul_el_id)))
         except exceptions.TimeoutException:
-            print('No list returned after 15 seconds')
+            # print('No list returned after 15 seconds')
             if self.address_repeat > 1:
-                print('No list returned after 2 timeout attempts.')
+                # print('No list returned after 2 timeout attempts.')
                 return False
             else:
                 sleep(5)
@@ -215,7 +220,7 @@ class AddressInput:
                 input_el.send_keys(Keys.BACKSPACE)
                 sleep(0.2)
                 if self.address_repeat > 1:
-                    print('List not returning after 2 attempts')
+                    # print('List not returning after 2 attempts')
                     return False
                 else:
                     self.ul_list_selector(driver, input_el, input_text)
@@ -224,6 +229,7 @@ class AddressInput:
                                       li_els[random.randrange(0, len(li_els))])
 
                 return True
+
 
 def md_toast_remover(driver: Chrome):
     try:
@@ -254,7 +260,7 @@ def md_toast_remover(driver: Chrome):
                     sleep(3)
 
 
-def md_toast_wait(driver: Chrome):
+def md_toast_wait(driver: Chrome, second_sleep=0):
     try:
         WdWait(driver, 15).until(ec.invisibility_of_element_located((By.TAG_NAME, 'md-toast')))
     except exceptions.NoSuchElementException:
@@ -262,7 +268,7 @@ def md_toast_wait(driver: Chrome):
         try:
             WdWait(driver, 15).until(ec.invisibility_of_element_located((By.TAG_NAME, 'md-toast')))
         except exceptions.NoSuchElementException:
-            pass
+            sleep(second_sleep)
         else:
             sleep(5)
     except exceptions.TimeoutException:
@@ -303,9 +309,17 @@ def element_clicker(driver: Chrome, web_element: WebElement = None, css_selector
                 driver.execute_script('arguments[0].click();', web_element)
             except exceptions.JavascriptException:
                 md_toast_remover(driver)
+                driver.execute_script('arguments[0].click();', web_element)
+            finally:
+                return True
+        except exceptions.ElementNotInteractableException:
+            return False
+
         except Exception as e:
             print(traceback.format_exc())
-            raise e
+            return False
+        else:
+            return True
 
 
 def unique_strings(nwords: int, pool: str = string.ascii_letters) -> str:
@@ -332,6 +346,10 @@ def unique_strings(nwords: int, pool: str = string.ascii_letters) -> str:
         add(token)
     return " ".join(seen)
 
+
+def phone_num_gen(char_nums: int = 8):
+    result_str = '04' + ''.join(random.choice(string.digits) for _ in range(char_nums))
+    return result_str
 
 if __name__ == '__main__':
     # user_setup_raw(Chrome(executable_path=GeckoDriverManager().install()), ent='dev')
