@@ -9,6 +9,7 @@ from selenium.webdriver.remote.webelement import WebElement
 from datetime import date
 from time import sleep
 
+from main.Permanent.helper_funcs import element_clicker
 from main.Permanent.user_manipulation import get_current_username
 
 
@@ -21,39 +22,9 @@ def org_changer(driver: Chrome, org_name):
     # toolbar_check(driver)
 
     if not _check_current_org(driver, org_name):
-
-        try:
-            WdWait(driver, 10).until(
-                ec.element_to_be_clickable(
-                    (By.CSS_SELECTOR, '#navBar > div > md-menu > a'))).click()
-
-        except exceptions.ElementNotInteractableException:
-            # TODO - Find a way around this element not being interactable
-            driver.execute_script("document.querySelector('#navBar > div > md-menu > a').click();")
-        except exceptions.ElementClickInterceptedException:
-            driver.execute_script('document.querySelector("#navBar > div > md-menu > a").click();')
-        except exceptions.TimeoutException:
-            try:
-                WdWait(driver, 5).until(
-                    ec.element_to_be_clickable(
-                        (By.CSS_SELECTOR, 'button[ng-click="::$ctrl.toggleSideNavigation()"]')))
-            except exceptions.TimeoutException:
-                raise exceptions.TimeoutException(
-                    "Couldn't click the profile icon or the sandwich clicker", org_name)
-            else:
-                # TODO - Sandwich click handler
-                raise Exception("Sandwichino clickino TODO")
-
-        try:
-            WdWait(driver, 10).until(ec.element_to_be_clickable(
-                (By.CSS_SELECTOR, 'button[ng-click="::$ctrl.organizationChange($event)"]'))).click()
-        except exceptions.ElementNotInteractableException:
-            # TODO - Find a way around this element not being interactable
-            driver.execute_script(
-                'document.querySelector(\'button[ng-click="::$ctrl.organizationChange($event)"]\').click();')
-        except exceptions.ElementClickInterceptedException:
-            driver.execute_script(
-                'document.querySelector(\'button[ng-click="::$ctrl.organizationChange($event)"]\').click();')
+        element_clicker(driver, css_selector='#navBar > div > md-menu > a')
+        # TODO - Sandwich click handler (if the screen is narrow)
+        element_clicker(driver, css_selector='button[ng-click="::$ctrl.organizationChange($event)"]')
 
         try:
             WdWait(driver, 15).until(

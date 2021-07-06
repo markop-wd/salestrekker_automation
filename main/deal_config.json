@@ -6,15 +6,15 @@
         "min": 2,
         "max": 4
       },
-      "value": 4
+      "value": 2
     },
     "contact_types": {
       "types":"mixed",
-      "no_of_companies": 1
+      "no_of_companies": 2
     },
     "non_client": {
-      "active": false,
-      "no_of_clients": 5
+      "active": true,
+      "no_of_clients": 3
     },
     "employment": {"num": 2}
   },

@@ -14,6 +14,7 @@ from selenium.webdriver.support.wait import WebDriverWait as WdWait
 from selenium.common import exceptions
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.select import Select
 
 from selenium.webdriver import Chrome
 
@@ -194,6 +195,7 @@ class AddressInput:
     needs to be rewritten as the function calls itself, if no address is found, then steps out in a messy way
     TODO - Change so the input is generated in this class rather than inputting it outside
     """
+
     def __init__(self):
         self.address_repeat = 0
 
@@ -314,10 +316,82 @@ def element_clicker(driver: Chrome, web_element: WebElement = None, css_selector
                 return True
         except exceptions.ElementNotInteractableException:
             return False
+        except exceptions.StaleElementReferenceException:
+            return False
 
         except Exception as e:
             print(traceback.format_exc())
             return False
+        else:
+            return True
+
+
+def selector(driver: Chrome, select_element: WebElement, index='random', rand_range=''):
+    try:
+        current_sel = Select(select_element)
+    except exceptions.StaleElementReferenceException as inst:
+        traceback.print_exc()
+        traceback.print_stack()
+        return False
+    except Exception:
+        traceback.print_exc()
+        traceback.print_stack()
+        return False
+    else:
+        if index == 'random':
+            if not rand_range:
+                try:
+                    select_value = random.randrange(1, len(current_sel.options))
+                except ValueError:
+                    select_value = random.randrange(0, 2)
+            else:
+                a, b = [int(t) for t in rand_range.split('-')]
+                select_value = random.randrange(a, b)
+        else:
+            select_value = int(index)
+        # TODO - Handle the selector exceptions properly
+        try:
+            current_sel.select_by_index(select_value)
+        except exceptions.ElementClickInterceptedException:
+            md_toast_remover(driver)
+            try:
+                current_sel.select_by_index(select_value)
+            except exceptions.ElementClickInterceptedException:
+                md_toast_remover(driver)
+
+                try:
+                    header = driver.find_element(by=By.CSS_SELECTOR,
+                                                 value='st-header.new.ng-scope')
+                except exceptions.NoSuchElementException:
+                    pass
+                else:
+                    driver.execute_script("arguments[0].remove();", header)
+
+                try:
+                    scroll_mask = driver.find_element(by=By.CSS_SELECTOR,
+                                                      value='div.md-scroll-mask')
+                except exceptions.NoSuchElementException:
+                    pass
+                else:
+                    driver.execute_script("arguments[0].remove();", scroll_mask)
+
+                current_sel.select_by_index(select_value)
+                return True
+
+        except exceptions.NoSuchElementException:
+            try:
+                current_sel.select_by_index(0)
+                return True
+            except:
+                traceback.print_exc()
+                traceback.print_stack()
+                return False
+
+        except ValueError:
+            traceback.print_exc()
+            traceback.print_stack()
+            return False
+
         else:
             return True
 
@@ -351,6 +425,121 @@ def phone_num_gen(char_nums: int = 8):
     result_str = '04' + ''.join(random.choice(string.digits) for _ in range(char_nums))
     return result_str
 
-if __name__ == '__main__':
-    # user_setup_raw(Chrome(executable_path=GeckoDriverManager().install()), ent='dev')
-    print(password_string_create())
+
+def simple_expense_calc(driver: Chrome, deal_url: str):
+    expense_total = 0
+    hem_total = 0
+    no_hem_total = 0
+    driver.get(deal_url)
+    expense_button = WdWait(driver, 10).until(ec.visibility_of_element_located((By.XPATH, '//*[@id="top"]/st-sidebar/st-sidebar-content/st-sidebar-block[1]/div/div/button[2]')))
+    expense_button.click()
+    sleep(2)
+    expenses = WdWait(driver, 10).until(ec.visibility_of_element_located((By.TAG_NAME, 'st-household-expenses')))
+
+    values = expenses.find_elements(by=By.CSS_SELECTOR, value='input[ng-model="householdExpense.value"]')
+    frequencies = expenses.find_elements(by=By.CSS_SELECTOR, value='select[ng-model="householdExpense.frequency"]')
+
+    hem = "//span[contains(@class, 'success')]/../input"
+    no_hem = "//span[contains(@class, 'danger')]/../input"
+    select = '../../../div/st-form-field-container/select'
+
+    hem_els = expenses.find_elements(by=By.XPATH, value=hem)
+    no_hem_els = expenses.find_elements(by=By.XPATH, value=no_hem)
+
+    for hem_el in hem_els:
+        value = hem_el.get_attribute('value')
+        value = int(value.lstrip('$').replace(',', ''))
+        freq = Select(hem_el.find_element(by=By.XPATH, value=select)).first_selected_option.text
+        if freq == 'Weekly':
+            hem_total += (52 * value)
+        elif freq == 'Fortnightly':
+            hem_total += (26 * value)
+        elif freq == 'Monthly':
+            hem_total += (12 * value)
+        elif freq == 'Quarterly':
+            hem_total += (4 * value)
+        elif freq == 'Semiannual':
+            hem_total += (2 * value)
+        elif freq == 'Annually':
+            hem_total += value
+        else:
+            pass
+
+    for no_hem_el in no_hem_els:
+        value = no_hem_el.get_attribute('value')
+        value = int(value.lstrip('$').replace(',', ''))
+        freq = Select(no_hem_el.find_element(by=By.XPATH, value=select)).first_selected_option.text
+        if freq == 'Weekly':
+            no_hem_total += (52 * value)
+        elif freq == 'Fortnightly':
+            no_hem_total += (26 * value)
+        elif freq == 'Monthly':
+            no_hem_total += (12 * value)
+        elif freq == 'Quarterly':
+            no_hem_total += (4 * value)
+        elif freq == 'Semiannual':
+            no_hem_total += (2 * value)
+        elif freq == 'Annually':
+            no_hem_total += value
+        else:
+            pass
+
+    for count, i_value in enumerate(values):
+        value = i_value.get_attribute('value')
+        value = int(value.lstrip('$').replace(',', ''))
+        freq = Select(frequencies[count]).first_selected_option.text
+        if freq == 'Weekly':
+            expense_total += (52 * value)
+        elif freq == 'Fortnightly':
+            expense_total += (26 * value)
+        elif freq == 'Monthly':
+            expense_total += (12 * value)
+        elif freq == 'Quarterly':
+            expense_total += (4 * value)
+        elif freq == 'Semiannual':
+            expense_total += (2 * value)
+        elif freq == 'Annually':
+            expense_total += value
+        else:
+            pass
+
+    print('Expense total: ', expense_total)
+    print('Hem total: ', hem_total)
+    print('No hem total: ', no_hem_total)
+
+
+# only for payg and one client for now
+def income_calc(driver: Chrome, deal_url: str):
+    total = 0
+    driver.get(deal_url)
+    income_button = WdWait(driver,10).until(ec.visibility_of_element_located((By.XPATH, '//*[@id="top"]/st-sidebar/st-sidebar-content/st-sidebar-block[1]/div/div/button[1]')))
+    income_button.click()
+    sleep(2)
+    WdWait(driver, 10).until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div.flex.layout-column.ng-scope.layout-gt-sm-row')))
+    paygs = driver.find_elements(by=By.CSS_SELECTOR,
+                                 value='div.flex.layout-column.ng-scope.layout-gt-sm-row')
+    for payg in paygs:
+        inputs = payg.find_elements(by=By.CSS_SELECTOR,
+                                    value='div.flex.layout-column.ng-scope.layout-gt-sm-row md-input-container > input')
+        selects = payg.find_elements(by=By.CSS_SELECTOR,
+                                     value='div.flex.layout-column.ng-scope.layout-gt-sm-row st-form-field-container > select[ng-change="$ctrl.saveIncome()"]')
+        for count, input_el in enumerate(inputs):
+            value = input_el.get_attribute('value')
+            value = int(value.lstrip('$').replace(',', ''))
+            freq = Select(selects[count]).first_selected_option.text
+            if freq == 'Weekly':
+                total += (52 * value)
+            elif freq == 'Fortnightly':
+                total += (26 * value)
+            elif freq == 'Monthly':
+                total += (12 * value)
+            elif freq == 'Quarterly':
+                total += (4 * value)
+            elif freq == 'Semiannual':
+                total += (2 * value)
+            elif freq == 'Annually':
+                total += value
+            else:
+                pass
+
+    print('Income total:', total)

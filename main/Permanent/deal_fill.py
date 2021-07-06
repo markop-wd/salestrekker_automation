@@ -1,17 +1,14 @@
-from main.Permanent import workflow_manipulation
-
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait as WdWait
-from selenium.webdriver.support.select import Select
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver import Chrome
 from selenium.common import exceptions
 
-from main.Permanent.helper_funcs import random_string_create, md_toast_remover, AddressInput, element_clicker
+from main.Permanent.helper_funcs import random_string_create, AddressInput, element_clicker, selector
+from main.Permanent import deal_fill_selectors as selectors
 
 from time import sleep
-from datetime import datetime, date
 import json
 import string
 import random
@@ -21,8 +18,8 @@ from pathlib import Path
 
 class MultipleDealCreator:
 
-    def __init__(self, ent, driver: Chrome):
-        # self.current_export_array = []
+    def __init__(self, driver: Chrome):
+        # Review working with paths
         occupation_path = Path(__file__).parent.resolve() / "../assets/occupations.json"
         with open(occupation_path) as occupation_codes:
             self.occupations = json.load(occupation_codes)
@@ -31,17 +28,11 @@ class MultipleDealCreator:
         with open(industry_path, 'r') as industry_codes:
             self.industries = json.load(industry_codes)
 
-        with open("deal_config.json") as deal_config_json:
+        deal_config = Path(__file__).parent.resolve() / "../deal_config.json"
+        with open(deal_config) as deal_config_json:
             self.deal_config = json.load(deal_config_json)
 
-        self.address_input = AddressInput()
-        self.users_in_workflow = ''
-        self.number_of_contacts = None
         self.driver = driver
-        self.ent = ent
-        self.main_url = 'https://' + ent + '.salestrekker.com'
-        # self.wf_manipulate = workflow_manipulation.WorkflowManipulation(self.driver, ent)
-        self.address_repeat = 0
         self.address_placeholders = ['Search Property (eg. 1 Walker Avenue)',
                                      'Search current address',
                                      'Search employer address', 'Search next of kin address',
@@ -49,101 +40,37 @@ class MultipleDealCreator:
                                      'Search previous address',
                                      'Search post settlement address']
 
-    def selector(self, select_element, index='random'):
-        try:
-            current_sel = Select(select_element)
-        except exceptions.StaleElementReferenceException as inst:
-            print('Stale reference', inst)
-            print(inst.stacktrace)
-        except:
-            traceback.print_stack()
-            traceback.print_exc()
-        else:
-            if index == 'random':
-                try:
-                    index = random.randrange(1, len(current_sel.options))
-                except ValueError:
-                    index = random.randrange(0, 2)
-            else:
-                index = int(index)
-            # TODO - Handle the selector exceptions properly
-            try:
-                current_sel.select_by_index(index)
-            except exceptions.ElementClickInterceptedException:
-                md_toast_remover(self.driver)
-                try:
-                    current_sel.select_by_index(index)
-                except exceptions.ElementClickInterceptedException:
-                    print('removing header')
-                    md_toast_remover(self.driver)
-
-                    try:
-                        header = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                          value='st-header.new.ng-scope')
-                    except exceptions.NoSuchElementException:
-                        pass
-                    else:
-                        self.driver.execute_script("arguments[0].remove();", header)
-
-                    try:
-                        scroll_mask = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                               value='div.md-scroll-mask')
-                        self.driver.execute_script("arguments[0].remove();", scroll_mask)
-                    except exceptions.NoSuchElementException:
-                        pass
-
-                    try:
-                        current_sel.select_by_index(index)
-                    except ValueError:
-                        current_sel.select_by_index(index)
-
-                except ValueError:
-                    current_sel.select_by_index(index)
-
-            except exceptions.NoSuchElementException:
-                pass
-
-            except ValueError:
-                try:
-                    current_sel.select_by_index(index)
-                except exceptions.ElementClickInterceptedException:
-                    md_toast_remover(self.driver)
-                    try:
-                        current_sel.select_by_index(index)
-                    except exceptions.ElementClickInterceptedException:
-                        print('removing header')
-                        md_toast_remover(self.driver)
-                        header = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                          value='st-header.new.ng-scope')
-                        self.driver.execute_script("arguments[0].remove();", header)
-                        current_sel.select_by_index(index)
-
     def select_el_handler(self, content):
-
-        md_toast_remover(self.driver)
 
         for select_el in content.find_elements(by=By.TAG_NAME, value='select'):
             try:
-                if select_el.get_attribute('ng-model') == '$ctrl.address.country':
-                    self.selector(select_el, index='1')
-                elif select_el.get_attribute('ng-model') in ['$ctrl.employment.isCurrent',
-                                                             '$ctrl.employment.type',
-                                                             '$ctrl.employment.status',
-                                                             '$ctrl.employment.basis']:
+                ng_model = select_el.get_attribute('ng-model')
+                if ng_model == '$ctrl.address.country':
+                    selector(self.driver, select_el, index='1')
+                elif ng_model in ['$ctrl.employment.isCurrent',
+                                  '$ctrl.employment.type',
+                                  '$ctrl.employment.status',
+                                  '$ctrl.employment.basis']:
                     continue
+                elif ng_model in ['$ctrl.contact.person.information.countryOfResidency',
+                                  '$ctrl.contact.person.information.countryOfTaxResidence',
+                                  '$ctrl.contact.person.information.citizenship',
+                                  '$ctrl.contact.person.information.residentialStatus',
+                                  '$ctrl.contact.person.information.countryOfBirth']:
+                    selector(self.driver, select_el, index='1')
                 else:
-                    self.selector(select_el)
+                    selector(self.driver, select_el)
             except exceptions.StaleElementReferenceException:
                 continue
 
     def md_radio_group(self, content):
-        for md_radio_group in content.find_elements(by=By.TAG_NAME, value='md-radio-group'):
+        md_radio_group = content.find_elements(by=By.TAG_NAME, value='md-radio-group')
+        for group in md_radio_group:
             try:
-                md_radio_buttons = md_radio_group.find_elements(by=By.TAG_NAME,
-                                                                value='md-radio-button')
+                md_radio_buttons = group.find_elements(by=By.TAG_NAME,
+                                                       value='md-radio-button')
                 radio_button_to_click = random.randrange(0, len(md_radio_buttons))
-                if not element_clicker(self.driver, web_element=md_radio_buttons[radio_button_to_click]):
-                    continue
+                element_clicker(self.driver, web_element=md_radio_buttons[radio_button_to_click])
             except exceptions.StaleElementReferenceException:
                 continue
 
@@ -152,104 +79,42 @@ class MultipleDealCreator:
         self._first_employment()
         employ_num = self.deal_config["contacts"]["employment"]["num"]
 
-        for i in range(employ_num):
+        try:
+            employment = self.driver.find_element(by=eval(selectors.EMPLOYMENT_BUTTON['by']),
+                                                  value=selectors.EMPLOYMENT_BUTTON['value'])
+        except exceptions.NoSuchElementException:
+            print('Am in company, weird')
+            return
+            # self.driver.get_screenshot_as_file(
+            #     f'Reports/{date.today()}/Screenshots/employment{random_string_create(3)}.png')
+
+        for i in range(1, employ_num):
+            element_clicker(self.driver, web_element=employment)
+
+            employment_status = self.driver.find_elements(by=eval(selectors.EMPLOY_STATUS['by']),
+                                                          value=selectors.EMPLOY_STATUS['value'])[i]
+            selector(self.driver, select_element=employment_status, index='random', rand_range='0-2')
+
+            employment_type = self.driver.find_elements(by=eval(selectors.EMPLOY_TYPE['by']),
+                                                        value=selectors.EMPLOY_TYPE['value'])[i]
+            selector(self.driver, select_element=employment_type, index='random', rand_range='1-5')
+
+            employment_priority = self.driver.find_elements(by=eval(selectors.EMPLOY_PRIORITY['by']),
+                                                            value=selectors.EMPLOY_PRIORITY['value'])[i]
+            selector(self.driver, select_element=employment_priority, index='random', rand_range='1-3')
+            emply_els = self.driver.find_elements(by=eval(selectors.EMPLOY_BASIS['by']),
+                                                             value=selectors.EMPLOY_BASIS['value'])
             try:
-                employment = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                      value='st-block-form-header > button[ng-click="$ctrl.employmentAdd($event)"]')
+                employment_basis = emply_els[i-1]
             except exceptions.NoSuchElementException:
-                print('No employment element, something\'s gone off. Handler')
-                # self.driver.get_screenshot_as_file(
-                #     f'Reports/{date.today()}/Screenshots/employment{random_string_create(3)}.png')
+                pass
             else:
-                element_clicker(self.driver, web_element=employment)
-
-                for count, employment_status in enumerate(self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                                                    value='select[ng-change="$ctrl.toggleEmployment()"]')):
-                    if count == 0:
-                        continue
-                    try:
-                        Select(employment_status).select_by_index(random.randrange(0, 2))
-                    except exceptions.ElementClickInterceptedException:
-                        md_toast_remover(self.driver)
-                        try:
-                            Select(employment_status).select_by_index(random.randrange(0, 2))
-                        except exceptions.ElementClickInterceptedException:
-                            header = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                              value='st-header.new.ng-scope')
-                            self.driver.execute_script("arguments[0].remove();", header)
-                            Select(employment_status).select_by_index(random.randrange(0, 2))
-
-                for count, employment_type in enumerate(self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                                                  value='select[ng-change="$ctrl.toggleEmploymentType()"]')):
-                    if count == 0:
-                        continue
-                    try:
-                        Select(employment_type).select_by_index(random.randrange(1, 5))
-                    except exceptions.ElementClickInterceptedException:
-                        md_toast_remover(self.driver)
-                        try:
-                            Select(employment_type).select_by_index(random.randrange(1, 5))
-                        except exceptions.ElementClickInterceptedException:
-                            header = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                              value='st-header.new.ng-scope')
-                            self.driver.execute_script("arguments[0].remove();", header)
-                            Select(employment_type).select_by_index(random.randrange(1, 5))
-
-                for count, employment_priority in enumerate(self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                                                      value='select[ng-model="$ctrl.employment.status"]')):
-                    if count == 0:
-                        continue
-                    try:
-                        Select(employment_priority).select_by_index(random.randrange(1, 3))
-                    except exceptions.ElementClickInterceptedException:
-                        md_toast_remover(self.driver)
-                        try:
-                            Select(employment_priority).select_by_index(random.randrange(1, 3))
-                        except exceptions.ElementClickInterceptedException:
-                            header = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                              value='st-header.new.ng-scope')
-                            self.driver.execute_script("arguments[0].remove();", header)
-                            Select(employment_priority).select_by_index(random.randrange(1, 3))
-
-                try:
-                    employment_basis = self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                                 value='select[ng-model="$ctrl.employment.basis"]')
-                except exceptions.NoSuchElementException:
-                    pass
-                else:
-                    for count, basis in enumerate(employment_basis):
-                        if count == 0:
-                            continue
-                        try:
-                            num_basis_options = len(Select(basis).options)
-                        except exceptions.ElementClickInterceptedException:
-                            md_toast_remover(self.driver)
-                            try:
-                                num_basis_options = len(Select(basis).options)
-                            except exceptions.ElementClickInterceptedException:
-                                header = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                                  value='st-header.new.ng-scope')
-                                self.driver.execute_script("arguments[0].remove();", header)
-                                num_basis_options = len(Select(basis).options)
-
-                        try:
-                            Select(basis).select_by_index(random.randrange(1, num_basis_options))
-                        except exceptions.ElementClickInterceptedException:
-                            md_toast_remover(self.driver)
-                            try:
-                                Select(basis).select_by_index(
-                                    random.randrange(1, num_basis_options))
-                            except exceptions.ElementClickInterceptedException:
-                                header = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                                  value='st-header.new.ng-scope')
-                                self.driver.execute_script("arguments[0].remove();", header)
-                                Select(basis).select_by_index(
-                                    random.randrange(1, num_basis_options))
+                selector(self.driver, select_element=employment_basis, index='random')
 
     def _first_employment(self):
         try:
-            employment = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                  value='st-block-form-header > button[ng-click="$ctrl.employmentAdd($event)"]')
+            employment = self.driver.find_element(by=eval(selectors.EMPLOYMENT_BUTTON['by']),
+                                                  value=selectors.EMPLOYMENT_BUTTON['value'])
         except exceptions.NoSuchElementException:
             print('No employment element, something\'s gone off. First employment')
             # self.driver.get_screenshot_as_file(
@@ -259,79 +124,27 @@ class MultipleDealCreator:
 
             sleep(0.01)
 
-            employ_status = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                     value='select[ng-change="$ctrl.toggleEmployment()"]')
-            try:
-                Select(employ_status).select_by_index(0)
-            except exceptions.ElementClickInterceptedException:
-                md_toast_remover(self.driver)
-                try:
-                    Select(employ_status).select_by_index(0)
-                except exceptions.ElementClickInterceptedException:
-                    header = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                      value='st-header.new.ng-scope')
-                    self.driver.execute_script("arguments[0].remove();", header)
-                    Select(employ_status).select_by_index(0)
+            employ_status = self.driver.find_element(by=eval(selectors.EMPLOY_STATUS['by']),
+                                                     value=selectors.EMPLOY_STATUS['value'])
+            selector(self.driver, select_element=employ_status, index='0')
 
-            employ_type = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                   value='select[ng-change="$ctrl.toggleEmploymentType()"]')
-            try:
-                Select(employ_type).select_by_index(random.randrange(1, 3))
-            except exceptions.ElementClickInterceptedException:
-                md_toast_remover(self.driver)
-                try:
-                    Select(employ_type).select_by_index(random.randrange(1, 3))
-                except exceptions.ElementClickInterceptedException:
-                    header = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                      value='st-header.new.ng-scope')
-                    self.driver.execute_script("arguments[0].remove();", header)
-                    Select(employ_type).select_by_index(random.randrange(1, 3))
+            employ_type = self.driver.find_element(by=eval(selectors.EMPLOY_TYPE['by']),
+                                                   value=selectors.EMPLOY_TYPE['value'])
+            selector(self.driver, select_element=employ_type, index='random', rand_range='1-3')
 
-            employ_priority = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                       value='select[ng-model="$ctrl.employment.status"]')
-            try:
-                Select(employ_priority).select_by_index(random.randrange(1, 3))
-            except exceptions.ElementClickInterceptedException:
-                md_toast_remover(self.driver)
-                try:
-                    Select(employ_priority).select_by_index(random.randrange(1, 3))
-                except exceptions.ElementClickInterceptedException:
-                    header = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                      value='st-header.new.ng-scope')
-                    self.driver.execute_script("arguments[0].remove();", header)
-                    Select(employ_priority).select_by_index(random.randrange(1, 3))
+            employ_priority = self.driver.find_element(by=eval(selectors.EMPLOY_PRIORITY['by']),
+                                                       value=selectors.EMPLOY_PRIORITY['value'])
+            selector(self.driver, select_element=employ_priority, index='random', rand_range='1-3')
 
-            employ_basis = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                    value='select[ng-model="$ctrl.employment.basis"]')
-            try:
-                num_basis_options = len(Select(employ_basis).options)
-            except exceptions.ElementClickInterceptedException:
-                md_toast_remover(self.driver)
-                try:
-                    num_basis_options = len(Select(employ_basis).options)
-                except exceptions.ElementClickInterceptedException:
-                    header = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                      value='st-header.new.ng-scope')
-                    self.driver.execute_script("arguments[0].remove();", header)
-                    num_basis_options = len(Select(employ_basis).options)
-
-            try:
-                Select(employ_basis).select_by_index(random.randrange(1, num_basis_options))
-            except exceptions.ElementClickInterceptedException:
-                md_toast_remover(self.driver)
-                try:
-                    Select(employ_basis).select_by_index(
-                        random.randrange(1, num_basis_options))
-                except exceptions.ElementClickInterceptedException:
-                    header = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                      value='st-header.new.ng-scope')
-                    self.driver.execute_script("arguments[0].remove();", header)
-                    Select(employ_basis).select_by_index(
-                        random.randrange(1, num_basis_options))
+            employ_basis = self.driver.find_element(by=eval(selectors.EMPLOY_BASIS['by']),
+                                                    value=selectors.EMPLOY_BASIS['value'])
+            selector(self.driver, select_element=employ_basis, index='random')
 
     def ul_list_selector(self, input_el, input_text):
         sleep(5)
         input_el.send_keys(input_text)
+
+        # The ul list produced by typing in the input always has the ID inside itself but needs to modified like so
         ul_el_id = 'ul-' + str(input_el.get_attribute('id')).split('-')[-1]
         try:
             WdWait(self.driver, 15).until(ec.visibility_of_element_located((By.ID, ul_el_id)))
@@ -351,10 +164,9 @@ class MultipleDealCreator:
                                            li_els[random.randrange(0, len(li_els))])
 
     def input_el_handler(self, content):
-
+        input_els = content.find_elements(by=By.TAG_NAME, value='input')
         try:
-            for input_el in content.find_elements(by=By.TAG_NAME, value='input'):
-                self.address_repeat = 0
+            for input_el in input_els:
 
                 value_test = input_el.get_attribute('value')
 
@@ -477,40 +289,43 @@ class MultipleDealCreator:
                     to_click = random.randrange(0, len(md_select_container))
                 except ValueError:
                     continue
-                element_clicker(self.driver, web_element=md_select_container[to_click])
+                if not element_clicker(self.driver, web_element=md_select_container[to_click]):
+                    continue
             except:
                 traceback.print_stack()
                 traceback.print_exc()
                 continue
 
     def checkbox_handler(self, content):
-        for checkbox in content.find_elements(by=By.TAG_NAME, value='md-checkbox'):
+        checkboxes = content.find_elements(by=By.TAG_NAME, value='md-checkbox')
+
+        for checkbox in checkboxes:
             try:
                 if checkbox.get_attribute('ng-change') == '$ctrl.marketingToggle()':
                     continue
                 else:
                     if random.randrange(0, 100) > 30:
-                        element_clicker(self.driver, web_element=checkbox)
+                        if not element_clicker(self.driver, web_element=checkbox):
+                            continue
             except exceptions.NoSuchElementException:
                 print('excepted exception but why')
             except exceptions.StaleElementReferenceException:
-                print('Stale elemento')
+                continue
 
     def client_profile_input(self, deal_url):
         if deal_url != self.driver.current_url:
             self.driver.get(deal_url)
 
-        try:
-            WdWait(self.driver, 20).until(
-                ec.presence_of_element_located(
-                    (By.CSS_SELECTOR, 'st-sidebar-block button:nth-child(2)')))
-        except exceptions.TimeoutException:
-            WdWait(self.driver, 20).until(
-                ec.presence_of_element_located(
-                    (By.CSS_SELECTOR, 'st-sidebar-block > div > button')))
-
-        test = self.driver.find_elements(by=By.CSS_SELECTOR, value='st-sidebar-block button')
-        test[-1].click()
+        WdWait(self.driver, 20).until(
+            ec.presence_of_element_located(
+                (By.CSS_SELECTOR, 'st-sidebar-block > div > button')))
+        """
+        A couple of ways to click this tools/profile button. One way is to click st-sidebar-block button:nth-child(2),
+        but getting all els and going for the last one seems solid enough
+        """
+        profile_buttons = self.driver.find_elements(by=By.CSS_SELECTOR, value='st-sidebar-block button')
+        element_clicker(self.driver, web_element=profile_buttons[-1])
+        # TODO - 30 seconds wait for the st-contact which is in 90% of situations the first page, maybe try another way
         try:
             WdWait(self.driver, 10).until(
                 ec.presence_of_element_located((By.CSS_SELECTOR, 'st-contact')))
@@ -518,57 +333,63 @@ class MultipleDealCreator:
             WdWait(self.driver, 20).until(
                 ec.presence_of_element_located((By.CSS_SELECTOR, 'st-contact')))
 
-        contact_buttons = self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                    value='st-sidebar-content > st-sidebar-block:first-of-type > div '
-                                                          '> button')
+        contact_buttons = self.driver.find_elements(by=eval(selectors.CONTACT_BUTTONS['by']),
+                                                    value=selectors.CONTACT_BUTTONS['value'])
 
-        for button_count, contact_button in enumerate(contact_buttons, start=1):
-            self.address_repeat = 0
-            try:
-                current_button = self.driver.find_element(by=By.XPATH,
-                                                          value=f'//span[text()={button_count}]/ancestor::*[position()=2]')
-            except exceptions.NoSuchElementException:
-                print(f'{button_count}')
-                print('No such element?')
-            else:
-                element_clicker(self.driver, web_element=current_button)
+        contact_info = []
+        for contact in contact_buttons:
+            contact_info.append(
+                {
+                    'web_el': contact,
+                    'type': contact.find_element(by=By.CSS_SELECTOR, value='small > span').text,
+                    'contact_name': contact.find_element(by=By.CSS_SELECTOR, value='span.truncate').text
+                 }
+            )
 
-                content = WdWait(self.driver, 10).until(
-                    ec.presence_of_element_located((By.CSS_SELECTOR, 'body > md-content')))
+        for contact_button in contact_info:
 
-                self.select_el_handler(content)
+            if not element_clicker(self.driver, web_element=contact_button['web_el']):
+                contact_button['web_el'] = self.driver.find_element(by=By.XPATH,
+                                                                    value=f"//st-sidebar-block/div/button/span[contains(text(),'{contact_button['contact_name']}')]/..")
+                element_clicker(self.driver, web_element=contact_button['web_el'])
 
-                self.md_select_handler(content)
+            content = WdWait(self.driver, 10).until(
+                ec.presence_of_element_located((eval(selectors.CONTENT['by']), selectors.CONTENT['value'])))
 
-                self.md_radio_group(content)
+            self.select_el_handler(content)
 
+            self.md_select_handler(content)
+
+            self.md_radio_group(content)
+
+            if contact_button['type'] == 'Personal':
                 self.employment_handler()
 
-                self.select_el_handler(content)
+            self.select_el_handler(content)
 
-                self.input_el_handler(content)
+            self.input_el_handler(content)
 
-                self.checkbox_handler(content)
+            self.checkbox_handler(content)
 
-                textarea_handler(content)
+            textarea_handler(content)
 
         # self.driver.refresh()
         WdWait(self.driver, 20).until(
             ec.presence_of_element_located((By.CSS_SELECTOR, 'form-content > form')))
 
         try:
-            buttons = self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                value='st-sidebar-content > st-sidebar-block > div > div > button')
+            buttons = self.driver.find_elements(by=eval(selectors.PROFILE_BUTTONS['by']),
+                                                value=selectors.PROFILE_BUTTONS['value'])
         except exceptions.NoSuchElementException:
-            print('No div > button')
+            print('No div > buttons')
         else:
             separators = []
 
-            for button_count, button in enumerate(buttons, start=1):
+            for button in buttons:
 
                 try:
-                    current_separator = button.find_element(by=By.CSS_SELECTOR,
-                                                            value='div > button > span.truncate').text
+                    current_separator = button.find_element(by=eval(selectors.BUTTON_TEXT['by']),
+                                                            value=selectors.BUTTON_TEXT['value']).text
                 except exceptions.StaleElementReferenceException as inst:
                     # TODO ?
                     print(inst.stacktrace)
@@ -585,8 +406,8 @@ class MultipleDealCreator:
 
                 separators.append(current_separator)
 
+            # I am using separator names rather than buttons as the page might need to be reloaded and the buttons might go stale
             for separator in separators:
-                self.address_repeat = 0
                 try:
                     current_button = self.driver.find_element(by=By.XPATH,
                                                               value=f"//span[text()='{separator}']/ancestor::button[position()=1]")
@@ -600,11 +421,11 @@ class MultipleDealCreator:
                     continue
 
                 content = WdWait(self.driver, 10).until(
-                    ec.presence_of_element_located((By.CSS_SELECTOR, 'body > md-content')))
+                    ec.presence_of_element_located((eval(selectors.CONTENT['by']), selectors.CONTENT['value'])))
 
                 if separator == 'Income':
-                    income_buttons = self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                               value='div.mt0 button')
+                    income_buttons = self.driver.find_elements(by=eval(selectors.INFO_BUTTONS['by']),
+                                                               value=selectors.INFO_BUTTONS['value'])
                     for income_button in income_buttons:
 
                         if not element_clicker(self.driver, web_element=income_button):
@@ -619,15 +440,16 @@ class MultipleDealCreator:
                     self.input_el_handler(content)
 
                 elif separator == 'Expenses':
+                    # TODO - Make this smarter, check if one is already added and so forth
                     WdWait(self.driver, 10).until(
                         ec.presence_of_element_located((By.TAG_NAME, 'st-households')))
-                    self.driver.find_element(by=By.CSS_SELECTOR,
-                                             value='st-block-form-header > button').click()
+                    self.driver.find_element(by=eval(selectors.ADD_HOUSEHOLD['by']),
+                                             value=selectors.ADD_HOUSEHOLD['value']).click()
 
                     household_picker = WdWait(self.driver, 10).until(ec.presence_of_element_located(
-                        (By.CSS_SELECTOR,
-                         'st-tabs-list-content > div > div > div > md-input-container > md-select')))
+                        (eval(selectors.HOUSEHOLD_PICKER['by']), selectors.HOUSEHOLD_PICKER['value'])))
                     element_clicker(self.driver, web_element=household_picker)
+
                     household_picker_id = household_picker.get_attribute('id')
                     household_picker_container_id = str(int(household_picker_id.split("_")[-1]) + 1)
                     household_picker_container = WdWait(self.driver, 10).until(
@@ -648,7 +470,8 @@ class MultipleDealCreator:
                     self.select_el_handler(content)
 
                 if separator == 'Assets':
-                    assets = self.driver.find_elements(by=By.CSS_SELECTOR, value='div.mt0 button')
+                    assets = self.driver.find_elements(by=eval(selectors.INFO_BUTTONS['by']),
+                                                       value=selectors.INFO_BUTTONS['value'])
                     for asset in assets:
                         if not element_clicker(self.driver, web_element=asset):
                             continue
@@ -665,13 +488,17 @@ class MultipleDealCreator:
 
                 elif separator == 'Liabilities':
 
-                    liabilities = self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                            value='div.mt0 button')
-                    for liability in liabilities:
-                        if not element_clicker(self.driver, web_element=liability):
-                            continue
-                        if not element_clicker(self.driver, web_element=liability):
-                            continue
+                    liabilities = self.driver.find_elements(by=eval(selectors.INFO_BUTTONS['by']),
+                                                            value=selectors.INFO_BUTTONS['value'])
+
+                    for _ in range(0, random.randint(3, 7)):
+                        element_clicker(self.driver, web_element=random.choice(liabilities))
+
+                    # for liability in liabilities:
+                    #     if not element_clicker(self.driver, web_element=liability):
+                    #         continue
+                    #     if not element_clicker(self.driver, web_element=liability):
+                    #         continue
 
                     self.select_el_handler(content)
 
@@ -707,8 +534,8 @@ class MultipleDealCreator:
                     textarea_handler(content)
 
                 elif separator == 'Insurance':
-                    insurances = self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                          value='div.mt0 button')
+                    insurances = self.driver.find_elements(by=eval(selectors.INFO_BUTTONS['by']),
+                                                           value=selectors.INFO_BUTTONS['value'])
                     for insurance in insurances:
                         if not element_clicker(self.driver, web_element=insurance):
                             continue
@@ -723,8 +550,8 @@ class MultipleDealCreator:
 
                 elif separator == 'Other advisers':
                     # TODO - Fix other adviser adding
-                    other_advisers = self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                               value='div.mt0 button')
+                    other_advisers = self.driver.find_elements(by=eval(selectors.INFO_BUTTONS['by']),
+                                                               value=selectors.INFO_BUTTONS['value'])
                     for other_adviser in other_advisers:
                         if not element_clicker(self.driver, web_element=other_adviser):
                             continue
