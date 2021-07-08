@@ -1,3 +1,6 @@
+"""
+A simple mockup/tryout for the API - not working yet, just checking if it would be useful in the current landscape.
+"""
 from flask import Flask, render_template, Response
 from flask_restful import Api, Resource, request, reqparse
 import requests

@@ -1,3 +1,8 @@
+"""
+This is what will read the new account e-mail and extract username and password from it.
+
+I used a st.receive@gmail.com that I made it has nothing important on except those accounts that are all in separate organizations that have no access to others orgs.
+"""
 import email
 import imaplib
 import re
@@ -14,6 +19,9 @@ class Mailer:
 
 
 def mail_get(ent: str) -> dict:
+    """
+    Read emails from st.receive@gmail.com
+    """
 
     user_email = "st.receive@gmail.com"
     user_password = "yalk8kut4HUH*psuw"
@@ -47,8 +55,8 @@ def mail_get(ent: str) -> dict:
             f'ALL UNSEEN SUBJECT "Your {all_ents[ent]} account" '
             f'FROM "no-reply@eml.salestrekker.com" '
             f'ON "{current_date}"')
-    except KeyError:
-        raise KeyError(f'No enterprise found for: {ent}')
+    except KeyError as no_ent:
+        raise KeyError(f'No enterprise found for: {ent}') from no_ent
     else:
         try:
             last_email_id = id_list[0].split()[-1]
@@ -75,9 +83,9 @@ def mail_get(ent: str) -> dict:
 
                     if re_pass is not None:
                         return return_dict
-                    else:
-                        return_dict = {'email': None, 'password': None}
-                        return return_dict
+
+                return_dict = {'email': None, 'password': None}
+                return return_dict
 
 
 if __name__ == '__main__':

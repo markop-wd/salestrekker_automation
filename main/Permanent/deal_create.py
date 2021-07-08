@@ -1,24 +1,18 @@
-import string
-
-from main.Permanent import workflow_manipulation
-
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.wait import WebDriverWait as WdWait
-from selenium.webdriver.support.select import Select
-from selenium.webdriver.support import expected_conditions as ec
-from selenium.webdriver import Chrome
-from selenium.common import exceptions
-
-from main.Permanent.helper_funcs import md_toast_remover, element_clicker
-
-from time import sleep
-from datetime import datetime
 import json
 import random
-# import traceback
-# from pathlib import Path
-#
+from datetime import datetime
+from time import sleep
+
+from selenium.common import exceptions
+from selenium.webdriver import Chrome
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.support.select import Select
+from selenium.webdriver.support.wait import WebDriverWait as WdWait
+
+from main.Permanent.helper_funcs import md_toast_remover, element_clicker, phone_num_gen, selector
+from main.Permanent.deal_create_selectors import *
 
 
 class EditDeal:
@@ -35,38 +29,53 @@ class EditDeal:
         self.deal_info = deal_config['deal_info']
         number_of_contacts = self.contacts['number_of_contacts']
 
-        # in both cases decrease 1 as one contact already exists within a deal
         if number_of_contacts['random']:
-            self.number_of_contacts = int(random.randrange(number_of_contacts['rand_val']['min'],
-                                                           number_of_contacts['rand_val'][
-                                                               'max'])) - 1
+            # Take a random value between the min and the max random value in deal config
+            self.number_of_contacts = int(random.randrange(
+                number_of_contacts['rand_val']['min'],
+                number_of_contacts['rand_val']['max'])
+            )
         else:
-            self.number_of_contacts = int(number_of_contacts['value']) - 1
+            # Otherwise just take the value from deal config
+            self.number_of_contacts = int(number_of_contacts['value'])
+        # Subtract 1 in both cases (as when you create a deal one contact is present by default)
+        self.number_of_contacts -= 1
 
-    def run(self, workflow: str = 'test', af_type: str = "cons",
-            settlement_date: str = f'{datetime.now().strftime("%d/%m/%Y")}',
-            deal_owner_name: str = '', add_all_team: bool = False):
-
+    def run(self, workflow: str = 'test', af_type: str = "cons", deal_owner_name: str = '', client_email: str = ""):
+        """
+        This is the main logic for the deal creation, this one calls the 'private' functions
+        Also it makes sure we are at the correct place and the correct time when not filling in input fields
+        """
         if workflow == 'test':
             self.driver.get(self.main_url)
             in_workflow = self.driver.current_url.split('/')[-1]
         else:
-            in_workflow = workflow
+            in_workflow = workflow.split('/')[-1]
+
         if not deal_owner_name:
+            # TODO - maybe take the current user as the default deal owner rather than going by the config
             deal_owner_name = self.deal_info['deal_owner']
 
-        if add_all_team:
-            if users_in_workflow := workflow_manipulation.workflow_users(driver=self.driver,
-                                                                         ent=self.ent,
-                                                                         workflow_id=in_workflow):
-                self.users_in_workflow = users_in_workflow
-            else:
-                workflow_manipulation.add_users_to_workflow(driver=self.driver,ent=self.ent,
-                                                            workflow_id=in_workflow)
+        # TODO - Review this little snippet as it might not be needed at all and can only be left in the off case
+        # if add_all_team:
+        #     if users_in_workflow := workflow_manipulation.workflow_users(driver=self.driver,
+        #                                                                  ent=self.ent,
+        #                                                                  workflow_id=in_workflow):
+        #         self.users_in_workflow = users_in_workflow
+        #     else:
+        #         workflow_manipulation.add_users_to_workflow(driver=self.driver, ent=self.ent,
+        #                                                     workflow_id=in_workflow)
 
         self.driver.get(self.main_url + '/deal/edit/' + in_workflow + '/0')
 
-        WdWait(self.driver, 15).until(ec.presence_of_element_located((By.ID, 'top')))
+        try:
+            WdWait(self.driver, 15).until(ec.presence_of_element_located((By.ID, 'top')))
+        except exceptions.TimeoutException:
+            try:
+                WdWait(self.driver, 30).until(ec.presence_of_element_located((By.ID, 'top')))
+            except exceptions.TimeoutException:
+                self.driver.refresh()
+                WdWait(self.driver, 15).until(ec.presence_of_element_located((By.ID, 'top')))
 
         # assert "Add New Ticket" in self.driver.title
 
@@ -75,249 +84,130 @@ class EditDeal:
         try:
             purpose_radio_group = WdWait(self.driver, 5).until(
                 ec.presence_of_element_located(
-                    (By.CSS_SELECTOR, 'md-radio-group[ng-change="toggleCommercial()"]')))
+                    (eval(LOAN_PURPOSE['by']),
+                     LOAN_PURPOSE['value']
+                     )))
         except exceptions.TimeoutException:
             pass
         else:
             if af_type == "comm":
-                purpose_radio_group.find_element(by=By.CSS_SELECTOR,
-                                                 value='md-radio-button[aria-label="Commercial"]').click()
+                comm_button = purpose_radio_group.find_element(by=eval(COMMERCIAL_PURPOSE['by']),
+                                                               value=COMMERCIAL_PURPOSE['value'])
+                element_clicker(self.driver, web_element=comm_button)
             elif af_type == "cons":
-                purpose_radio_group.find_element(by=By.CSS_SELECTOR,
-                                                 value='md-radio-button[aria-label="Consumer"]').click()
+                cons_button = purpose_radio_group.find_element(by=eval(CONSUMER_PURPOSE['by']),
+                                                               value=CONSUMER_PURPOSE['value'])
+                element_clicker(self.driver, web_element=cons_button)
 
         self._contact_add()
-        self._contact_input()
-        self._deal_info_input(settlement_date)
+        self._contact_input(client_email)
+        self._deal_info_input()
 
         # Save
-        sleep(5)
-        save_button = WdWait(self.driver, 10).until(
-            ec.element_to_be_clickable((By.CSS_SELECTOR, 'button.save')))
-        try:
-            save_button.click()
-        except exceptions.ElementClickInterceptedException:
-            self.driver.execute_script("arguments[0].click();", save_button)
-
-        try:
-            WdWait(self.driver, 10).until(
-                ec.presence_of_element_located((By.TAG_NAME, 'ticket-content')))
-        except exceptions.TimeoutException:
-            try:
-                WdWait(self.driver, 10).until(
-                    ec.presence_of_element_located((By.CSS_SELECTOR, 'form[name="ticketEdit"]')))
-            except exceptions.TimeoutException:
-                WdWait(self.driver, 10).until(
-                    ec.presence_of_element_located((By.TAG_NAME, 'ticket-content')))
-            else:
-                home_button = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                       value='md-toolbar > div > a.brand')
-                try:
-                    home_button.click()
-                except exceptions.ElementClickInterceptedException:
-                    self.driver.execute_script("arguments[0].click();", home_button)
-                finally:
-                    try:
-                        WdWait(self.driver, 20).until(
-                            ec.presence_of_element_located((By.TAG_NAME, 'ticket-content')))
-                    except exceptions.TimeoutException:
-                        pass
-
-        finally:
-            deal_url = self.driver.current_url
-
+        deal_url = self._save()
         return deal_url
-        # self.client_profile_input()
 
     def _contact_add(self):
 
         incrementer = 0
+        no_of_companies = self.contacts['contact_types']['no_of_companies']
+
+        add_contact = WdWait(self.driver, 10).until(
+            ec.presence_of_element_located((
+                eval(ADD_CONTACT['by']),
+                ADD_CONTACT['value']
+            )))
 
         for contact in range(self.number_of_contacts):
-            add_contact = WdWait(self.driver, 10).until(
-                ec.presence_of_element_located((By.CSS_SELECTOR,
-                                                '#top > form-content > form > '
-                                                'div > st-block > '
-                                                'st-block-form-header > '
-                                                'md-menu > button')))
-            try:
-                add_contact.click()
-            except exceptions.ElementClickInterceptedException:
-                self.driver.execute_script('arguments[0].click();', add_contact)
+            element_clicker(self.driver, web_element=add_contact)
+
             add_contact_container_id = add_contact.get_attribute('aria-owns')
             contact_type_container = WdWait(self.driver, 5).until(
                 ec.presence_of_element_located((By.ID, add_contact_container_id)))
 
-            if self.contacts['contact_types'] == 'mixed':
+            if self.contacts['contact_types']['types'] == 'mixed':
 
-                # rand_val = random.randrange(0, 2)
-
-                if incrementer < 2:
-
+                if 0 < no_of_companies > incrementer:
                     contact_type = contact_type_container.find_elements(by=By.TAG_NAME,
-                                                                        value='button')
-                    try:
-                        contact_type[0].click()
-                    except exceptions.ElementClickInterceptedException:
-                        self.driver.execute_script('arguments[0].click();', contact_type[0])
+                                                                        value='button')[1]
+                    element_clicker(self.driver, web_element=contact_type)
+
                     incrementer += 1
                 else:
                     contact_type = contact_type_container.find_elements(by=By.TAG_NAME,
-                                                                        value='button')
-                    try:
-                        contact_type[1].click()
-                    except exceptions.ElementClickInterceptedException:
-                        self.driver.execute_script('arguments[0].click();', contact_type[1])
+                                                                        value='button')[0]
+                    element_clicker(self.driver, web_element=contact_type)
 
-                    incrementer += 1
+            elif self.contacts['contact_types']['types'] == 'company':
+                contact_type = contact_type_container.find_elements(by=By.TAG_NAME, value='button')[1]
+                element_clicker(self.driver, web_element=contact_type)
 
-                    # type_of_cont = contact_type[rand_val].get_attribute('ng-click')
-                    #
-                    # if type_of_cont == 'contactAdd(false)':
-                    #     self.current_export_array.append('Person ')
-                    #
-                    # if type_of_cont == 'contactAdd(true)':
-                    #     self.current_export_array.append('Company ')
-
-            elif self.contacts['contact_types'] == 'company':
-                contact_type = contact_type_container.find_elements(by=By.TAG_NAME, value='button')
-                for contact_button in contact_type:
-                    if contact_button.find_element(by=By.TAG_NAME, value='span').text == 'Company':
-                        try:
-                            contact_button.click()
-                        except exceptions.ElementClickInterceptedException:
-                            self.driver.execute_script('arguments[0].click();', contact_button)
-                            # self.current_export_array.append('Company ')
-                        break
-                else:
-                    raise Exception
-                    pass
-
-            elif self.contacts['contact_types'] == 'person':
-                contact_type = contact_type_container.find_elements(by=By.TAG_NAME, value='button')
-                for contact_button in contact_type:
-                    sleep(1)
-                    if contact_button.find_element(by=By.TAG_NAME, value='span').text == 'Person':
-                        try:
-                            contact_button.click()
-                        except exceptions.ElementClickInterceptedException:
-                            self.driver.execute_script('arguments[0].click();', contact_button)
-                            # self.current_export_array.append('Person ')
-                        finally:
-                            break
-                else:
-                    raise Exception
-                    pass
-
-        # self.current_export_array.append("No. of clients: " + str(number_of_contacts) + ", ")
+            elif self.contacts['contact_types']['types'] == 'person':
+                contact_type = contact_type_container.find_elements(by=By.TAG_NAME, value='button')[0]
+                element_clicker(self.driver, web_element=contact_type)
 
     # TODO - Get a better way to pass in names
-    def _contact_input(self):
+    def _contact_input(self, client_email):
 
-        person_names = [['Misty', 'Banks'], ['Karl', 'Berg'], ['Tanisha', 'Obrien'],
-                        ['Jasmin', 'Talley'],
-                        ['Lexi-Mai', 'Mccray'], ['Chandni', 'Kramer'], ['Musab', 'Cunningham'],
-                        ['Spike', 'Dunn'],
-                        ['Doris', 'Vu'], ['Dominick', 'Ferry'], ['Rudi', 'Wolfe'],
-                        ['Saira', 'Haas'],
-                        ['Keeleigh', 'Bate'],
-                        ['Nana', 'Tomlinson'], ['Andrew', 'Phelps'], ['Kirandeep', 'Goulding'],
-                        ['Roland', 'Penn'],
-                        ['Harry', 'Slater'], ['Alexie', 'Aguilar'], ['Adelaide', 'Mellor'],
-                        ['Finbar', 'Bray'],
-                        ['Nasir', 'Potter'], ['Patrycja', 'Metcalfe'], ['Nela', 'Burch'],
-                        ['Belinda', 'Houston'],
-                        ['Amaya', 'Brandt'], ['Husnain', 'Nixon'], ['Tiana', 'Allison'],
-                        ['Wyatt', 'Stephens'],
-                        ['Kenneth', 'Webster'], ['April', 'Lawrence'], ['Leia', 'Wright'],
-                        ['Bushra', 'Knowles'],
-                        ['Levi', 'Davidson'], ['Keira', 'Dalton'], ['Amin', 'Flower'],
-                        ['Samiha', 'Cameron'],
-                        ['Marianne', 'Baker'], ['Habib', 'Portillo'], ['Yousuf', 'Lord'],
-                        ['Nicola', 'Goodman'],
-                        ['Samanta', 'Roman'], ['Benedict', 'Wardle'], ['Nikhil', 'Hayden'],
-                        ['Aurora', 'Bains'],
-                        ['Giulia', 'Romero'], ['Rosa', 'Iles'], ['Alannah', 'Navarro'],
-                        ['Marian', 'Malone'],
-                        ['Dionne', 'Molina'], ['Xanthe', 'Macfarlane'], ['Anabel', 'Hilton'],
-                        ['Samira', 'Mckay'],
-                        ['Mason', 'Novak'], ['Colleen', 'Gaines'], ['Esther', 'Ratliff'],
-                        ['Faheem', 'Valdez'],
-                        ['Rachael', 'Zavala'], ['Kuba', 'Gibbons'], ['Callam', 'Almond'],
-                        ['Nick', 'Bruce'],
-                        ['Ayub', 'Felix'],
-                        ['Esmay', 'Reeve'], ['Aimee', 'Chang'], ['Sarah', 'Patrick'],
-                        ['Billy', 'Hutchings'],
-                        ['Enid', 'Ayala'], ['Katie-Louise', 'Russell'], ['Ashlee', 'Burn'],
-                        ['Tamar', 'Parra'],
-                        ['Darla', 'Sharma'], ['Whitney', 'Emery'], ['Helena', 'Burris'],
-                        ['Rachelle', 'Southern'],
-                        ['Maisie', 'Mcleod'], ['Julia', 'Mckee'], ['Mandy', 'Duggan'],
-                        ['Isaiah', 'William'],
-                        ['Sally', 'Dalby'], ['Marianna', 'Carr'], ['Jasleen', 'Carty'],
-                        ['Evie-Mae', 'Read'],
-                        ['Lana', 'Marsh'], ['Kiana', 'Chase'], ['Preston', 'Greene'],
-                        ['Rae', 'Stafford'],
-                        ['Poppy-Rose', 'Greig'], ['Lyla', 'Woolley'], ['Christy', 'Bird'],
-                        ['Maheen', 'Wyatt'],
-                        ['Cordelia', 'Escobar'], ['Mariya', 'Bradley'], ['Amelia-Grace', 'Kirby'],
-                        ['Kier', 'Whitney'],
-                        ['Sonny', 'Cartwright'], ['Alessia', 'Sargent'], ['Inigo', 'Plummer'],
-                        ['Hareem', 'Lucero'],
-                        ['Caitlyn', 'Reynolds'], ['Ayana', 'Melia'], ['Danielle', 'Davenport'],
-                        ['Charlotte', 'Irving'],
-                        ['Bronwyn', 'Barrow'], ['Eliot', 'Senior'], ['Lesley', 'Mcgowan'],
-                        ['Ada', 'Hancock'],
-                        ['Azra', 'Povey'], ['Wilbur', 'Mcmanus'], ['Lillian', 'Tyson'],
-                        ['Yannis', 'Hunt'],
-                        ['Sherri', 'Betts'], ['Cosmo', 'Lopez'], ['Nella', 'Molloy'],
-                        ['Hasan', 'Plant'],
-                        ['Tyrique', 'Kirk'],
-                        ['Jonah', 'Cantu'], ['Lexi-Mae', 'Reid'], ['Nigel', 'Whelan'],
-                        ['Zavier', 'Dupont'],
-                        ['Bevan', 'Berry'], ['Leo', 'Mueller'], ['Israel', 'Lowery'],
-                        ['Sharna', 'Powell'],
-                        ['Jagoda', 'Porter'], ['Deborah', 'Krueger'], ['Claire', 'Griffiths'],
-                        ['Anabelle', 'Garrett'],
-                        ['Kobie', 'Barrett'], ['Nabeel', 'Gibbs'], ['Kayley', 'Calvert'],
-                        ['Zahrah', 'Hills'],
-                        ['Beck', 'Rice'], ['Kingsley', 'Correa'], ['Micah', 'Pineda'],
-                        ['Jerry', 'Beasley'],
-                        ['Haydn', 'Sanderson'], ['Robyn', 'Frye'], ['Carwyn', 'Garrison'],
-                        ['Rhys', 'Trevino'],
-                        ['Seamus', 'Stafford'], ['Maia', 'Rankin'], ['Iman', 'Huerta'],
-                        ['Rahul', 'Luna'],
-                        ['Judy', 'Mustafa'],
-                        ['Arwa', 'Lane'], ['Jeevan', 'Russo'], ['Francesco', 'Richmond'],
-                        ['Shyam', 'Ferry'],
-                        ['Amal', 'Wolfe'], ['Gabrielle', 'Schmidt'], ['Kellie', 'Mcnally'],
-                        ['Derry', 'Power'],
-                        ['Quentin', 'Castaneda'], ['Hashir', 'Wickens'], ['Alma', 'Romero'],
-                        ['Rheanna', 'Smyth'],
-                        ['Sebastian', 'Coulson'], ['Sahara', 'Riley'], ['Miriam', 'Carty'],
-                        ['Debbie', 'Hogan'],
-                        ['Niyah', 'Bonilla'], ['Lillie-May', 'Mcgee'], ['Petra', 'Buck'],
-                        ['Khalil', 'Mccoy'],
-                        ['Lena', 'Schneider'], ['Isabell', 'Gordon'], ['Howard', 'Hardy'],
-                        ['Lennie', 'Ferreira'],
-                        ['Jibril', 'Jarvis'], ['Christiana', 'Haley'], ['Alan', 'Bray'],
-                        ['Kimora', 'Barnett'],
-                        ['Muneeb', 'Finch'], ['Iqrah', 'Cox'], ['Hanna', 'Lawrence'],
-                        ['Akbar', 'Leech'],
-                        ['Beverly', 'Bain'],
-                        ['Jill', 'Cross'], ['Shania', 'Hyde'], ['T-Jay', 'Soto'],
-                        ['George', 'Bates'],
-                        ['Lexie', 'Knowles'],
-                        ['Gerard', 'Douglas'], ['Weronika', 'Roberts'], ['Alison', 'Cornish'],
-                        ['Reon', 'Robles'],
-                        ['Piotr', 'Macgregor'], ['Alya', 'Hines'], ['Mitchel', 'Oakley'],
-                        ['Sally', 'Santos'],
-                        ['Alfie-Lee', 'Kirkpatrick'], ['Abbie', 'Alvarez'], ['Pola', 'Piper'],
-                        ['Laylah', 'Murphy'],
-                        ['Zubair', 'Boyd'], ['Ali', 'Haas'], ['Nicole', 'Corbett'],
-                        ['Lorna', 'Short'],
-                        ['Ember', 'Alexander'],
-                        ['Cora', 'Sloan']]
+        first_names = ['Misty', 'Karl', 'Tanisha', 'Jasmin', 'Lexi-Mai', 'Chandni', 'Musab', 'Spike', 'Doris',
+                       'Dominick', 'Rudi',
+                       'Saira', 'Keeleigh', 'Nana', 'Andrew', 'Kirandeep', 'Roland', 'Harry', 'Alexie', 'Adelaide',
+                       'Finbar', 'Nasir',
+                       'Patrycja', 'Nela', 'Belinda', 'Amaya', 'Husnain', 'Tiana', 'Wyatt', 'Kenneth', 'April', 'Leia',
+                       'Bushra',
+                       'Levi', 'Keira', 'Amin', 'Samiha', 'Marianne', 'Habib', 'Yousuf', 'Nicola', 'Samanta',
+                       'Benedict', 'Nikhil',
+                       'Aurora', 'Giulia', 'Rosa', 'Alannah', 'Marian', 'Dionne', 'Xanthe', 'Anabel', 'Samira', 'Mason',
+                       'Colleen',
+                       'Esther', 'Faheem', 'Rachael', 'Kuba', 'Callam', 'Nick', 'Ayub', 'Esmay', 'Aimee', 'Sarah',
+                       'Billy', 'Enid',
+                       'Katie-Louise', 'Ashlee', 'Tamar', 'Darla', 'Whitney', 'Helena', 'Rachelle', 'Maisie', 'Julia',
+                       'Mandy',
+                       'Isaiah', 'Sally', 'Marianna', 'Jasleen', 'Evie-Mae', 'Lana', 'Kiana', 'Preston', 'Rae',
+                       'Poppy-Rose', 'Lyla',
+                       'Christy', 'Maheen', 'Cordelia', 'Mariya', 'Amelia-Grace', 'Kier', 'Sonny', 'Alessia', 'Inigo',
+                       'Hareem',
+                       'Caitlyn', 'Ayana', 'Danielle', 'Charlotte', 'Bronwyn', 'Eliot', 'Lesley', 'Ada', 'Azra',
+                       'Wilbur', 'Lillian',
+                       'Yannis', 'Sherri', 'Cosmo', 'Nella', 'Hasan', 'Tyrique', 'Jonah', 'Lexi-Mae', 'Nigel', 'Zavier',
+                       'Bevan',
+                       'Leo', 'Israel', 'Sharna', 'Jagoda', 'Deborah', 'Claire', 'Anabelle', 'Kobie', 'Nabeel',
+                       'Kayley', 'Zahrah',
+                       'Beck', 'Kingsley', 'Micah', 'Jerry', 'Haydn', 'Robyn', 'Carwyn', 'Rhys', 'Seamus', 'Maia',
+                       'Iman', 'Rahul',
+                       'Judy', 'Arwa', 'Jeevan', 'Francesco', 'Shyam', 'Amal', 'Gabrielle', 'Kellie', 'Derry',
+                       'Quentin', 'Hashir',
+                       'Alma', 'Rheanna', 'Sebastian', 'Sahara', 'Miriam', 'Debbie', 'Niyah', 'Lillie-May', 'Petra',
+                       'Khalil', 'Lena',
+                       'Isabell', 'Howard', 'Lennie', 'Jibril', 'Christiana', 'Alan', 'Kimora', 'Muneeb', 'Iqrah',
+                       'Hanna', 'Akbar',
+                       'Beverly', 'Jill', 'Shania', 'T-Jay', 'George', 'Lexie', 'Gerard', 'Weronika', 'Alison', 'Reon',
+                       'Piotr',
+                       'Alya', 'Mitchel', 'Sally', 'Alfie-Lee', 'Abbie', 'Pola', 'Laylah', 'Zubair', 'Ali', 'Nicole',
+                       'Lorna',
+                       'Ember', 'Cora']
+
+        surnames = ['Banks', 'Berg', 'Obrien', 'Talley', 'Mccray', 'Kramer', 'Cunningham', 'Dunn', 'Vu', 'Ferry',
+                    'Wolfe', 'Haas', 'Bate', 'Tomlinson', 'Phelps', 'Goulding', 'Penn', 'Slater', 'Aguilar', 'Mellor',
+                    'Bray', 'Potter', 'Metcalfe', 'Burch', 'Houston', 'Brandt', 'Nixon', 'Allison', 'Stephens',
+                    'Webster', 'Lawrence', 'Wright', 'Knowles', 'Davidson', 'Dalton', 'Flower', 'Cameron', 'Baker',
+                    'Portillo', 'Lord', 'Goodman', 'Roman', 'Wardle', 'Hayden', 'Bains', 'Romero', 'Iles', 'Navarro',
+                    'Malone', 'Molina', 'Macfarlane', 'Hilton', 'Mckay', 'Novak', 'Gaines', 'Ratliff', 'Valdez',
+                    'Zavala', 'Gibbons', 'Almond', 'Bruce', 'Felix', 'Reeve', 'Chang', 'Patrick', 'Hutchings', 'Ayala',
+                    'Russell', 'Burn', 'Parra', 'Sharma', 'Emery', 'Burris', 'Southern', 'Mcleod', 'Mckee', 'Duggan',
+                    'William', 'Dalby', 'Carr', 'Carty', 'Read', 'Marsh', 'Chase', 'Greene', 'Stafford', 'Greig',
+                    'Woolley', 'Bird', 'Wyatt', 'Escobar', 'Bradley', 'Kirby', 'Whitney', 'Cartwright', 'Sargent',
+                    'Plummer', 'Lucero', 'Reynolds', 'Melia', 'Davenport', 'Irving', 'Barrow', 'Senior', 'Mcgowan',
+                    'Hancock', 'Povey', 'Mcmanus', 'Tyson', 'Hunt', 'Betts', 'Lopez', 'Molloy', 'Plant', 'Kirk',
+                    'Cantu', 'Reid', 'Whelan', 'Dupont', 'Berry', 'Mueller', 'Lowery', 'Powell', 'Porter', 'Krueger',
+                    'Griffiths', 'Garrett', 'Barrett', 'Gibbs', 'Calvert', 'Hills', 'Rice', 'Correa', 'Pineda',
+                    'Beasley', 'Sanderson', 'Frye', 'Garrison', 'Trevino', 'Stafford', 'Rankin', 'Huerta', 'Luna',
+                    'Mustafa', 'Lane', 'Russo', 'Richmond', 'Ferry', 'Wolfe', 'Schmidt', 'Mcnally', 'Power',
+                    'Castaneda', 'Wickens', 'Romero', 'Smyth', 'Coulson', 'Riley', 'Carty', 'Hogan', 'Bonilla', 'Mcgee',
+                    'Buck', 'Mccoy', 'Schneider', 'Gordon', 'Hardy', 'Ferreira', 'Jarvis', 'Haley', 'Bray', 'Barnett',
+                    'Finch', 'Cox', 'Lawrence', 'Leech', 'Bain', 'Cross', 'Hyde', 'Soto', 'Bates', 'Knowles', 'Douglas',
+                    'Roberts', 'Cornish', 'Robles', 'Macgregor', 'Hines', 'Oakley', 'Santos', 'Kirkpatrick', 'Alvarez',
+                    'Piper', 'Murphy', 'Boyd', 'Haas', 'Corbett', 'Short', 'Alexander', 'Sloan']
 
         company_names = ['Indeed Entity', 'Finally Entity', 'Seem Entity', 'They Entity',
                          'Reallysatisfied Entity',
@@ -421,257 +311,259 @@ class EditDeal:
 
         person_list = []
         company_list = []
-        try:
-            WdWait(self.driver, 6).until(
-                ec.presence_of_element_located(
-                    (By.CSS_SELECTOR, 'div.mt0 > div > div:nth-child(1) input')))
-        except exceptions.TimeoutException:
-            pass
-        for contact in self.driver.find_elements(by=By.CSS_SELECTOR, value='div.mt0'):
-            if contact.find_element(by=By.CSS_SELECTOR,
-                                    value='md-autocomplete-wrap > md-input-container > label').text == 'First name':
+        WdWait(self.driver, 6).until(
+            ec.presence_of_element_located((
+                eval(FIRST_CLIENT_INPUT['by']),
+                FIRST_CLIENT_INPUT['value']
+            )))
+
+        contacts = self.driver.find_elements(
+            by=eval(CONTACTS['by']),
+            value=CONTACTS['value']
+        )
+
+        for contact in contacts:
+            contact_label = contact.find_element(
+                by=eval(CONTACT_LABEL['by']),
+                value=CONTACT_LABEL['value']
+            )
+            if contact_label.text == 'First name':
                 person_list.append(contact)
-            elif contact.find_element(by=By.CSS_SELECTOR,
-                                      value='md-autocomplete-wrap > md-input-container > label').text == 'Entity name':
+            elif contact_label.text == 'Entity name':
                 company_list.append(contact)
 
         if person_list:
             for count, person in enumerate(person_list):
-                person_name = person_names[random.randrange(0, len(person_names))]
+                # person_name = person_names[random.randrange(0, len(person_names))]
+                first_name = random.choice(first_names)
+                surname = random.choice(surnames)
 
-                person.find_element(by=By.CSS_SELECTOR,
-                                    value='div:nth-child(2) > div:nth-child(1) > md-autocomplete > '
-                                          'md-autocomplete-wrap > md-input-container >input').send_keys(
-                    person_name[0])
-                person.find_element(by=By.CSS_SELECTOR,
-                                    value='div:nth-child(2) > div:nth-child(2) > md-input-container > input').send_keys(
-                    person_name[1])
-                num_prefix = person.find_element(by=By.CSS_SELECTOR,
-                                                 value='div:nth-child(2) > div:nth-child(3) > '
-                                                       'md-input-container:nth-child(1) > input')
-                num_prefix.send_keys(Keys.CONTROL + 'a')
-                num_prefix.send_keys('61')
-                person.find_element(by=By.CSS_SELECTOR,
-                                    value='div:nth-child(2) > div:nth-child(3) > md-input-container:nth-child(2) > '
-                                          'input').send_keys("".join(random.sample(string.digits, 9)))
-                person.find_element(by=By.CSS_SELECTOR,
-                                    value='div:nth-child(2) > div:nth-child(4) > md-input-container > input').send_keys(
-                    f'{person_name[0].lower()}@website.com')
-                current_sel = person.find_element(by=By.CSS_SELECTOR,
-                                                  value='div:nth-child(2) > div:nth-child(4) > '
-                                                        'st-form-field-container > select')
+                if not client_email:
+                    client_email_input = f'{first_name.lower()}@{surname[1].lower()}.com'
+                else:
+                    _mejl_split = client_email.split('@')
+                    _person_name_merge = first_name.lower() + surname.lower()
+                    client_email_input = f'{_mejl_split[0]}+{_person_name_merge}@{_mejl_split[1]}'
 
-                # try:
-                #     Select(current_sel).select_by_value(contact_type)
-                # except exceptions.ElementClickInterceptedException:
-                #     md_toast_waiter(self.driver)
-                #     try:
-                #         Select(current_sel).select_by_value(contact_type)
-                #     except exceptions.ElementClickInterceptedException:
-                #         self.driver.find_element(by=By.TAG_NAME, value='md-backdrop').click()
+                person.find_element(by=eval(PERSON_NAME['by']),
+                                    value=PERSON_NAME['value']).send_keys(first_name)
+                person.find_element(by=eval(PERSON_SURNAME['by']),
+                                    value=PERSON_SURNAME['value']).send_keys(surname)
+
+                person.find_element(by=eval(PHONE_NUM['by']),
+                                    value=PHONE_NUM['value']).send_keys(phone_num_gen())
+                person.find_element(by=eval(PERSON_EMAIL['by']),
+                                    value=PERSON_EMAIL['value']).send_keys(client_email_input)
+
+                client_type = person.find_element(by=eval(CLIENT_TYPE['by']),
+                                                  value=CLIENT_TYPE['value'])
 
                 if self.contacts['non_client']['active']:
                     if count < int(self.contacts['non_client']['no_of_clients']):
-                        try:
-                            Select(current_sel).select_by_index(random.randrange(0, 4))
-                        except exceptions.ElementClickInterceptedException:
-                            md_toast_remover(self.driver)
-                            Select(current_sel).select_by_index(random.randrange(0, 4))
+                        # TODO - Re-do this maybe put it in a separate function as it repeats a couple of times
+                        selector(self.driver, client_type, rand_range="0-4")
                     else:
-                        try:
-                            Select(current_sel).select_by_index(
-                                random.randrange(0, len(Select(current_sel).options)))
-                        except exceptions.ElementClickInterceptedException:
-                            md_toast_remover(self.driver)
-                            Select(current_sel).select_by_index(
-                                random.randrange(0, len(Select(current_sel).options)))
+                        client_type_len = int(len(Select(client_type).options))
+                        selector(self.driver, client_type, rand_range=f'4-{client_type_len}')
                 else:
-                    try:
-                        Select(current_sel).select_by_index(random.randrange(0, 4))
-                    except exceptions.ElementClickInterceptedException:
-                        md_toast_remover(self.driver)
-                        Select(current_sel).select_by_index(random.randrange(0, 4))
+                    selector(self.driver, client_type, rand_range="0-4")
 
         if company_list:
             for count, company in enumerate(company_list):
-                company.find_element(by=By.CSS_SELECTOR,
-                                     value='div:nth-child(2) > div:nth-child(1) > md-autocomplete > md-autocomplete-wrap > md-input-container >input').send_keys(
-                    company_names[random.randrange(0, len(company_names))])
-                num_prefix = company.find_element(by=By.CSS_SELECTOR,
-                                                  value='div:nth-child(2) > div:nth-child(2) > md-input-container:nth-child(1) > input')
-                num_prefix.send_keys(Keys.CONTROL + 'a')
-                num_prefix.send_keys('22')
-                company.find_element(by=By.CSS_SELECTOR,
-                                     value='div:nth-child(2) > div:nth-child(2) > md-input-container:nth-child(2) > input').send_keys(
-                    "".join(random.sample(string.digits, 9)))
-                company.find_element(by=By.CSS_SELECTOR,
-                                     value='div:nth-child(2) > div:nth-child(3) input').send_keys(
-                    'email@company.real')
-                current_sel = company.find_element(by=By.CSS_SELECTOR,
-                                                   value='div > div:nth-child(3) > st-form-field-container > select')
+                company_name = random.choice(company_names)
+                company_name_short = company_name.split(' ')[0].lower()
+                if not client_email:
+                    client_email_input = f'{company_name_short}@entity.com'
+                else:
+                    _mejl_split = client_email.split('@')
+                    client_email_input = f'{_mejl_split[0]}+{company_name_short}@{_mejl_split[1]}'
+                company.find_element(by=eval(COMPANY_NAME['by']),
+                                     value=COMPANY_NAME['value']).send_keys(company_name)
 
-                # try:
-                #     Select(current_sel).select_by_value(contact_type)
-                # except exceptions.ElementClickInterceptedException:
-                #     md_toast_waiter(self.driver)
-                #     try:
-                #         Select(current_sel).select_by_value(contact_type)
-                #     except exceptions.ElementClickInterceptedException:
-                #         self.driver.find_element(by=By.TAG_NAME, value='md-backdrop').click()
+                company.find_element(
+                    by=eval(PHONE_NUM['by']),
+                    value=PHONE_NUM['value']).send_keys(phone_num_gen())
+
+                company.find_element(by=eval(COMPANY_EMAIL['by']),
+                                     value=COMPANY_EMAIL['value']).send_keys(client_email_input)
+
+                client_type = company.find_element(
+                    by=eval(CLIENT_TYPE['by']),
+                    value=CLIENT_TYPE['value']
+                )
 
                 if self.contacts['non_client']['active']:
                     if count < int(self.contacts['non_client']['no_of_clients']):
                         try:
-                            Select(current_sel).select_by_index(random.randrange(0, 4))
+                            Select(client_type).select_by_index(random.randrange(0, 4))
                         except exceptions.ElementClickInterceptedException:
                             md_toast_remover(self.driver)
-                            Select(current_sel).select_by_index(random.randrange(0, 4))
+                            Select(client_type).select_by_index(random.randrange(0, 4))
                     else:
                         try:
-                            Select(current_sel).select_by_index(
-                                random.randrange(0, len(Select(current_sel).options)))
+                            Select(client_type).select_by_index(
+                                random.randrange(0, len(Select(client_type).options)))
                         except exceptions.ElementClickInterceptedException:
                             md_toast_remover(self.driver)
-                            Select(current_sel).select_by_index(
-                                random.randrange(0, len(Select(current_sel).options)))
+                            Select(client_type).select_by_index(
+                                random.randrange(0, len(Select(client_type).options)))
                 else:
                     try:
-                        Select(current_sel).select_by_index(random.randrange(0, 4))
+                        Select(client_type).select_by_index(random.randrange(0, 4))
                     except exceptions.ElementClickInterceptedException:
                         md_toast_remover(self.driver)
-                        Select(current_sel).select_by_index(random.randrange(0, 4))
+                        Select(client_type).select_by_index(random.randrange(0, 4))
 
-    def _deal_info_input(self, date: str):
+    def _deal_info_input(self):
+        deal_prefix = 'Test'
+        deal_name = f'{deal_prefix} {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
 
-        main_info_block = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                   value='st-block > st-block-form-content > div.layout-wrap')
+        main_info_block = self.driver.find_element(by=eval(MAIN_INFO_BLOCK['by']),
+                                                   value=MAIN_INFO_BLOCK['value'])
 
         # Deal Name
-        main_info_block.find_element(by=By.CSS_SELECTOR,
-                                     value='div:nth-child(1) > md-input-container > input').send_keys(
-            Keys.CONTROL + 'a')
-        # main_info_block.find_element(by=By.CSS_SELECTOR,value='div:nth-child(1) > md-input-container > input').send_keys(str(datetime.today()))
-        main_info_block.find_element(by=By.CSS_SELECTOR,
-                                     value='div:nth-child(1) > md-input-container > input').send_keys(
-            f'{datetime.now()}')
+        deal_name_input = main_info_block.find_element(by=eval(DEAL_NAME['by']),
+                                                       value=DEAL_NAME['value'])
+
+        deal_name_input.send_keys(Keys.CONTROL + 'a')
+        deal_name_input.send_keys(deal_name)
 
         # self.select_deal_owner(main_info_block, 'Salestrekker Help Desk')
 
-        # # Team Members
-        # team_members_field = main_info_block.find_element(by=By.CSS_SELECTOR,value='div > md-chips input')
-        # for user in self.users_in_workflow:
-        #     team_members_field.send_keys(user)
-        #     sleep(2)
-        #     try:
-        #         WdWait(self.driver, 5).until(
-        #             ec.visibility_of_element_located((By.CSS_SELECTOR, 'md-autocomplete-parent-scope > div')))
-        #     except exceptions.TimeoutException:
-        #         print('this shouldn\'t happen as we\'ve already ensured that users are in that workflow, but here we '
-        #               'are ')
-        #
-        #     offered_users = self.driver.find_elements(by=By.CSS_SELECTOR,value='md-autocomplete-parent-scope > div')
-        #     for offered_user in offered_users:
-        #         try:
-        #             self.driver.execute_script('arguments[0].click();', offered_user.find_element(by=By.XPATH,value='../..'))
-        #         except exceptions.StaleElementReferenceException:
-        #             continue
-        #         # offered_user.click()
+        stage_select_element = main_info_block.find_element(by=eval(STAGE_SELECT['by']),
+                                                            value=STAGE_SELECT['value'])
 
-        stage_select_element = main_info_block.find_element(by=By.CSS_SELECTOR,
-                                                            value='div:nth-child(4) > md-input-container > md-select')
-        try:
-            stage_select_element.click()
-        except exceptions.ElementClickInterceptedException:
-            self.driver.execute_script('arguments[0].click();', stage_select_element)
-        stage_select_id = str(stage_select_element.get_attribute('id'))
-        stage_container_id = str(int(stage_select_id.split("_")[-1]) + 1)
+        element_clicker(self.driver, web_element=stage_select_element)
 
+        stage_select_id = str(stage_select_element.get_attribute('aria-owns'))
         stages = self.driver.find_elements(by=By.CSS_SELECTOR,
-                                           value="div#select_container_" + stage_container_id + " > md-select-menu > md-content > md-option")
+                                           value=f'#{stage_select_id} md-option')
+
         sleep(0.1)
         if self.deal_info['random']:
             stage_num = random.randrange(0, len(stages))
         else:
             stage_num = int(self.deal_info['stage_num']) - 1
-        try:
-            stages[stage_num].click()
-        except exceptions.ElementClickInterceptedException:
-            self.driver.execute_script('arguments[0].click();', stages[stage_num])
-        except exceptions.ElementNotInteractableException:
-            self.driver.execute_script('arguments[0].click();', stages[stage_num])
-        except IndexError:
-            print('Non-existent number of stages entered')
+
+        element_clicker(driver=self.driver, web_element=stages[stage_num])
 
         # Deal Value
         deal_value = 500000
         sleep(0.2)
-        deal_value_input = main_info_block.find_element(by=By.CSS_SELECTOR,
-                                                        value='div:nth-child(5) > md-input-container > input')
+
+        deal_value_input = main_info_block.find_element(by=eval(DEAL_VALUE['by']),
+                                                        value=DEAL_VALUE['value'])
         deal_value_input.send_keys(Keys.CONTROL + 'a')
         deal_value_input.send_keys(deal_value)
+
         try:
             WdWait(self.driver, 5).until(ec.text_to_be_present_in_element_value(
-                (By.CSS_SELECTOR, 'div:nth-child(5) > md-input-container > input'),
+                (eval(DEAL_VALUE['by']), DEAL_VALUE['value']),
                 '$' + f'{deal_value:,}'))
         except exceptions.TimeoutException:
-            print('erroooor')
             deal_value_input.send_keys(Keys.CONTROL + 'a')
-            deal_value_input.send_keys(f'{deal_value}')
+            deal_value_input.send_keys(deal_value)
 
         # Estimated settlement date
-        estimated_settlement_date_input = main_info_block.find_element(by=By.CSS_SELECTOR,
-                                                                       value='md-datepicker[ng-model="getSetOnceOffDueDate"] > div > input')
-        estimated_settlement_date_input.send_keys(Keys.CONTROL + 'a')
-        estimated_settlement_date_input.send_keys(f'{date}')
+        # Add two months on top of the current one for the settlement date (and don't go over 12)
+        today = datetime.now()
+        new_month = (today.month + 2) % 12
+        settlement_date = today.replace(month=new_month).strftime("%d/%m/%Y")
+
+        settlement_date_input = main_info_block.find_element(by=eval(SETTLEMENT_DATE['by']),
+                                                             value=SETTLEMENT_DATE['value'])
+        settlement_date_input.send_keys(Keys.CONTROL + 'a')
+        settlement_date_input.send_keys(settlement_date)
+
+        # TODO - I like this pattern, maybe it should move the helper_funcs and re-use it for text inputs where feasible
         try:
             WdWait(self.driver, 5).until(ec.text_to_be_present_in_element_value(
-                (By.CSS_SELECTOR,
-                 'div:nth-child(6) > md-input-container > md-datepicker > div > input'),
-                f'{date}'))
+                (eval(SETTLEMENT_DATE['by']), SETTLEMENT_DATE['value']),
+                settlement_date))
         except exceptions.TimeoutException:
-            estimated_settlement_date_input.send_keys(Keys.CONTROL + 'a')
-            estimated_settlement_date_input.send_keys(f'{date}')
+            settlement_date_input.send_keys(Keys.CONTROL + 'a')
+            settlement_date_input.send_keys(settlement_date)
 
         # Summary notes
         summary_notes = 'Summary Notes-u'
-        main_info_block.find_element(by=By.CSS_SELECTOR,
-                                     value='div > md-input-container > div > textarea').send_keys(
-            f'{summary_notes}')
+        main_info_block.find_element(by=eval(SUMMARY_NOTES['by']),
+                                     value=SUMMARY_NOTES['value']).send_keys(summary_notes)
 
     def _select_deal_owner(self, deal_owner_name: str):
 
         main_info_block = WdWait(self.driver, 10).until(
             ec.presence_of_element_located(
-                (By.CSS_SELECTOR, 'st-block > st-block-form-content > div.layout-wrap')))
+                (eval(MAIN_INFO_BLOCK['by']),
+                 MAIN_INFO_BLOCK['value']
+                 )))
 
         # Deal Owner
-        deal_owner_select_element = main_info_block.find_element(by=By.CSS_SELECTOR,
-                                                                 value='div:nth-child(2) > md-input-container > md-select')
+        deal_owner_select_element = main_info_block.find_element(by=eval(DEAL_OWNER_MD['by']),
+                                                                 value=DEAL_OWNER_MD['value'])
 
         element_clicker(driver=self.driver, web_element=deal_owner_select_element)
 
-        deal_owner_select_id = str(deal_owner_select_element.get_attribute('id'))
-        deal_owner_id = str(int(deal_owner_select_id.split("_")[-1]) + 1)
+        deal_owner_id = str(deal_owner_select_element.get_attribute('aria-owns'))
+
+        deal_owner_list = WdWait(self.driver, 10).until(
+            ec.visibility_of_element_located(
+                (By.ID, deal_owner_id)))
+
+        _deal_owners = []
+        sleep(0.1)
+        deal_owners = deal_owner_list.find_elements(by=eval(DEAL_OWNER_LIST['by']),
+                                                    value=DEAL_OWNER_LIST['value'])
+        for owner in deal_owners:
+            if owner.text == deal_owner_name:
+                element_clicker(self.driver, web_element=owner)
+                break
+            _deal_owners.append({'name': owner.text, 'el': owner})
+        else:
+            print('No owner with that name')
+            for count, owner in enumerate(_deal_owners, start=1):
+                print(count, owner['name'])
+            owner_index = int(input('Select a owner index: ')) - 1
+            element_clicker(self.driver, web_element=_deal_owners[owner_index]['el'])
+
+    def _save(self):
+        sleep(5)
+        element_clicker(self.driver, css_selector=SAVE_BUTTON['value'])
+
+        # Wait 10 seconds for the ticket-content tag to appear (only visible in the deal front page)
         try:
             WdWait(self.driver, 10).until(
-                ec.visibility_of_element_located(
-                    (By.CSS_SELECTOR, "div#select_container_" + deal_owner_id)))
+                ec.presence_of_element_located((
+                    eval(TICKET_CONTENT['by']),
+                    TICKET_CONTENT['value']
+                )))
         except exceptions.TimeoutException:
-            pass
-
-        try:
-            self.driver.find_element(by=By.XPATH, value=f"//md-option/div/span[contains(text(), '{deal_owner_name}')]").click()
-        except Exception:
-            print('looping')
-            deal_owners = self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                    value="div#select_container_" + deal_owner_id + " > md-select-menu > md-content > md-option > div > span")
-
-            # TODO Rewrite to do a javascript search instead of a for loop
-            for deal_owner in deal_owners:
-                sleep(0.1)
-                if deal_owner.text == deal_owner_name:
-                    element_clicker(self.driver, deal_owner)
-                    break
+            # If ticket-content was not loaded check if we are still within the deal creation page
+            try:
+                WdWait(self.driver, 10).until(
+                    ec.presence_of_element_located((
+                        eval(TICKET_EDIT['by']),
+                        TICKET_EDIT['value']
+                    )))
+            # If it timed out - just check if the deal front page loading took longer
+            except exceptions.TimeoutException:
+                WdWait(self.driver, 10).until(
+                    ec.presence_of_element_located((
+                        eval(TICKET_CONTENT['by']),
+                        TICKET_CONTENT['value']
+                    )))
             else:
-                element_clicker(self.driver, deal_owners[0])
+                # If we are still in deal creation page, there is an overlay that needs to be clicked in order to save
+                home_button = self.driver.find_element(by=eval(HOME_BUTTON['by']),
+                                                       value=HOME_BUTTON['value'])
+                element_clicker(self.driver, web_element=home_button)
 
+                # After clicking the overlay, wait for the ticket-content to load
+                WdWait(self.driver, 20).until(
+                    ec.presence_of_element_located((
+                        eval(TICKET_CONTENT['by']),
+                        TICKET_CONTENT['value']
+                    )))
+
+        deal_url = self.driver.current_url
+
+        return deal_url

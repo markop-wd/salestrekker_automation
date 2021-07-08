@@ -1,3 +1,7 @@
+"""
+If a function exits this is the function that should take the browser back.
+Not finished yet.
+"""
 import os
 import random
 import time

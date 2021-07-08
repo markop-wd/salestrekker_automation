@@ -9,17 +9,16 @@ from selenium.webdriver import Chrome
 
 import random
 from time import sleep
-import pathlib
+from pathlib import Path
 
 from main import filelock
 from main.Permanent import user_manipulation
+from main.Permanent.helper_funcs import md_toast_wait, element_waiter, element_clicker
 from main.Permanent.user_manipulation import return_all_users, get_current_username
 from selenium.webdriver.common.keys import Keys
 
 
 # TODO - Find a way to extract work
-
-# TODO
 def get_deals(driver, ent: str, all_deals=True, workflow_id=''):
     all_deals_list = []
 
@@ -78,16 +77,14 @@ def get_deals(driver, ent: str, all_deals=True, workflow_id=''):
 
 def add_workflow(driver: Chrome, ent: str, workflow_type='Home Loan',
                  add_all_users=True, wf_owner='', workflow_name=''):
-    main_url = "https://" + ent + ".salestrekker.com"
-
+    """
+    adding a workflow to the current organization
     valid_wfs = {'None', 'Asset Finance', 'Commercial Loan', 'Conveyancing', 'Home Loan',
-                 'Insurance', 'Personal Loan', 'Real Estate'}
+             'Insurance', 'Personal Loan', 'Real Estate'}
+    """
+    current_vars_path = Path.cwd().parent / 'current_vars.py'
 
-    while workflow_type not in valid_wfs:
-        print('Valid options are\n')
-        for wf in valid_wfs:
-            print(wf + '\n')
-        workflow_type = input("Please enter a valid wf type")
+    main_url = "https://" + ent + ".salestrekker.com"
 
     if not workflow_name:
         workflow_name = f'Test WF - {workflow_type} - {date.today()}'
@@ -95,32 +92,17 @@ def add_workflow(driver: Chrome, ent: str, workflow_type='Home Loan',
     assert "salestrekker" in driver.current_url, 'invalid url'
     assert "authenticate" not in driver.current_url, 'you are at a login page'
 
-    # TODO - Assert that you are at a correct position
-
-    # TODO-- Write a way to convert workflow name values to the system values
-    # workflow_name_convert(workflow_name)
-
     driver.get(main_url + "/settings/workflow/0")
-    try:
-        WdWait(driver, 20).until(
-            ec.visibility_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
-    except exceptions.TimeoutException:
-        driver.get(main_url + "/settings/workflow/0")
-        try:
-            WdWait(driver, 10).until(
-                ec.visibility_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
-        except exceptions.TimeoutException:
-            driver.get(main_url + "/settings/workflow/0")
-            WdWait(driver, 20).until(
-                ec.visibility_of_element_located((By.CSS_SELECTOR, 'st-block.mb0')))
+    element_waiter(driver, css_selector='st-block.mb0', url=f'{main_url}/settings/workflow/0')
 
     org_name = driver.find_element(by=By.CSS_SELECTOR, value='st-avatar[organization] > img').get_attribute('alt')
 
     if add_all_users:
         # Lock the file before accessing it (due to multithreading issues)
-        fl = filelock.FileLock("current_vars.json")
+        fl = filelock.FileLock(current_vars_path)
+
         with fl:
-            with open('current_vars.json', "r") as json_file:
+            with open(current_vars_path, "r") as json_file:
                 load_dict = json.load(json_file)
                 # If we don't have a date we don't have anything and if we do we want to save it
                 try:
@@ -170,15 +152,11 @@ def add_workflow(driver: Chrome, ent: str, workflow_type='Home Loan',
             user + Keys.ENTER)
 
     # This is the workflow type selector
-
     wf_select_id = str(driver.find_element(by=By.CSS_SELECTOR,
-                                           value='st-block-form-content >div >div:nth-child(4) > md-input-container > md-select').get_attribute(
-        'id'))
+                                           value='st-block-form-content >div >div:nth-child(4) > md-input-container > md-select').get_attribute('id'))
     wf_select_container_id = str(int(wf_select_id.split("_")[-1]) + 1)
-
-    driver.find_element(by=By.CSS_SELECTOR,
-                        value='st-block-form-content > div > div:nth-child(4)').click()
     # don't look at me like that, this was the safer route... I think
+    element_clicker(driver=driver, css_selector='st-block-form-content > div > div:nth-child(4)')
 
     WdWait(driver, 10).until(
         ec.element_to_be_clickable((By.ID, "select_container_" + wf_select_container_id)))
@@ -190,24 +168,13 @@ def add_workflow(driver: Chrome, ent: str, workflow_type='Home Loan',
         wf_el_text = wf_type.text
         # TODO
         if wf_el_text == workflow_type:
-            try:
-                wf_type.click()
-            except:
-                driver.execute_script("arguments[0].click()",
-                                      wf_type.find_element(by=By.TAG_NAME, value='span'))
+            element_clicker(driver, web_element=wf_type)
             break
 
-    try:
-        driver.find_element(by=By.CSS_SELECTOR,
-                            value='st-block-form-content > div > div:nth-child(3)').click()
-    except exceptions.ElementClickInterceptedException:
-        driver.execute_script(
-            "document.querySelector('st-block-form-content > div > div:nth-child(3)').click();")
+    element_clicker(driver, css_selector='st-block-form-content > div > div:nth-child(3)')
 
     owner_select_id = str(driver.find_element(by=By.CSS_SELECTOR,
-                                              value='st-block-form-content >div >div:nth-child(3) > md-input-container > md-select').get_attribute(
-        'id'))
-
+                                              value='st-block-form-content >div >div:nth-child(3) > md-input-container > md-select').get_attribute('id'))
     owner_select_container_id = str(int(owner_select_id.split("_")[-1]) + 1)
 
     WdWait(driver, 10).until(
@@ -220,7 +187,7 @@ def add_workflow(driver: Chrome, ent: str, workflow_type='Home Loan',
         for deal_owner in deal_owners:
             span = deal_owner.find_element(by=By.TAG_NAME, value='span')
             if span.text == user:
-                deal_owner.click()
+                element_clicker(driver, web_element=deal_owner)
                 break
     else:
         user = wf_owner
@@ -230,37 +197,21 @@ def add_workflow(driver: Chrome, ent: str, workflow_type='Home Loan',
             loop_owner = deal_owner.find_element(by=By.TAG_NAME, value='span').text
             owners.append(loop_owner)
             if loop_owner == user:
-                deal_owner.click()
+                element_clicker(driver, web_element=deal_owner)
                 break
         else:
-            print('No deal owner with name ', wf_owner)
-            print('Here are the available workflow owners\n')
-            for name in owners:
-                print(name + '\n')
-
-            wf_owner = input('Please re-input the workflow owner name')
-            user = wf_owner
-            owners = []
+            user = get_current_username(driver)
             sleep(0.1)
             for deal_owner in deal_owners:
-                loop_owner = deal_owner.find_element(by=By.TAG_NAME, value='span').text
-                owners.append(loop_owner)
-                if loop_owner == user:
-                    deal_owner.click()
+                span = deal_owner.find_element(by=By.TAG_NAME, value='span')
+                if span.text == user:
+                    element_clicker(driver, web_element=deal_owner)
                     break
-            else:
-                print(
-                    'No user with that name - either something is wrong and I didn\'t write this out')
 
     # From here
-
     new_stages = random.randint(0, 5)
     while new_stages > 0:
-        try:
-            driver.find_element(by=By.CSS_SELECTOR, value='span > button').click()
-        except exceptions.ElementClickInterceptedException:
-            driver.execute_script("document.querySelector('span > button').click();")
-
+        element_clicker(driver, css_selector='span > button')
         new_stages -= 1
 
     sleep(1)
@@ -269,11 +220,14 @@ def add_workflow(driver: Chrome, ent: str, workflow_type='Home Loan',
         workflow_name)
 
     # number_of_stages = len(driver.find_elements(by=By.CSS_SELECTOR,value='workflow-stages > workflow-stage'))
-
-    WdWait(driver, 10).until(
-        ec.visibility_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))
-    WdWait(driver, 10).until(
-        ec.invisibility_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))
+    try:
+        WdWait(driver, 10).until(
+            ec.visibility_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))
+    except exceptions.TimeoutException:
+        sleep(7)
+    else:
+        WdWait(driver, 10).until(
+            ec.invisibility_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))
 
     # TODO - Confirm that the workflow exists
 
@@ -349,6 +303,8 @@ def add_users_to_workflow(driver, ent: str, workflow_id='New', users="All"):
             user + Keys.ENTER)
         sleep(0.1)
 
+    # md_toast_wait(driver, second_sleep=5)
+    # md_toast_wait(driver)
     WdWait(driver, 10).until(
         ec.visibility_of_element_located((By.CSS_SELECTOR, 'div.md-toast-content')))
     WdWait(driver, 10).until(
@@ -436,5 +392,10 @@ def get_all_workflows(driver, ent):
             ec.visibility_of_element_located(
                 (By.CSS_SELECTOR, 'md-menu-content.sub-menu > section')))
         workflows = workflow_container.find_elements(by=By.CSS_SELECTOR, value='md-menu-item > a')
-        workflow_list = [workflow.get_attribute('href') for workflow in workflows]
+        workflow_list = [{"name": workflow.find_element(by=By.TAG_NAME, value="span").text,
+                          "link": workflow.get_attribute('href')} for workflow in workflows]
         return workflow_list
+
+
+def get_all_workflows_api():
+    pass
