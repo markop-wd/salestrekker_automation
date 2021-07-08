@@ -91,7 +91,7 @@ import time
 import errno
 
 
-class FileLock(object):
+class FileLock:
     """ A file locking mechanism that has context-manager support so
         you can use it in a ``with`` statement. This should be relatively cross
         compatible as it doesn't rely on ``msvcrt`` or ``fcntl`` for the locking.
@@ -138,9 +138,9 @@ class FileLock(object):
                 # Attempt to create the lockfile.
                 # These flags cause os.open to raise an OSError if the file already exists.
                 fd = os.open(self.lockfile, os.O_CREAT | os.O_EXCL | os.O_RDWR)
-                with os.fdopen(fd, "a") as f:
+                with os.fdopen(fd, "a") as file:
                     # Print some info about the current process as debug info for anyone who bothers to look.
-                    f.write(self._lock_file_contents)
+                    file.write(self._lock_file_contents)
                 break
             except OSError as e:
                 if e.errno != errno.EEXIST:
@@ -192,7 +192,6 @@ class FileLock(object):
 
 
 if __name__ == "__main__":
-    import sys
     import functools
     import threading
     import tempfile

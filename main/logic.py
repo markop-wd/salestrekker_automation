@@ -1,6 +1,6 @@
 """
 Main business logic.
-This is where you call all of the modules/functions and organize them. 
+This is where you call all of the modules/functions and organize them.
 
 Once there is a GUI this should be repurposed so that buttons call their respective functions.
 """
@@ -14,6 +14,8 @@ from time import sleep
 from selenium.common import exceptions
 from selenium.webdriver import Chrome
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait as WdWait
+from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.select import Select
 
 import Permanent.client_portal.login
@@ -40,8 +42,8 @@ class Test:
         self.org_name = org_name
 
     def screenshot_helper(self, element_with_scroll, org_name, sub_section_name, button_count):
-        scroll_total = self.driver.execute_script(f"return arguments[0].scrollHeight", element_with_scroll)
-        content = self.driver.execute_script(f"return arguments[0].clientHeight", element_with_scroll)
+        scroll_total = self.driver.execute_script("return arguments[0].scrollHeight", element_with_scroll)
+        content = self.driver.execute_script("return arguments[0].clientHeight", element_with_scroll)
 
         scroll_new = 0
         count = 1
@@ -86,11 +88,15 @@ class Test:
                                    sub_section_name=setting_name, button_count=count)
 
 
-def worker(driver: Chrome, ent: str, password: str, runner_main_org: str,
-           runner_learn_org: str, email: str = 'helpdesk@salestrekker.com'):
+def worker(driver: Chrome, ent: str, password: str, email: str = 'helpdesk@salestrekker.com'):
+    """
+    Just a simple test worker, that I call from runner for customized tasks
+    """
     with open("perm_vars.json", "r") as perm_json:
         perm_vars = json.load(perm_json)
 
+    runner_learn_org = perm_vars['ents_info'][ent]['learn']
+    runner_main_org = perm_vars['ents_info'][ent]['main']
     test_users = perm_vars['test_users']
     allowed_workflows = perm_vars['workflows'].split('-')
 
@@ -102,7 +108,7 @@ def worker(driver: Chrome, ent: str, password: str, runner_main_org: str,
     # org_funcs.org_changer(driver, 'Test Organization 2021-03-10 Test')
 
     # org_funcs.org_changer(driver, runner_main_org)
-    orgi_name = 'New Zealand Test'
+    orgi_name = 'Test Organization 2021-03-10'
     org_funcs.org_changer(driver, orgi_name)
 
     # org_funcs.org_changer(driver, f'Test Organization {date.today()}')
@@ -137,6 +143,99 @@ def worker(driver: Chrome, ent: str, password: str, runner_main_org: str,
     # hl_workflow = ''
     # for workflow in allowed_workflows:
     #     workflow_manipulation.add_workflow(driver=driver, ent=ent, workflow_type=workflow, wf_owner='Phillip Djukanovic')
+    for _ in range(50):
+        driver.get('https://dev.salestrekker.com/contact/edit/person/0')
+        WdWait(driver, 10).until(ec.visibility_of_element_located((By.TAG_NAME, 'st-contact')))
+
+        first_names = ['Misty', 'Karl', 'Tanisha', 'Jasmin', 'Lexi-Mai', 'Chandni', 'Musab', 'Spike', 'Doris',
+                       'Dominick', 'Rudi',
+                       'Saira', 'Keeleigh', 'Nana', 'Andrew', 'Kirandeep', 'Roland', 'Harry', 'Alexie', 'Adelaide',
+                       'Finbar', 'Nasir',
+                       'Patrycja', 'Nela', 'Belinda', 'Amaya', 'Husnain', 'Tiana', 'Wyatt', 'Kenneth', 'April', 'Leia',
+                       'Bushra',
+                       'Levi', 'Keira', 'Amin', 'Samiha', 'Marianne', 'Habib', 'Yousuf', 'Nicola', 'Samanta',
+                       'Benedict', 'Nikhil',
+                       'Aurora', 'Giulia', 'Rosa', 'Alannah', 'Marian', 'Dionne', 'Xanthe', 'Anabel', 'Samira', 'Mason',
+                       'Colleen',
+                       'Esther', 'Faheem', 'Rachael', 'Kuba', 'Callam', 'Nick', 'Ayub', 'Esmay', 'Aimee', 'Sarah',
+                       'Billy', 'Enid',
+                       'Katie-Louise', 'Ashlee', 'Tamar', 'Darla', 'Whitney', 'Helena', 'Rachelle', 'Maisie', 'Julia',
+                       'Mandy',
+                       'Isaiah', 'Sally', 'Marianna', 'Jasleen', 'Evie-Mae', 'Lana', 'Kiana', 'Preston', 'Rae',
+                       'Poppy-Rose', 'Lyla',
+                       'Christy', 'Maheen', 'Cordelia', 'Mariya', 'Amelia-Grace', 'Kier', 'Sonny', 'Alessia', 'Inigo',
+                       'Hareem',
+                       'Caitlyn', 'Ayana', 'Danielle', 'Charlotte', 'Bronwyn', 'Eliot', 'Lesley', 'Ada', 'Azra',
+                       'Wilbur', 'Lillian',
+                       'Yannis', 'Sherri', 'Cosmo', 'Nella', 'Hasan', 'Tyrique', 'Jonah', 'Lexi-Mae', 'Nigel', 'Zavier',
+                       'Bevan',
+                       'Leo', 'Israel', 'Sharna', 'Jagoda', 'Deborah', 'Claire', 'Anabelle', 'Kobie', 'Nabeel',
+                       'Kayley', 'Zahrah',
+                       'Beck', 'Kingsley', 'Micah', 'Jerry', 'Haydn', 'Robyn', 'Carwyn', 'Rhys', 'Seamus', 'Maia',
+                       'Iman', 'Rahul',
+                       'Judy', 'Arwa', 'Jeevan', 'Francesco', 'Shyam', 'Amal', 'Gabrielle', 'Kellie', 'Derry',
+                       'Quentin', 'Hashir',
+                       'Alma', 'Rheanna', 'Sebastian', 'Sahara', 'Miriam', 'Debbie', 'Niyah', 'Lillie-May', 'Petra',
+                       'Khalil', 'Lena',
+                       'Isabell', 'Howard', 'Lennie', 'Jibril', 'Christiana', 'Alan', 'Kimora', 'Muneeb', 'Iqrah',
+                       'Hanna', 'Akbar',
+                       'Beverly', 'Jill', 'Shania', 'T-Jay', 'George', 'Lexie', 'Gerard', 'Weronika', 'Alison', 'Reon',
+                       'Piotr',
+                       'Alya', 'Mitchel', 'Sally', 'Alfie-Lee', 'Abbie', 'Pola', 'Laylah', 'Zubair', 'Ali', 'Nicole',
+                       'Lorna',
+                       'Ember', 'Cora']
+
+        surnames = ['Banks', 'Berg', 'Obrien', 'Talley', 'Mccray', 'Kramer', 'Cunningham', 'Dunn', 'Vu', 'Ferry',
+                    'Wolfe', 'Haas', 'Bate', 'Tomlinson', 'Phelps', 'Goulding', 'Penn', 'Slater', 'Aguilar', 'Mellor',
+                    'Bray', 'Potter', 'Metcalfe', 'Burch', 'Houston', 'Brandt', 'Nixon', 'Allison', 'Stephens',
+                    'Webster', 'Lawrence', 'Wright', 'Knowles', 'Davidson', 'Dalton', 'Flower', 'Cameron', 'Baker',
+                    'Portillo', 'Lord', 'Goodman', 'Roman', 'Wardle', 'Hayden', 'Bains', 'Romero', 'Iles', 'Navarro',
+                    'Malone', 'Molina', 'Macfarlane', 'Hilton', 'Mckay', 'Novak', 'Gaines', 'Ratliff', 'Valdez',
+                    'Zavala', 'Gibbons', 'Almond', 'Bruce', 'Felix', 'Reeve', 'Chang', 'Patrick', 'Hutchings', 'Ayala',
+                    'Russell', 'Burn', 'Parra', 'Sharma', 'Emery', 'Burris', 'Southern', 'Mcleod', 'Mckee', 'Duggan',
+                    'William', 'Dalby', 'Carr', 'Carty', 'Read', 'Marsh', 'Chase', 'Greene', 'Stafford', 'Greig',
+                    'Woolley', 'Bird', 'Wyatt', 'Escobar', 'Bradley', 'Kirby', 'Whitney', 'Cartwright', 'Sargent',
+                    'Plummer', 'Lucero', 'Reynolds', 'Melia', 'Davenport', 'Irving', 'Barrow', 'Senior', 'Mcgowan',
+                    'Hancock', 'Povey', 'Mcmanus', 'Tyson', 'Hunt', 'Betts', 'Lopez', 'Molloy', 'Plant', 'Kirk',
+                    'Cantu', 'Reid', 'Whelan', 'Dupont', 'Berry', 'Mueller', 'Lowery', 'Powell', 'Porter', 'Krueger',
+                    'Griffiths', 'Garrett', 'Barrett', 'Gibbs', 'Calvert', 'Hills', 'Rice', 'Correa', 'Pineda',
+                    'Beasley', 'Sanderson', 'Frye', 'Garrison', 'Trevino', 'Stafford', 'Rankin', 'Huerta', 'Luna',
+                    'Mustafa', 'Lane', 'Russo', 'Richmond', 'Ferry', 'Wolfe', 'Schmidt', 'Mcnally', 'Power',
+                    'Castaneda', 'Wickens', 'Romero', 'Smyth', 'Coulson', 'Riley', 'Carty', 'Hogan', 'Bonilla', 'Mcgee',
+                    'Buck', 'Mccoy', 'Schneider', 'Gordon', 'Hardy', 'Ferreira', 'Jarvis', 'Haley', 'Bray', 'Barnett',
+                    'Finch', 'Cox', 'Lawrence', 'Leech', 'Bain', 'Cross', 'Hyde', 'Soto', 'Bates', 'Knowles', 'Douglas',
+                    'Roberts', 'Cornish', 'Robles', 'Macgregor', 'Hines', 'Oakley', 'Santos', 'Kirkpatrick', 'Alvarez',
+                    'Piper', 'Murphy', 'Boyd', 'Haas', 'Corbett', 'Short', 'Alexander', 'Sloan']
+
+        first_name = random.choice(first_names)
+        last_name = random.choice(surnames)
+        email = f'matthew+{first_name.lower()}{last_name.lower()}@salestrekker.com'
+        date_of_birth = f'09/07/{random.randrange(1950, 1990)}'
+
+        driver.find_element(by=By.CSS_SELECTOR,
+                            value='input[ng-model="$ctrl.contact.person.information.firstName"]').send_keys(first_name)
+        driver.find_element(by=By.CSS_SELECTOR,
+                            value='input[ng-model="$ctrl.contact.person.information.familyName"]').send_keys(last_name)
+        driver.find_element(by=By.CSS_SELECTOR,
+                            value='md-datepicker[ng-model="$ctrl.getSetDateOfBirth"] input').send_keys(date_of_birth)
+        phone_code = driver.find_element(by=By.CSS_SELECTOR,
+                                         value='input[ng-model="$ctrl.contact.person.contact.primaryCode"]')
+        phone_code.clear()
+        phone_code.send_keys('381')
+        driver.find_element(by=By.CSS_SELECTOR,
+                            value='input[ng-model="$ctrl.contact.person.contact.primary"]').send_keys('695242544')
+        driver.find_element(by=By.CSS_SELECTOR,
+                            value='input[ng-model="$ctrl.contact.person.contact.email"]').send_keys(email)
+        driver.find_element(by=By.CSS_SELECTOR,
+                            value='md-datepicker[ng-model="$ctrl.getSetPassportExpiryDate"] input').send_keys('09/07/2021')
+        try:
+            WdWait(driver, 10).until(
+                ec.visibility_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))
+        except exceptions.TimeoutException:
+            sleep(7)
+        else:
+            WdWait(driver, 10).until(
+                ec.invisibility_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))
 
     af_workflow = 'https://dev.salestrekker.com/board/592111a5-b638-41c5-bf09-92b6a9b0c9e5'
     hl_workflow = 'https://dev.salestrekker.com/board/9a2d3ca1-5cd3-4cf2-8d32-1f0f2fae710d'
@@ -153,21 +252,21 @@ def worker(driver: Chrome, ent: str, password: str, runner_main_org: str,
     #         af_workflow = workflow['link']
     #     if "Test WF - Home Loan" in workflow['name']:
     #         hl_workflow = workflow['link']
+
+    # if af_workflow or hl_workflow:
+    #     deal_create = EditDeal(ent, driver)
+    #     deal_fill = MultipleDealCreator(driver)
+    #     # hd_username = user_manipulation.get_current_username(driver)
     #
-    if af_workflow or hl_workflow:
-        deal_create = EditDeal(ent, driver)
-        deal_fill = MultipleDealCreator(driver)
-        # hd_username = user_manipulation.get_current_username(driver)
-
-        if af_workflow:
-            link = deal_create.run(workflow=af_workflow, deal_owner_name='Marko P', af_type='cons')
-            deal_fill.client_profile_input(link)
-
-            link = deal_create.run(workflow=af_workflow, deal_owner_name='Marko P', af_type='comm')
-            deal_fill.client_profile_input(link)
-        if hl_workflow:
-            link = deal_create.run(workflow=hl_workflow, deal_owner_name='Marko P')
-            deal_fill.client_profile_input(link)
+    #     if af_workflow:
+    #         link = deal_create.run(workflow=af_workflow, deal_owner_name='Marko P', af_type='cons')
+    #         deal_fill.client_profile_input(link)
+    #
+    #         link = deal_create.run(workflow=af_workflow, deal_owner_name='Marko P', af_type='comm')
+    #         deal_fill.client_profile_input(link)
+    #     if hl_workflow:
+    #         link = deal_create.run(workflow=hl_workflow, deal_owner_name='Marko P')
+    #         deal_fill.client_profile_input(link)
 
     # new_email, new_password = helper_funcs.user_setup_raw(driver, ent)
     # with open('details.json', 'r') as details:
@@ -229,8 +328,11 @@ def worker(driver: Chrome, ent: str, password: str, runner_main_org: str,
 
 
 # The logic here is mostly static and includes the main rundown. Login, create an organization, add users, the workflows, add all types of deals
-def worker_main(driver: Chrome, ent: str, password: str, runner_main_org: str,
-                runner_learn_org: str, email: str = 'helpdesk@salestrekker.com'):
+def worker_main(driver: Chrome, ent: str, password: str, email: str = 'helpdesk@salestrekker.com'):
+    """
+    The logic here is mostly static and includes the main rundown.
+    Login, create an organization, add users, the workflows, add all types of deals
+    """
     # The workflows here just serve as a placeholder
     # hl_workflows = {
     #     "gem": "https://gem.salestrekker.com/board/ba299909-8eb3-4f72-803e-809ee5197e15",
@@ -250,6 +352,8 @@ def worker_main(driver: Chrome, ent: str, password: str, runner_main_org: str,
 
     test_users = perm_vars['test_users']
     allowed_workflows = perm_vars['workflows'].split('-')
+    runner_learn_org = perm_vars['ents_info'][ent]['learn']
+    runner_main_org = perm_vars['ents_info'][ent]['main']
 
     driver.implicitly_wait(20)
 
@@ -293,7 +397,7 @@ def worker_main(driver: Chrome, ent: str, password: str, runner_main_org: str,
     #     # First split the email then append the current date to before the @ - so instead of phillip@salestrekker.com this will create phillip+240321@salestrekker.com
     #     email_split = values['email'].split('@')
     #     email_with_date = email_split[0] + f'+{date.today().strftime("%d%m%y")}@' + email_split[1]
-    # 
+    #
     #     user_manipulation.add_user(driver, ent,
     #                                email=email_with_date, username=values['username'],
     #                                broker=False, admin=False,

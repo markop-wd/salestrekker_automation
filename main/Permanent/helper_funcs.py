@@ -543,3 +543,26 @@ def income_calc(driver: Chrome, deal_url: str):
                 pass
 
     print('Income total:', total)
+
+
+def element_waiter(driver: Chrome, css_selector: str, url: str = ''):
+    """
+    Pass in a css selector and a URL and this will retry finding it
+    """
+    condition = ec.visibility_of_element_located((By.CSS_SELECTOR, css_selector))
+    try:
+        WdWait(driver, 20).until(condition)
+    except exceptions.TimeoutException:
+        if url:
+            driver.get(url)
+        else:
+            driver.refresh()
+
+        try:
+            WdWait(driver, 10).until(condition)
+        except exceptions.TimeoutException:
+            if url:
+                driver.get(url)
+            else:
+                driver.refresh()
+            WdWait(driver, 20).until(condition)

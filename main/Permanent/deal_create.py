@@ -14,6 +14,7 @@ from selenium.webdriver.support.wait import WebDriverWait as WdWait
 from main.Permanent.helper_funcs import md_toast_remover, element_clicker, phone_num_gen, selector
 from main.Permanent.deal_create_selectors import *
 
+
 class EditDeal:
     def __init__(self, ent: str, driver: Chrome):
         with open("deal_config.json") as deal_config_json:
@@ -67,7 +68,6 @@ class EditDeal:
 
         self.driver.get(self.main_url + '/deal/edit/' + in_workflow + '/0')
 
-        # TODO - Throw in some try excepts to check if this page loaded at all
         try:
             WdWait(self.driver, 15).until(ec.presence_of_element_located((By.ID, 'top')))
         except exceptions.TimeoutException:

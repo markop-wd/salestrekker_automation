@@ -6,6 +6,7 @@ from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 
+
 from datetime import date, datetime
 import json
 import traceback
@@ -15,10 +16,6 @@ from urllib3 import exceptions as http_execs
 
 from logic import worker, cp_worker, worker_main, api
 from main.Permanent.login import LogIn
-
-# Perm vars contain learn and main org names for each ent, users to be added, types of workflows etc.
-with open("perm_vars.json") as perm_json:
-    ents_info = json.load(perm_json)['ents_info']
 
 # Details are the logins stored
 with open("details.json") as details:
@@ -92,8 +89,7 @@ def main_runner(ent, email="helpdesk@salestrekker.com", cp_pin: str = '', cp_lin
             cp_worker(driver=driver, pin=cp_pin, link=cp_link)
         else:
             # If no cp link or pin then call the main worker with parameters you get from perm vars and details
-            worker(driver=driver, ent=ent, password=info[ent][email], runner_main_org=ents_info[ent]['main'],
-                   runner_learn_org=ents_info[ent]['learn'], email=email)
+            worker(driver=driver, ent=ent, password=info[ent][email], email=email)
             # api(driver=driver, ent=ent, password=info[ent][email], email=email)
 
     # Exception catching and storing the exceptions, time when it happened and the traceback for reporting and also include a screenshot.
@@ -149,7 +145,7 @@ if __name__ == '__main__':
     #     {"ent": "nlgconnect", "cp_link": "https://nlgconnect-cp.salestrekker.com/authenticate/Ha0ybv-_tjtp",
     #      "cp_pin": "302847"}
     # ]
-    #
+
     # cp_list = [
     #     {"ent": "sfg", "cp_link": "https://sfg-cp.salestrekker.com/authenticate/z5gG8DXyT0w7",
     #      "cp_pin": "125005"},
@@ -171,15 +167,20 @@ if __name__ == '__main__':
     #     future_runner = {executor.submit(main_runner, ent): ent for ent in
     #                      my_test_ents}
 
+    # with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
+    #     future_runner = {executor.submit(main_runner, 'dev'): _ for _ in
+    #                      range(5)}
+
     # import_ents = [
     #     'platform', 'sfg'
     # ]
 
     # def wrapper(p):
-    #     return main_runner(email="matthew+120321@salestrekker.com", ent=p)
+    #     return main_runner(email="matthew@salestrekker.com", ent='dev', stuff=p)
+    #
     #
     # with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
-    #     test_runner = {executor.submit(wrapper, 'dev'): i for i in range(3)}
+    #     test_runner = {executor.submit(wrapper, i): i for i in range(3)}
 
     # main_runner(**consumer_list[2])
 
@@ -199,12 +200,11 @@ if __name__ == '__main__':
     # main_runner('ioutsource', email='helpdesk@salestrekker.com')
     # main_runner('dev', email='matthew+291220@salestrekker.com')
 
-    main_runner('sfg')
-    # main_runner('nlgconnect')
+    main_runner('dev')
 
     # with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
     #     future_runner = {executor.submit(main_runner, 'dev'): i for i in
-    #                      range(3)}
+    #                      range(5)}
 
     # email_date = date.today().strftime("%d%m%y")
     # for ent in import_ents:

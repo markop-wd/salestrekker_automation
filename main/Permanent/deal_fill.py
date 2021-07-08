@@ -6,7 +6,7 @@ from selenium.webdriver import Chrome
 from selenium.common import exceptions
 
 from main.Permanent.helper_funcs import random_string_create, AddressInput, element_clicker, selector
-from main.Permanent import deal_fill_selectors as selectors
+from main.Permanent.deal_fill_selectors import *
 
 from time import sleep
 import json
@@ -19,7 +19,9 @@ from pathlib import Path
 class MultipleDealCreator:
 
     def __init__(self, driver: Chrome):
-        # Review working with paths
+        # TODO - Review working with paths
+
+        # These two below are for employment information (occupation and industry codes)
         occupation_path = Path(__file__).parent.resolve() / "../assets/occupations.json"
         with open(occupation_path) as occupation_codes:
             self.occupations = json.load(occupation_codes)
@@ -28,6 +30,7 @@ class MultipleDealCreator:
         with open(industry_path, 'r') as industry_codes:
             self.industries = json.load(industry_codes)
 
+        # This is the main deal config file
         deal_config = Path(__file__).parent.resolve() / "../deal_config.json"
         with open(deal_config) as deal_config_json:
             self.deal_config = json.load(deal_config_json)
@@ -41,8 +44,8 @@ class MultipleDealCreator:
                                      'Search post settlement address']
 
     def select_el_handler(self, content):
-
-        for select_el in content.find_elements(by=By.TAG_NAME, value='select'):
+        selects = content.find_elements(by=By.TAG_NAME, value='select')
+        for select_el in selects:
             try:
                 ng_model = select_el.get_attribute('ng-model')
                 if ng_model == '$ctrl.address.country':
@@ -80,8 +83,8 @@ class MultipleDealCreator:
         employ_num = self.deal_config["contacts"]["employment"]["num"]
 
         try:
-            employment = self.driver.find_element(by=eval(selectors.EMPLOYMENT_BUTTON['by']),
-                                                  value=selectors.EMPLOYMENT_BUTTON['value'])
+            employment = self.driver.find_element(by=eval(EMPLOYMENT_BUTTON['by']),
+                                                  value=EMPLOYMENT_BUTTON['value'])
         except exceptions.NoSuchElementException:
             print('Am in company, weird')
             return
@@ -91,19 +94,19 @@ class MultipleDealCreator:
         for i in range(1, employ_num):
             element_clicker(self.driver, web_element=employment)
 
-            employment_status = self.driver.find_elements(by=eval(selectors.EMPLOY_STATUS['by']),
-                                                          value=selectors.EMPLOY_STATUS['value'])[i]
+            employment_status = self.driver.find_elements(by=eval(EMPLOY_STATUS['by']),
+                                                          value=EMPLOY_STATUS['value'])[i]
             selector(self.driver, select_element=employment_status, index='random', rand_range='0-2')
 
-            employment_type = self.driver.find_elements(by=eval(selectors.EMPLOY_TYPE['by']),
-                                                        value=selectors.EMPLOY_TYPE['value'])[i]
+            employment_type = self.driver.find_elements(by=eval(EMPLOY_TYPE['by']),
+                                                        value=EMPLOY_TYPE['value'])[i]
             selector(self.driver, select_element=employment_type, index='random', rand_range='1-5')
 
-            employment_priority = self.driver.find_elements(by=eval(selectors.EMPLOY_PRIORITY['by']),
-                                                            value=selectors.EMPLOY_PRIORITY['value'])[i]
+            employment_priority = self.driver.find_elements(by=eval(EMPLOY_PRIORITY['by']),
+                                                            value=EMPLOY_PRIORITY['value'])[i]
             selector(self.driver, select_element=employment_priority, index='random', rand_range='1-3')
-            emply_els = self.driver.find_elements(by=eval(selectors.EMPLOY_BASIS['by']),
-                                                             value=selectors.EMPLOY_BASIS['value'])
+            emply_els = self.driver.find_elements(by=eval(EMPLOY_BASIS['by']),
+                                                             value=EMPLOY_BASIS['value'])
             try:
                 employment_basis = emply_els[i-1]
             except exceptions.NoSuchElementException:
@@ -113,8 +116,8 @@ class MultipleDealCreator:
 
     def _first_employment(self):
         try:
-            employment = self.driver.find_element(by=eval(selectors.EMPLOYMENT_BUTTON['by']),
-                                                  value=selectors.EMPLOYMENT_BUTTON['value'])
+            employment = self.driver.find_element(by=eval(EMPLOYMENT_BUTTON['by']),
+                                                  value=EMPLOYMENT_BUTTON['value'])
         except exceptions.NoSuchElementException:
             print('No employment element, something\'s gone off. First employment')
             # self.driver.get_screenshot_as_file(
@@ -124,20 +127,20 @@ class MultipleDealCreator:
 
             sleep(0.01)
 
-            employ_status = self.driver.find_element(by=eval(selectors.EMPLOY_STATUS['by']),
-                                                     value=selectors.EMPLOY_STATUS['value'])
+            employ_status = self.driver.find_element(by=eval(EMPLOY_STATUS['by']),
+                                                     value=EMPLOY_STATUS['value'])
             selector(self.driver, select_element=employ_status, index='0')
 
-            employ_type = self.driver.find_element(by=eval(selectors.EMPLOY_TYPE['by']),
-                                                   value=selectors.EMPLOY_TYPE['value'])
+            employ_type = self.driver.find_element(by=eval(EMPLOY_TYPE['by']),
+                                                   value=EMPLOY_TYPE['value'])
             selector(self.driver, select_element=employ_type, index='random', rand_range='1-3')
 
-            employ_priority = self.driver.find_element(by=eval(selectors.EMPLOY_PRIORITY['by']),
-                                                       value=selectors.EMPLOY_PRIORITY['value'])
+            employ_priority = self.driver.find_element(by=eval(EMPLOY_PRIORITY['by']),
+                                                       value=EMPLOY_PRIORITY['value'])
             selector(self.driver, select_element=employ_priority, index='random', rand_range='1-3')
 
-            employ_basis = self.driver.find_element(by=eval(selectors.EMPLOY_BASIS['by']),
-                                                    value=selectors.EMPLOY_BASIS['value'])
+            employ_basis = self.driver.find_element(by=eval(EMPLOY_BASIS['by']),
+                                                    value=EMPLOY_BASIS['value'])
             selector(self.driver, select_element=employ_basis, index='random')
 
     def ul_list_selector(self, input_el, input_text):
@@ -333,8 +336,8 @@ class MultipleDealCreator:
             WdWait(self.driver, 20).until(
                 ec.presence_of_element_located((By.CSS_SELECTOR, 'st-contact')))
 
-        contact_buttons = self.driver.find_elements(by=eval(selectors.CONTACT_BUTTONS['by']),
-                                                    value=selectors.CONTACT_BUTTONS['value'])
+        contact_buttons = self.driver.find_elements(by=eval(CONTACT_BUTTONS['by']),
+                                                    value=CONTACT_BUTTONS['value'])
 
         contact_info = []
         for contact in contact_buttons:
@@ -354,7 +357,7 @@ class MultipleDealCreator:
                 element_clicker(self.driver, web_element=contact_button['web_el'])
 
             content = WdWait(self.driver, 10).until(
-                ec.presence_of_element_located((eval(selectors.CONTENT['by']), selectors.CONTENT['value'])))
+                ec.presence_of_element_located((eval(CONTENT['by']), CONTENT['value'])))
 
             self.select_el_handler(content)
 
@@ -378,8 +381,8 @@ class MultipleDealCreator:
             ec.presence_of_element_located((By.CSS_SELECTOR, 'form-content > form')))
 
         try:
-            buttons = self.driver.find_elements(by=eval(selectors.PROFILE_BUTTONS['by']),
-                                                value=selectors.PROFILE_BUTTONS['value'])
+            buttons = self.driver.find_elements(by=eval(PROFILE_BUTTONS['by']),
+                                                value=PROFILE_BUTTONS['value'])
         except exceptions.NoSuchElementException:
             print('No div > buttons')
         else:
@@ -388,8 +391,8 @@ class MultipleDealCreator:
             for button in buttons:
 
                 try:
-                    current_separator = button.find_element(by=eval(selectors.BUTTON_TEXT['by']),
-                                                            value=selectors.BUTTON_TEXT['value']).text
+                    current_separator = button.find_element(by=eval(BUTTON_TEXT['by']),
+                                                            value=BUTTON_TEXT['value']).text
                 except exceptions.StaleElementReferenceException as inst:
                     # TODO ?
                     print(inst.stacktrace)
@@ -421,11 +424,11 @@ class MultipleDealCreator:
                     continue
 
                 content = WdWait(self.driver, 10).until(
-                    ec.presence_of_element_located((eval(selectors.CONTENT['by']), selectors.CONTENT['value'])))
+                    ec.presence_of_element_located((eval(CONTENT['by']), CONTENT['value'])))
 
                 if separator == 'Income':
-                    income_buttons = self.driver.find_elements(by=eval(selectors.INFO_BUTTONS['by']),
-                                                               value=selectors.INFO_BUTTONS['value'])
+                    income_buttons = self.driver.find_elements(by=eval(INFO_BUTTONS['by']),
+                                                               value=INFO_BUTTONS['value'])
                     for income_button in income_buttons:
 
                         if not element_clicker(self.driver, web_element=income_button):
@@ -443,11 +446,11 @@ class MultipleDealCreator:
                     # TODO - Make this smarter, check if one is already added and so forth
                     WdWait(self.driver, 10).until(
                         ec.presence_of_element_located((By.TAG_NAME, 'st-households')))
-                    self.driver.find_element(by=eval(selectors.ADD_HOUSEHOLD['by']),
-                                             value=selectors.ADD_HOUSEHOLD['value']).click()
+                    self.driver.find_element(by=eval(ADD_HOUSEHOLD['by']),
+                                             value=ADD_HOUSEHOLD['value']).click()
 
                     household_picker = WdWait(self.driver, 10).until(ec.presence_of_element_located(
-                        (eval(selectors.HOUSEHOLD_PICKER['by']), selectors.HOUSEHOLD_PICKER['value'])))
+                        (eval(HOUSEHOLD_PICKER['by']), HOUSEHOLD_PICKER['value'])))
                     element_clicker(self.driver, web_element=household_picker)
 
                     household_picker_id = household_picker.get_attribute('id')
@@ -470,8 +473,8 @@ class MultipleDealCreator:
                     self.select_el_handler(content)
 
                 if separator == 'Assets':
-                    assets = self.driver.find_elements(by=eval(selectors.INFO_BUTTONS['by']),
-                                                       value=selectors.INFO_BUTTONS['value'])
+                    assets = self.driver.find_elements(by=eval(INFO_BUTTONS['by']),
+                                                       value=INFO_BUTTONS['value'])
                     for asset in assets:
                         if not element_clicker(self.driver, web_element=asset):
                             continue
@@ -488,8 +491,8 @@ class MultipleDealCreator:
 
                 elif separator == 'Liabilities':
 
-                    liabilities = self.driver.find_elements(by=eval(selectors.INFO_BUTTONS['by']),
-                                                            value=selectors.INFO_BUTTONS['value'])
+                    liabilities = self.driver.find_elements(by=eval(INFO_BUTTONS['by']),
+                                                            value=INFO_BUTTONS['value'])
 
                     for _ in range(0, random.randint(3, 7)):
                         element_clicker(self.driver, web_element=random.choice(liabilities))
@@ -534,8 +537,8 @@ class MultipleDealCreator:
                     textarea_handler(content)
 
                 elif separator == 'Insurance':
-                    insurances = self.driver.find_elements(by=eval(selectors.INFO_BUTTONS['by']),
-                                                           value=selectors.INFO_BUTTONS['value'])
+                    insurances = self.driver.find_elements(by=eval(INFO_BUTTONS['by']),
+                                                           value=INFO_BUTTONS['value'])
                     for insurance in insurances:
                         if not element_clicker(self.driver, web_element=insurance):
                             continue
@@ -550,8 +553,8 @@ class MultipleDealCreator:
 
                 elif separator == 'Other advisers':
                     # TODO - Fix other adviser adding
-                    other_advisers = self.driver.find_elements(by=eval(selectors.INFO_BUTTONS['by']),
-                                                               value=selectors.INFO_BUTTONS['value'])
+                    other_advisers = self.driver.find_elements(by=eval(INFO_BUTTONS['by']),
+                                                               value=INFO_BUTTONS['value'])
                     for other_adviser in other_advisers:
                         if not element_clicker(self.driver, web_element=other_adviser):
                             continue
