@@ -3,6 +3,7 @@ The background logic of handling reports, threads, exceptions
 """
 import concurrent.futures
 from selenium.webdriver import Chrome
+from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 
@@ -17,9 +18,6 @@ from logic import worker_main
 
 with open("details.json") as details:
     info = json.load(details)
-
-options = Options()
-options.add_experimental_option("detach", True)
 
 all_ents = [
     'ynet', 'vownet', 'gem', 'gemnz', 'platform', 'nlgconnect', 'app',
@@ -49,7 +47,7 @@ def csv_writer(write_dict: dict, ent_name: str):
             rundown.write('\n')
 
 
-def main_runner(ent, email="matthew+login@salestrekker.com", cp_pin: str = '', cp_link: str = ''):
+def main_runner(ent, headless):
     try:
         mkdir(f'Reports/{date.today()}')
     except FileExistsError:
@@ -62,12 +60,14 @@ def main_runner(ent, email="matthew+login@salestrekker.com", cp_pin: str = '', c
 
     completed = {}
 
-    driver = Chrome(executable_path=ChromeDriverManager().install())
+    options = Options().add_argument('--headless')
+
+    driver = Chrome(executable_path=ChromeDriverManager().install(), options=options)
 
     driver.maximize_window()
 
     try:
-        worker_main(driver=driver, ent=ent, password=info[ent][email], email=email)
+        worker_main(driver=driver, ent=ent, password="login@LOGIN1234", email="matthew+login@salestrekker.com")
     except http_execs.NewConnectionError:
         completed['time'] = datetime.now().strftime('%H:%M:%S')
         completed['completed'] = False
@@ -101,8 +101,13 @@ def main_runner(ent, email="matthew+login@salestrekker.com", cp_pin: str = '', c
         # return completed
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    headless_input = input('Headless? (y/n): ')
+    num_of_proc_input = int(input('Num of processes (min 1, max 12): '))
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=6) as executor:
-        future_runner = {executor.submit(main_runner, ent): ent for ent in
-                         all_ents}
+    ents = ((headless_input, ent) for ent in all_ents)
+
+    with concurrent.futures.ProcessPoolExecutor(max_workers=num_of_proc_input) as executor:
+        future_runner = executor.submit(lambda p: main_runner(*p), ())
+
+
