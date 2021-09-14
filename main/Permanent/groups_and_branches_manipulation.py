@@ -3,14 +3,13 @@ import traceback
 from os import path
 from time import sleep
 
-from selenium.webdriver.common.keys import Keys
 from selenium.common import exceptions
 from selenium.webdriver import Chrome
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait as WdWait
-
 
 # TODO - Empty lender accreditation check
 # TODO -
@@ -113,10 +112,13 @@ class GroupsAndBranches:
 
     def group_and_branches_scroller(self, element_with_scroll):
         while True:
-            last_height = self.driver.execute_script("return arguments[0].scrollHeight", element_with_scroll)
-            self.driver.execute_script(f"arguments[0].scroll(0,{last_height});", element_with_scroll)
+            last_height = self.driver.execute_script("return arguments[0].scrollHeight",
+                                                     element_with_scroll)
+            self.driver.execute_script(f"arguments[0].scroll(0,{last_height});",
+                                       element_with_scroll)
             element_dissapear(driver=self.driver, css_selector='md-progress-linear#whenScrolled')
-            new_height = self.driver.execute_script("return arguments[0].scrollHeight", element_with_scroll)
+            new_height = self.driver.execute_script("return arguments[0].scrollHeight",
+                                                    element_with_scroll)
 
             if new_height == last_height:
                 break

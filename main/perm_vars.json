@@ -1,39 +1,38 @@
 {
-  "ents_info":
-  {
-    "dev" : {
-    "main": "# Enterprise",
-    "learn": "**MAKE YOUR OWN** Matt Test Group (QA automation testing)"
+  "ents_info": {
+    "dev": {
+      "main": "# Enterprise",
+      "learn": "**MAKE YOUR OWN** Matt Test Group (QA automation testing)"
     },
-    "vownet" : {
-    "main" : "Vow Financial Pty Ltd",
-    "learn" : "Learn Vownet"
+    "vownet": {
+      "main": "Vow Financial Pty Ltd",
+      "learn": "Learn Vownet"
     },
-    "ioutsource" : {
+    "ioutsource": {
       "main": "outsource financial pty ltd",
       "learn": "Learn ioutsource"
     },
-    "sfg" :{
+    "sfg": {
       "main": "Specialist Finance Group",
       "learn": "0 - Learn SFGconnect"
     },
-    "chief" : {
+    "chief": {
       "main": "Chief",
       "learn": "ZZZ Learn Chief"
     },
-    "platform" : {
+    "platform": {
       "main": "# Platform Connect",
       "learn": "Z. Learn Platform Connect"
     },
-    "nlgconnect" : {
+    "nlgconnect": {
       "main": "AGILITI CAPITAL PTY LTD",
       "learn": "Z. Learn NLG Connect"
     },
-    "app" : {
+    "app": {
       "main": "3 Demo N Co",
       "learn": "Test Group"
     },
-    "gemnz" : {
+    "gemnz": {
       "main": "Astute Financial Management Limited",
       "learn": "0. Learn Gem"
     },
@@ -46,41 +45,36 @@
       "learn": "0. Learn GEM"
     }
   },
-
   "workflows": "None-Asset Finance-Commercial Loan-Conveyancing-Home Loan-Insurance-Personal Loan-Real Estate",
-
   "test_users": {
     "matthew": {
-        "username": "Matthew Test",
-        "email": "matthew@salestrekker.com",
-        "broker": true,
-        "admin": true,
-        "mentor": false
-      },
-
-      "maya": {
-        "username": "Maya Test",
-        "email": "maya@salestrekker.com",
-        "broker": true,
-        "admin": true,
-        "mentor": false
-      },
-
-      "phillip": {
-        "username": "Phillip Test",
-        "email":  "phillip@salestrekker.com",
-        "broker": true,
-        "admin": true,
-        "mentor": false
-      },
-
-      "zac": {
-        "username": "Zac Test",
-        "email": "zac@salestrekker.com",
-        "broker": true,
-        "admin": true,
-        "mentor": false
-      }
-}
+      "username": "Matthew Test",
+      "email": "matthew@salestrekker.com",
+      "broker": true,
+      "admin": true,
+      "mentor": false
+    },
+    "maya": {
+      "username": "Maya Test",
+      "email": "maya@salestrekker.com",
+      "broker": true,
+      "admin": true,
+      "mentor": false
+    },
+    "phillip": {
+      "username": "Phillip Test",
+      "email": "phillip@salestrekker.com",
+      "broker": true,
+      "admin": true,
+      "mentor": false
+    },
+    "zac": {
+      "username": "Zac Test",
+      "email": "zac@salestrekker.com",
+      "broker": true,
+      "admin": true,
+      "mentor": false
+    }
+  }
 }
 

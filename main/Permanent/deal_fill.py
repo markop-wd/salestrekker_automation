@@ -1,23 +1,23 @@
 import datetime
-import math
-
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.wait import WebDriverWait as WdWait
-from selenium.webdriver.support import expected_conditions as ec
-from selenium.webdriver import Chrome
-from selenium.common import exceptions
-
-from main.Permanent.helper_funcs import random_string_create, AddressInput, element_clicker, selector, element_waiter, \
-    random_date, md_toast_wait
-from main.Permanent.deal_fill_selectors import *
-
-from time import sleep
 import json
-import string
+import math
 import random
+import string
 import traceback
 from pathlib import Path
+from time import sleep
+
+from selenium.common import exceptions
+from selenium.webdriver import Chrome
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.support.wait import WebDriverWait as WdWait
+
+from main.Permanent.deal_fill_selectors import *
+from main.Permanent.helper_funcs import random_string_create, AddressInput, element_clicker, \
+    selector, element_waiter, \
+    random_date, md_toast_wait
 
 
 class FillDeal:
@@ -112,18 +112,21 @@ class FillDeal:
                 if i == 1:
                     selector(self.driver, select_element=employment_status, index='0')
                 else:
-                    selector(self.driver, select_element=employment_status, index='random', rand_range='0-2')
+                    selector(self.driver, select_element=employment_status, index='random',
+                             rand_range='0-2')
 
                 employment_type = f_empl_content.find_element(by=eval(EMPLOY_TYPE['by']),
                                                               value=EMPLOY_TYPE['value'])
                 if i == 1:
                     selector(self.driver, select_element=employment_type, index='2')
                 else:
-                    selector(self.driver, select_element=employment_type, index='random', rand_range='1-5')
+                    selector(self.driver, select_element=employment_type, index='random',
+                             rand_range='1-5')
 
                 employment_priority = f_empl_content.find_element(by=eval(EMPLOY_PRIORITY['by']),
                                                                   value=EMPLOY_PRIORITY['value'])
-                selector(self.driver, select_element=employment_priority, index='random', rand_range='1-3')
+                selector(self.driver, select_element=employment_priority, index='random',
+                         rand_range='1-3')
 
                 try:
                     emply_el = f_empl_content.find_element(by=eval(EMPLOY_BASIS['by']),
@@ -133,7 +136,8 @@ class FillDeal:
                 else:
                     selector(self.driver, select_element=emply_el, index='random')
 
-                date_el = f_empl_content.find_element(by=By.CSS_SELECTOR, value='input[placeholder="DD/MM/YYYY"]')
+                date_el = f_empl_content.find_element(by=By.CSS_SELECTOR,
+                                                      value='input[placeholder="DD/MM/YYYY"]')
                 date_el.send_keys(random_date().strftime("%d/%m/%Y"))
                 md_toast_wait(self.driver)
 
@@ -176,7 +180,8 @@ class FillDeal:
                                                        value=EMPLOY_BASIS['value'])
             selector(self.driver, select_element=employ_basis, index='random')
 
-            date_el = f_empl_content.find_element(by=By.CSS_SELECTOR, value='input[placeholder="DD/MM/YYYY"]')
+            date_el = f_empl_content.find_element(by=By.CSS_SELECTOR,
+                                                  value='input[placeholder="DD/MM/YYYY"]')
 
             end_date = datetime.date.today() - datetime.timedelta(days=(365 * 3) + 3)
             date_el.send_keys(random_date(test_date2=end_date).strftime("%d/%m/%Y"))
@@ -312,7 +317,8 @@ class FillDeal:
                     elif ng_change == '$ctrl.saveAddress()':
                         continue
 
-                    elif ng_model in ['$ctrl.contact.person.contact.work', '$ctrl.contact.person.contact.home']:
+                    elif ng_model in ['$ctrl.contact.person.contact.work',
+                                      '$ctrl.contact.person.contact.home']:
                         input_el.send_keys("".join(random.sample(string.digits, 9)))
                     elif ng_model == '$ctrl.contact.person.contact.secondaryEmail':
                         input_el.send_keys('secondary@email.com')
@@ -336,7 +342,8 @@ class FillDeal:
                 md_select_id = str(md_select.get_attribute('id'))
                 md_select_container_id = str(int(md_select_id.split("_")[-1]) + 1)
                 WdWait(self.driver, 5).until(
-                    ec.element_to_be_clickable((By.ID, 'select_container_' + md_select_container_id)))
+                    ec.element_to_be_clickable(
+                        (By.ID, 'select_container_' + md_select_container_id)))
                 md_select_container = self.driver.find_elements(by=By.CSS_SELECTOR,
                                                                 value='#select_container_' + md_select_container_id + ' md-option')
 
@@ -378,7 +385,8 @@ class FillDeal:
         A couple of ways to click this tools/profile button. One way is to click st-sidebar-block button:nth-child(2),
         but getting all els and going for the last one seems solid enough
         """
-        profile_buttons = self.driver.find_elements(by=By.CSS_SELECTOR, value='st-sidebar-block button')
+        profile_buttons = self.driver.find_elements(by=By.CSS_SELECTOR,
+                                                    value='st-sidebar-block button')
         # TODO - if the deal is settled the last element will be SWITCH, this needs to be changed
         element_clicker(self.driver, web_element=profile_buttons[-1])
         # TODO - 30 seconds wait for the st-contact which is in 90% of situations the first page, maybe try another way
@@ -393,7 +401,8 @@ class FillDeal:
                 {
                     'web_el': contact,
                     'type': contact.find_element(by=By.CSS_SELECTOR, value='small > span').text,
-                    'contact_name': contact.find_element(by=By.CSS_SELECTOR, value='span.truncate').text
+                    'contact_name': contact.find_element(by=By.CSS_SELECTOR,
+                                                         value='span.truncate').text
                 }
             )
 
@@ -686,7 +695,6 @@ class FillDeal:
                     for insurance in insurances:
                         if not element_clicker(self.driver, web_element=insurance):
                             continue
-
 
                     self.select_el_handler(content)
 

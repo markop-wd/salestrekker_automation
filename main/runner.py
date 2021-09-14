@@ -2,22 +2,18 @@
 This encapsulatese the logic.py with the reports, threads and exceptions.
 """
 import concurrent.futures
+import json
 import os
+import traceback
+from datetime import date, datetime
+from os import mkdir
 
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
+from urllib3 import exceptions as http_execs
 from webdriver_manager.chrome import ChromeDriverManager
 
-
-from datetime import date, datetime
-import json
-import traceback
-from os import mkdir
-
-from urllib3 import exceptions as http_execs
-
-from logic import worker, cp_worker, worker_main, api, simple_worker
-from main.Permanent.login import LogIn
+from logic import cp_worker, simple_worker
 
 # Details are the logins stored
 with open("details.json") as details:
@@ -60,7 +56,8 @@ def csv_writer(write_dict: dict, ent_name: str):
             rundown.write('\n')
 
 
-def main_runner(ent='gemnz', email="helpdesk@salestrekker.com", cp_pin: str = '', cp_link: str = '', conccurent_arg=None):
+def main_runner(ent='gemnz', email="helpdesk@salestrekker.com", cp_pin: str = '', cp_link: str = '',
+                conccurent_arg=None):
     """
     This is the main caller and it also is the endpoint of the exceptions I have not handled in the logic iteslf, if any it will store them in a report.
     """
@@ -77,7 +74,9 @@ def main_runner(ent='gemnz', email="helpdesk@salestrekker.com", cp_pin: str = ''
     completed = {}
     os.environ['WDM_LOG_LEVEL'] = '0'
 
-    driver = Chrome(executable_path=ChromeDriverManager(log_level=0, print_first_line=False).install(), options=options)
+    driver = Chrome(
+        executable_path=ChromeDriverManager(log_level=0, print_first_line=False).install(),
+        options=options)
 
     # driver_ids = {"url": driver.command_executor._url, "id": driver.session_id}
     # with open("new_session.json", "w") as new:
@@ -93,7 +92,8 @@ def main_runner(ent='gemnz', email="helpdesk@salestrekker.com", cp_pin: str = ''
         else:
             # If no cp link or pin then call the main worker with parameters you get from perm vars and details
             # worker_main(driver=driver, ent=ent, password=info[ent][email], email=email)
-            simple_worker(driver=driver, ent=ent, password=info[ent][email], email=email, con_arg=conccurent_arg)
+            simple_worker(driver=driver, ent=ent, password=info[ent][email], email=email,
+                          con_arg=conccurent_arg)
             # worker(driver=driver, ent=ent, password=info[ent][email], email=email, con_arg=conccurent_arg)
 
             # api(driver=driver, ent=ent, password=info[ent][email], email=email)

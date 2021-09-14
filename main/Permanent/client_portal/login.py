@@ -1,8 +1,8 @@
-from selenium.webdriver.support.wait import WebDriverWait as WdWait
 from selenium.common import exceptions
-from selenium.webdriver.support import expected_conditions as ec
-from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.support.wait import WebDriverWait as WdWait
 
 
 # TODO - Add assertions that certain elements are in place - this is a good starting point for tests
@@ -26,11 +26,13 @@ class LogIn:
         except exceptions.TimeoutException:
             self.driver.refresh()
             try:
-                WdWait(self.driver, 20).until(ec.visibility_of_element_located((By.TAG_NAME, "input")))
+                WdWait(self.driver, 20).until(
+                    ec.visibility_of_element_located((By.TAG_NAME, "input")))
             except exceptions.TimeoutException:
                 self.driver.refresh()
                 try:
-                    WdWait(self.driver, 25).until(ec.visibility_of_element_located((By.TAG_NAME, "input")))
+                    WdWait(self.driver, 25).until(
+                        ec.visibility_of_element_located((By.TAG_NAME, "input")))
                 except exceptions.TimeoutException:
                     print('Salestrekker unresponsive, manual checkup needed')
                     raise exceptions.TimeoutException
@@ -39,14 +41,16 @@ class LogIn:
 
         finally:
             try:
-                self.driver.find_element(by=By.CSS_SELECTOR, value='input[placeholder="PIN code"]').send_keys(self.pin)
+                self.driver.find_element(by=By.CSS_SELECTOR,
+                                         value='input[placeholder="PIN code"]').send_keys(self.pin)
             except exceptions.NoSuchElementException:
                 print('No PIN element?')
             else:
                 self.driver.find_element(by=By.TAG_NAME, value='button').click()
 
             try:
-                WdWait(self.driver, 5).until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div.bp3-intent-danger')))
+                WdWait(self.driver, 5).until(
+                    ec.visibility_of_element_located((By.CSS_SELECTOR, 'div.bp3-intent-danger')))
             except exceptions.TimeoutException:
                 pass
             else:
@@ -55,12 +59,14 @@ class LogIn:
                 # self.driver.quit()
 
             try:
-                WdWait(self.driver, 10).until(ec.visibility_of_element_located((By.CLASS_NAME, 'dashboard')))
+                WdWait(self.driver, 10).until(
+                    ec.visibility_of_element_located((By.CLASS_NAME, 'dashboard')))
             except exceptions.TimeoutException:
                 if self.driver.current_url != f'https://{self.ent}-cp.salestrekker.com/dashboard':
 
                     try:
-                        WdWait(self.driver, 15).until(ec.visibility_of_element_located((By.CLASS_NAME, 'dashboard')))
+                        WdWait(self.driver, 15).until(
+                            ec.visibility_of_element_located((By.CLASS_NAME, 'dashboard')))
                     except exceptions.TimeoutException:
                         # TODO - Privacy YES/NO handler
                         print('No dashboard')
@@ -75,7 +81,8 @@ class LogIn:
         self.driver.get(self.link)
         # self.driver.get("https://" + self.ent + '-cp.salestrekker.com/authenticate')
         try:
-            WdWait(self.driver, 10).until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div#root')))
+            WdWait(self.driver, 10).until(
+                ec.visibility_of_element_located((By.CSS_SELECTOR, 'div#root')))
         except exceptions.TimeoutException:
             time_increment = 0
             while True:
@@ -89,9 +96,9 @@ class LogIn:
 
                 # sleep(time_increment)
                 try:
-                    WdWait(self.driver, time_increment).until(ec.visibility_of_element_located((By.TAG_NAME, 'div#root')))
+                    WdWait(self.driver, time_increment).until(
+                        ec.visibility_of_element_located((By.TAG_NAME, 'div#root')))
                 except exceptions.TimeoutException:
                     time_increment += 2
         finally:
             self.log_in_helper()
-

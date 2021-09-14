@@ -2,24 +2,21 @@
 When something out of the ordinary has to be done
 Instead of programming in the main business logic just implement it here and import it there
 """
-import datetime
 import random
+import string
 import threading
 import traceback
-import string
-from time import sleep
 from datetime import date, timedelta
-from random import choice
+from time import sleep
 
+from selenium.common import exceptions
+from selenium.webdriver import Chrome
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.support.wait import WebDriverWait as WdWait
-from selenium.common import exceptions
 from selenium.webdriver.support import expected_conditions as ec
-from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
-
-from selenium.webdriver import Chrome
+from selenium.webdriver.support.wait import WebDriverWait as WdWait
 
 from main.Permanent.login import LogIn
 from main.mail import mail_get
@@ -34,7 +31,8 @@ def random_string_create(char_nums: int = 10):
 def accreditation_fill(driver: Chrome, ent: str, all_new: bool = True):
     if driver.current_url != f"https://{ent}.salestrekker.com/settings/my-accreditations":
         driver.get(f"https://{ent}.salestrekker.com/settings/my-accreditations")
-    WdWait(driver, 50).until(ec.visibility_of_element_located((By.TAG_NAME, 'st-block-form-content')))
+    WdWait(driver, 50).until(
+        ec.visibility_of_element_located((By.TAG_NAME, 'st-block-form-content')))
 
     if all_new:
         try:
@@ -47,7 +45,8 @@ def accreditation_fill(driver: Chrome, ent: str, all_new: bool = True):
         except exceptions.NoSuchElementException:
             pass
 
-        add_new = driver.find_element(by=By.CSS_SELECTOR, value='button[aria-label="Add new lender accreditation"]')
+        add_new = driver.find_element(by=By.CSS_SELECTOR,
+                                      value='button[aria-label="Add new lender accreditation"]')
         element_clicker(driver=driver, web_element=add_new)
         # # md_select = driver.find_element(by=By.CSS_SELECTOR, value='md-select[ng-change="pickLender('
         # #                                                           'lenderAccreditation)"]')
@@ -454,13 +453,17 @@ def simple_expense_calc(driver: Chrome, deal_url: str):
     no_hem_total = 0
     driver.get(deal_url)
     expense_button = WdWait(driver, 10).until(ec.visibility_of_element_located(
-        (By.XPATH, '//*[@id="top"]/st-sidebar/st-sidebar-content/st-sidebar-block[1]/div/div/button[2]')))
+        (By.XPATH,
+         '//*[@id="top"]/st-sidebar/st-sidebar-content/st-sidebar-block[1]/div/div/button[2]')))
     expense_button.click()
     sleep(2)
-    expenses = WdWait(driver, 10).until(ec.visibility_of_element_located((By.TAG_NAME, 'st-household-expenses')))
+    expenses = WdWait(driver, 10).until(
+        ec.visibility_of_element_located((By.TAG_NAME, 'st-household-expenses')))
 
-    values = expenses.find_elements(by=By.CSS_SELECTOR, value='input[ng-model="householdExpense.value"]')
-    frequencies = expenses.find_elements(by=By.CSS_SELECTOR, value='select[ng-model="householdExpense.frequency"]')
+    values = expenses.find_elements(by=By.CSS_SELECTOR,
+                                    value='input[ng-model="householdExpense.value"]')
+    frequencies = expenses.find_elements(by=By.CSS_SELECTOR,
+                                         value='select[ng-model="householdExpense.frequency"]')
 
     hem = "//span[contains(@class, 'success')]/../input"
     no_hem = "//span[contains(@class, 'danger')]/../input"
@@ -536,11 +539,13 @@ def income_calc(driver: Chrome, deal_url: str):
     total = 0
     driver.get(deal_url)
     income_button = WdWait(driver, 10).until(ec.visibility_of_element_located(
-        (By.XPATH, '//*[@id="top"]/st-sidebar/st-sidebar-content/st-sidebar-block[1]/div/div/button[1]')))
+        (By.XPATH,
+         '//*[@id="top"]/st-sidebar/st-sidebar-content/st-sidebar-block[1]/div/div/button[1]')))
     income_button.click()
     sleep(2)
     WdWait(driver, 10).until(
-        ec.visibility_of_element_located((By.CSS_SELECTOR, 'div.flex.layout-column.ng-scope.layout-gt-sm-row')))
+        ec.visibility_of_element_located(
+            (By.CSS_SELECTOR, 'div.flex.layout-column.ng-scope.layout-gt-sm-row')))
     paygs = driver.find_elements(by=By.CSS_SELECTOR,
                                  value='div.flex.layout-column.ng-scope.layout-gt-sm-row')
     for payg in paygs:
@@ -621,64 +626,102 @@ def add_contact(driver: Chrome):
     driver.get('https://dev.salestrekker.com/contact/edit/person/0')
     WdWait(driver, 10).until(ec.visibility_of_element_located((By.TAG_NAME, 'st-contact')))
 
-    first_names = ['Misty', 'Karl', 'Tanisha', 'Jasmin', 'Lexi-Mai', 'Chandni', 'Musab', 'Spike', 'Doris',
+    first_names = ['Misty', 'Karl', 'Tanisha', 'Jasmin', 'Lexi-Mai', 'Chandni', 'Musab', 'Spike',
+                   'Doris',
                    'Dominick', 'Rudi',
-                   'Saira', 'Keeleigh', 'Nana', 'Andrew', 'Kirandeep', 'Roland', 'Harry', 'Alexie', 'Adelaide',
+                   'Saira', 'Keeleigh', 'Nana', 'Andrew', 'Kirandeep', 'Roland', 'Harry', 'Alexie',
+                   'Adelaide',
                    'Finbar', 'Nasir',
-                   'Patrycja', 'Nela', 'Belinda', 'Amaya', 'Husnain', 'Tiana', 'Wyatt', 'Kenneth', 'April', 'Leia',
+                   'Patrycja', 'Nela', 'Belinda', 'Amaya', 'Husnain', 'Tiana', 'Wyatt', 'Kenneth',
+                   'April', 'Leia',
                    'Bushra',
-                   'Levi', 'Keira', 'Amin', 'Samiha', 'Marianne', 'Habib', 'Yousuf', 'Nicola', 'Samanta',
+                   'Levi', 'Keira', 'Amin', 'Samiha', 'Marianne', 'Habib', 'Yousuf', 'Nicola',
+                   'Samanta',
                    'Benedict', 'Nikhil',
-                   'Aurora', 'Giulia', 'Rosa', 'Alannah', 'Marian', 'Dionne', 'Xanthe', 'Anabel', 'Samira', 'Mason',
+                   'Aurora', 'Giulia', 'Rosa', 'Alannah', 'Marian', 'Dionne', 'Xanthe', 'Anabel',
+                   'Samira', 'Mason',
                    'Colleen',
-                   'Esther', 'Faheem', 'Rachael', 'Kuba', 'Callam', 'Nick', 'Ayub', 'Esmay', 'Aimee', 'Sarah',
+                   'Esther', 'Faheem', 'Rachael', 'Kuba', 'Callam', 'Nick', 'Ayub', 'Esmay',
+                   'Aimee', 'Sarah',
                    'Billy', 'Enid',
-                   'Katie-Louise', 'Ashlee', 'Tamar', 'Darla', 'Whitney', 'Helena', 'Rachelle', 'Maisie', 'Julia',
+                   'Katie-Louise', 'Ashlee', 'Tamar', 'Darla', 'Whitney', 'Helena', 'Rachelle',
+                   'Maisie', 'Julia',
                    'Mandy',
-                   'Isaiah', 'Sally', 'Marianna', 'Jasleen', 'Evie-Mae', 'Lana', 'Kiana', 'Preston', 'Rae',
+                   'Isaiah', 'Sally', 'Marianna', 'Jasleen', 'Evie-Mae', 'Lana', 'Kiana', 'Preston',
+                   'Rae',
                    'Poppy-Rose', 'Lyla',
-                   'Christy', 'Maheen', 'Cordelia', 'Mariya', 'Amelia-Grace', 'Kier', 'Sonny', 'Alessia', 'Inigo',
+                   'Christy', 'Maheen', 'Cordelia', 'Mariya', 'Amelia-Grace', 'Kier', 'Sonny',
+                   'Alessia', 'Inigo',
                    'Hareem',
-                   'Caitlyn', 'Ayana', 'Danielle', 'Charlotte', 'Bronwyn', 'Eliot', 'Lesley', 'Ada', 'Azra',
+                   'Caitlyn', 'Ayana', 'Danielle', 'Charlotte', 'Bronwyn', 'Eliot', 'Lesley', 'Ada',
+                   'Azra',
                    'Wilbur', 'Lillian',
-                   'Yannis', 'Sherri', 'Cosmo', 'Nella', 'Hasan', 'Tyrique', 'Jonah', 'Lexi-Mae', 'Nigel', 'Zavier',
+                   'Yannis', 'Sherri', 'Cosmo', 'Nella', 'Hasan', 'Tyrique', 'Jonah', 'Lexi-Mae',
+                   'Nigel', 'Zavier',
                    'Bevan',
-                   'Leo', 'Israel', 'Sharna', 'Jagoda', 'Deborah', 'Claire', 'Anabelle', 'Kobie', 'Nabeel',
+                   'Leo', 'Israel', 'Sharna', 'Jagoda', 'Deborah', 'Claire', 'Anabelle', 'Kobie',
+                   'Nabeel',
                    'Kayley', 'Zahrah',
-                   'Beck', 'Kingsley', 'Micah', 'Jerry', 'Haydn', 'Robyn', 'Carwyn', 'Rhys', 'Seamus', 'Maia',
+                   'Beck', 'Kingsley', 'Micah', 'Jerry', 'Haydn', 'Robyn', 'Carwyn', 'Rhys',
+                   'Seamus', 'Maia',
                    'Iman', 'Rahul',
-                   'Judy', 'Arwa', 'Jeevan', 'Francesco', 'Shyam', 'Amal', 'Gabrielle', 'Kellie', 'Derry',
+                   'Judy', 'Arwa', 'Jeevan', 'Francesco', 'Shyam', 'Amal', 'Gabrielle', 'Kellie',
+                   'Derry',
                    'Quentin', 'Hashir',
-                   'Alma', 'Rheanna', 'Sebastian', 'Sahara', 'Miriam', 'Debbie', 'Niyah', 'Lillie-May', 'Petra',
+                   'Alma', 'Rheanna', 'Sebastian', 'Sahara', 'Miriam', 'Debbie', 'Niyah',
+                   'Lillie-May', 'Petra',
                    'Khalil', 'Lena',
-                   'Isabell', 'Howard', 'Lennie', 'Jibril', 'Christiana', 'Alan', 'Kimora', 'Muneeb', 'Iqrah',
+                   'Isabell', 'Howard', 'Lennie', 'Jibril', 'Christiana', 'Alan', 'Kimora',
+                   'Muneeb', 'Iqrah',
                    'Hanna', 'Akbar',
-                   'Beverly', 'Jill', 'Shania', 'T-Jay', 'George', 'Lexie', 'Gerard', 'Weronika', 'Alison', 'Reon',
+                   'Beverly', 'Jill', 'Shania', 'T-Jay', 'George', 'Lexie', 'Gerard', 'Weronika',
+                   'Alison', 'Reon',
                    'Piotr',
-                   'Alya', 'Mitchel', 'Sally', 'Alfie-Lee', 'Abbie', 'Pola', 'Laylah', 'Zubair', 'Ali', 'Nicole',
+                   'Alya', 'Mitchel', 'Sally', 'Alfie-Lee', 'Abbie', 'Pola', 'Laylah', 'Zubair',
+                   'Ali', 'Nicole',
                    'Lorna',
                    'Ember', 'Cora']
 
-    surnames = ['Banks', 'Berg', 'Obrien', 'Talley', 'Mccray', 'Kramer', 'Cunningham', 'Dunn', 'Vu', 'Ferry',
-                'Wolfe', 'Haas', 'Bate', 'Tomlinson', 'Phelps', 'Goulding', 'Penn', 'Slater', 'Aguilar', 'Mellor',
-                'Bray', 'Potter', 'Metcalfe', 'Burch', 'Houston', 'Brandt', 'Nixon', 'Allison', 'Stephens',
-                'Webster', 'Lawrence', 'Wright', 'Knowles', 'Davidson', 'Dalton', 'Flower', 'Cameron', 'Baker',
-                'Portillo', 'Lord', 'Goodman', 'Roman', 'Wardle', 'Hayden', 'Bains', 'Romero', 'Iles', 'Navarro',
-                'Malone', 'Molina', 'Macfarlane', 'Hilton', 'Mckay', 'Novak', 'Gaines', 'Ratliff', 'Valdez',
-                'Zavala', 'Gibbons', 'Almond', 'Bruce', 'Felix', 'Reeve', 'Chang', 'Patrick', 'Hutchings', 'Ayala',
-                'Russell', 'Burn', 'Parra', 'Sharma', 'Emery', 'Burris', 'Southern', 'Mcleod', 'Mckee', 'Duggan',
-                'William', 'Dalby', 'Carr', 'Carty', 'Read', 'Marsh', 'Chase', 'Greene', 'Stafford', 'Greig',
-                'Woolley', 'Bird', 'Wyatt', 'Escobar', 'Bradley', 'Kirby', 'Whitney', 'Cartwright', 'Sargent',
-                'Plummer', 'Lucero', 'Reynolds', 'Melia', 'Davenport', 'Irving', 'Barrow', 'Senior', 'Mcgowan',
-                'Hancock', 'Povey', 'Mcmanus', 'Tyson', 'Hunt', 'Betts', 'Lopez', 'Molloy', 'Plant', 'Kirk',
-                'Cantu', 'Reid', 'Whelan', 'Dupont', 'Berry', 'Mueller', 'Lowery', 'Powell', 'Porter', 'Krueger',
-                'Griffiths', 'Garrett', 'Barrett', 'Gibbs', 'Calvert', 'Hills', 'Rice', 'Correa', 'Pineda',
-                'Beasley', 'Sanderson', 'Frye', 'Garrison', 'Trevino', 'Stafford', 'Rankin', 'Huerta', 'Luna',
-                'Mustafa', 'Lane', 'Russo', 'Richmond', 'Ferry', 'Wolfe', 'Schmidt', 'Mcnally', 'Power',
-                'Castaneda', 'Wickens', 'Romero', 'Smyth', 'Coulson', 'Riley', 'Carty', 'Hogan', 'Bonilla', 'Mcgee',
-                'Buck', 'Mccoy', 'Schneider', 'Gordon', 'Hardy', 'Ferreira', 'Jarvis', 'Haley', 'Bray', 'Barnett',
-                'Finch', 'Cox', 'Lawrence', 'Leech', 'Bain', 'Cross', 'Hyde', 'Soto', 'Bates', 'Knowles', 'Douglas',
-                'Roberts', 'Cornish', 'Robles', 'Macgregor', 'Hines', 'Oakley', 'Santos', 'Kirkpatrick', 'Alvarez',
+    surnames = ['Banks', 'Berg', 'Obrien', 'Talley', 'Mccray', 'Kramer', 'Cunningham', 'Dunn', 'Vu',
+                'Ferry',
+                'Wolfe', 'Haas', 'Bate', 'Tomlinson', 'Phelps', 'Goulding', 'Penn', 'Slater',
+                'Aguilar', 'Mellor',
+                'Bray', 'Potter', 'Metcalfe', 'Burch', 'Houston', 'Brandt', 'Nixon', 'Allison',
+                'Stephens',
+                'Webster', 'Lawrence', 'Wright', 'Knowles', 'Davidson', 'Dalton', 'Flower',
+                'Cameron', 'Baker',
+                'Portillo', 'Lord', 'Goodman', 'Roman', 'Wardle', 'Hayden', 'Bains', 'Romero',
+                'Iles', 'Navarro',
+                'Malone', 'Molina', 'Macfarlane', 'Hilton', 'Mckay', 'Novak', 'Gaines', 'Ratliff',
+                'Valdez',
+                'Zavala', 'Gibbons', 'Almond', 'Bruce', 'Felix', 'Reeve', 'Chang', 'Patrick',
+                'Hutchings', 'Ayala',
+                'Russell', 'Burn', 'Parra', 'Sharma', 'Emery', 'Burris', 'Southern', 'Mcleod',
+                'Mckee', 'Duggan',
+                'William', 'Dalby', 'Carr', 'Carty', 'Read', 'Marsh', 'Chase', 'Greene', 'Stafford',
+                'Greig',
+                'Woolley', 'Bird', 'Wyatt', 'Escobar', 'Bradley', 'Kirby', 'Whitney', 'Cartwright',
+                'Sargent',
+                'Plummer', 'Lucero', 'Reynolds', 'Melia', 'Davenport', 'Irving', 'Barrow', 'Senior',
+                'Mcgowan',
+                'Hancock', 'Povey', 'Mcmanus', 'Tyson', 'Hunt', 'Betts', 'Lopez', 'Molloy', 'Plant',
+                'Kirk',
+                'Cantu', 'Reid', 'Whelan', 'Dupont', 'Berry', 'Mueller', 'Lowery', 'Powell',
+                'Porter', 'Krueger',
+                'Griffiths', 'Garrett', 'Barrett', 'Gibbs', 'Calvert', 'Hills', 'Rice', 'Correa',
+                'Pineda',
+                'Beasley', 'Sanderson', 'Frye', 'Garrison', 'Trevino', 'Stafford', 'Rankin',
+                'Huerta', 'Luna',
+                'Mustafa', 'Lane', 'Russo', 'Richmond', 'Ferry', 'Wolfe', 'Schmidt', 'Mcnally',
+                'Power',
+                'Castaneda', 'Wickens', 'Romero', 'Smyth', 'Coulson', 'Riley', 'Carty', 'Hogan',
+                'Bonilla', 'Mcgee',
+                'Buck', 'Mccoy', 'Schneider', 'Gordon', 'Hardy', 'Ferreira', 'Jarvis', 'Haley',
+                'Bray', 'Barnett',
+                'Finch', 'Cox', 'Lawrence', 'Leech', 'Bain', 'Cross', 'Hyde', 'Soto', 'Bates',
+                'Knowles', 'Douglas',
+                'Roberts', 'Cornish', 'Robles', 'Macgregor', 'Hines', 'Oakley', 'Santos',
+                'Kirkpatrick', 'Alvarez',
                 'Piper', 'Murphy', 'Boyd', 'Haas', 'Corbett', 'Short', 'Alexander', 'Sloan']
 
     first_name = random.choice(first_names)
@@ -687,21 +730,27 @@ def add_contact(driver: Chrome):
     date_of_birth = f'09/07/{random.randrange(1950, 1990)}'
 
     driver.find_element(by=By.CSS_SELECTOR,
-                        value='input[ng-model="$ctrl.contact.person.information.firstName"]').send_keys(first_name)
+                        value='input[ng-model="$ctrl.contact.person.information.firstName"]').send_keys(
+        first_name)
     driver.find_element(by=By.CSS_SELECTOR,
-                        value='input[ng-model="$ctrl.contact.person.information.familyName"]').send_keys(last_name)
+                        value='input[ng-model="$ctrl.contact.person.information.familyName"]').send_keys(
+        last_name)
     driver.find_element(by=By.CSS_SELECTOR,
-                        value='md-datepicker[ng-model="$ctrl.getSetDateOfBirth"] input').send_keys(date_of_birth)
+                        value='md-datepicker[ng-model="$ctrl.getSetDateOfBirth"] input').send_keys(
+        date_of_birth)
     phone_code = driver.find_element(by=By.CSS_SELECTOR,
                                      value='input[ng-model="$ctrl.contact.person.contact.primaryCode"]')
     phone_code.clear()
     phone_code.send_keys('381')
     driver.find_element(by=By.CSS_SELECTOR,
-                        value='input[ng-model="$ctrl.contact.person.contact.primary"]').send_keys('695242544')
+                        value='input[ng-model="$ctrl.contact.person.contact.primary"]').send_keys(
+        '695242544')
     driver.find_element(by=By.CSS_SELECTOR,
-                        value='input[ng-model="$ctrl.contact.person.contact.email"]').send_keys(email)
+                        value='input[ng-model="$ctrl.contact.person.contact.email"]').send_keys(
+        email)
     driver.find_element(by=By.CSS_SELECTOR,
-                        value='md-datepicker[ng-model="$ctrl.getSetPassportExpiryDate"] input').send_keys('09/07/2021')
+                        value='md-datepicker[ng-model="$ctrl.getSetPassportExpiryDate"] input').send_keys(
+        '09/07/2021')
     try:
         WdWait(driver, 10).until(
             ec.visibility_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))

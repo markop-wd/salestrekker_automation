@@ -1,14 +1,14 @@
-from selenium.webdriver.support.wait import WebDriverWait as WdWait
-from selenium.common import exceptions
-from selenium.webdriver.support import expected_conditions as ec
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver import Chrome
-
-import json
 from time import sleep
 
+from selenium.common import exceptions
+from selenium.webdriver import Chrome
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.support.wait import WebDriverWait as WdWait
 
+
+# TODO move this to API
 def add_user(driver: Chrome, ent: str, email: str, username: str, broker: bool = True,
              admin: bool = True, mentor: bool = False):
     main_url = "https://" + ent + ".salestrekker.com"
@@ -136,6 +136,7 @@ def return_user(driver, username, email):
                 return user
 
 
+# TODO Move this to API
 def return_all_users(driver: Chrome, ent):
     if driver.current_url != f"https://{ent}.salestrekker.com/settings/users":
         driver.get("https://" + ent + ".salestrekker.com/settings/users")

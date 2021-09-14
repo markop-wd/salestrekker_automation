@@ -1,12 +1,11 @@
-from selenium.webdriver.support.wait import WebDriverWait as WdWait
-# from selenium.common import exceptions
-from selenium.webdriver.support import expected_conditions as ec
-from selenium.webdriver.common.by import By
 from datetime import datetime, date
+from time import sleep
 
 from selenium.webdriver import Chrome
-
-from time import sleep
+from selenium.webdriver.common.by import By
+# from selenium.common import exceptions
+from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.support.wait import WebDriverWait as WdWait
 
 from main.Permanent.org_funcs import org_changer
 

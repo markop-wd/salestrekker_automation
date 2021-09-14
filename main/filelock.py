@@ -82,13 +82,12 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 """
 from __future__ import print_function
-from builtins import range
-from builtins import object
 
+import errno
 import os
 import sys
 import time
-import errno
+from builtins import range
 
 
 class FileLock:
@@ -201,12 +200,14 @@ if __name__ == "__main__":
     print("Protecting file: {}".format(protected_filepath))
     fl = FileLock(protected_filepath)
 
+
     def writelines(line, repeat=10):
         with fl:
             for _ in range(repeat):
                 with open(protected_filepath, "a") as f:
                     f.write(line + "\n")
                     f.flush()
+
 
     th1 = threading.Thread(target=functools.partial(writelines, "1111111111111111111111111111111"))
     th2 = threading.Thread(target=functools.partial(writelines, "2222222222222222222222222222222"))

@@ -4,14 +4,13 @@ This is where you call all of the modules/functions and organize them.
 
 Once there is a GUI this should be repurposed so that buttons call their respective functions.
 """
+import copy
+import json
 import os
 import random
 import string
 import traceback
 from datetime import date, datetime
-import json
-import copy
-import concurrent.futures
 from pathlib import Path
 from time import sleep
 
@@ -19,30 +18,24 @@ from selenium.common import exceptions
 from selenium.webdriver import Chrome
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.support.wait import WebDriverWait as WdWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.select import Select
+from selenium.webdriver.support.wait import WebDriverWait as WdWait
 from webdriver_manager.chrome import ChromeDriverManager
 
 import Permanent.client_portal.login
+from Permanent import org_funcs, user_manipulation, workflow_manipulation
 from Permanent.client_portal.portal_fill import PortalFill
-
-from Permanent.login import LogIn
 from Permanent.deal_create import CreateDeal
 from Permanent.deal_fill import FillDeal
 from Permanent.document_comparator import DocumentCheck
+from Permanent.login import LogIn
 from Permanent.workflow_comparator import WorkflowCheck
-from Permanent import org_funcs, user_manipulation, helper_funcs, workflow_manipulation
-
-from mail import mail_get
-import filelock
-
 # This is the worker that I modify to fit special scenarios - e.g. when I want to create 10 empty deals I write the logic here
-from main.Permanent.deal_fill_selectors import CONTENT, INFO_BUTTONS, ADD_HOUSEHOLD, HOUSEHOLD_PICKER
-from main.Permanent.deal_manipulation import Screenshot
-from main.Permanent.groups_and_branches_manipulation import GroupsAndBranches
-from main.Permanent.helper_funcs import md_toast_remover, element_waiter, element_clicker, element_dissapear, \
+from main.Permanent.deal_fill_selectors import CONTENT, INFO_BUTTONS, ADD_HOUSEHOLD, \
+    HOUSEHOLD_PICKER
+from main.Permanent.helper_funcs import md_toast_remover, element_waiter, element_clicker, \
+    element_dissapear, \
     random_string_create, AddressInput, selector
 
 
@@ -53,8 +46,10 @@ class Test:
         self.org_name = org_name
 
     def screenshot_helper(self, element_with_scroll, org_name, sub_section_name, button_count):
-        scroll_total = self.driver.execute_script("return arguments[0].scrollHeight", element_with_scroll)
-        content = self.driver.execute_script("return arguments[0].clientHeight", element_with_scroll)
+        scroll_total = self.driver.execute_script("return arguments[0].scrollHeight",
+                                                  element_with_scroll)
+        content = self.driver.execute_script("return arguments[0].clientHeight",
+                                             element_with_scroll)
 
         scroll_new = 0
         count = 1
@@ -90,13 +85,39 @@ class Test:
             except exceptions.ElementNotInteractableException:
                 self.driver.execute_script('arguments[0].click();', el)
             try:
-                WdWait(self.driver, 10).until(ec.visibility_of_element_located((By.TAG_NAME, 'main')))
+                WdWait(self.driver, 10).until(
+                    ec.visibility_of_element_located((By.TAG_NAME, 'main')))
             except exceptions.TimeoutException:
                 pass
             scroll_el = self.driver.find_element(by=By.CSS_SELECTOR, value='body > md-content')
             setting_name = el.find_element(by=By.TAG_NAME, value='span').text
             self.screenshot_helper(element_with_scroll=scroll_el, org_name=self.org_name,
                                    sub_section_name=setting_name, button_count=count)
+
+
+def test_worker(ent: str = 'dev', password: str = "+!'Y$pE+{Bw_oXB.",
+                email: str = 'matthew@salestrekker.com'):
+    """
+    Just a simple test worker, that I call from runner for customized tasks
+
+    Args:
+        email:
+        password:
+        ent (object):
+    """
+    start_time = datetime.now()
+    os.environ['WDM_LOG_LEVEL'] = '0'
+    os.environ['WDM_PRINT_FIRST_LINE'] = 'False'
+
+    driver = Chrome(executable_path=ChromeDriverManager().install())
+
+    LogIn(driver, ent, email, password).log_in()
+    org_funcs.org_changer(driver, '# Enterprise')
+
+    workflow_manipulation.get_deals(driver, 'dev', all_deals=True)
+
+    sleep(3)
+    print(f'finished {ent}', datetime.now() - start_time)
 
 
 def simple_worker(driver: Chrome, ent: str, password: str, email: str = 'helpdesk@salestrekker.com',
@@ -120,17 +141,19 @@ def simple_worker(driver: Chrome, ent: str, password: str, email: str = 'helpdes
     af_workflow = 'https://gemnz.salestrekker.com/board/48598fa2-03c9-4295-9d8b-a2afaddbd77e'
     if con_arg == 1:
         deal_1 = CreateDeal(ent, driver)
-        deal1_url = deal_1.run(workflow=hl_workflow, deal_owner_name='Phillip Salestrekker', client_email='matthew@salestrekker.com')
+        deal1_url = deal_1.run(workflow=hl_workflow, deal_owner_name='Phillip Salestrekker',
+                               client_email='matthew@salestrekker.com')
         FillDeal(driver).run(deal1_url)
     if con_arg == 2:
         deal_2 = CreateDeal(ent, driver)
-        deal_2_url = deal_2.run(workflow=af_workflow, deal_owner_name='Phillip Salestrekker', client_email='matthew@salestrekker.com',
+        deal_2_url = deal_2.run(workflow=af_workflow, deal_owner_name='Phillip Salestrekker',
+                                client_email='matthew@salestrekker.com',
                                 af_type='cons')
         FillDeal(driver).run(deal_2_url)
     if con_arg == 3:
-
         deal_3 = CreateDeal(ent, driver)
-        deal3_url = deal_3.run(workflow=af_workflow, deal_owner_name='Phillip Salestrekker', client_email='matthew@salestrekker.com',
+        deal3_url = deal_3.run(workflow=af_workflow, deal_owner_name='Phillip Salestrekker',
+                               client_email='matthew@salestrekker.com',
                                af_type='comm')
         FillDeal(driver).run(deal3_url)
 
@@ -138,7 +161,8 @@ def simple_worker(driver: Chrome, ent: str, password: str, email: str = 'helpdes
     print(f'finished {ent}', datetime.now() - start_time)
 
 
-def worker(driver: Chrome, ent: str, password: str, email: str = 'helpdesk@salestrekker.com', con_arg=None):
+def worker(driver: Chrome, ent: str, password: str, email: str = 'helpdesk@salestrekker.com',
+           con_arg=None):
     """
     Just a simple test worker, that I call from runner for customized tasks
 
@@ -203,7 +227,8 @@ def worker(driver: Chrome, ent: str, password: str, email: str = 'helpdesk@sales
     af_workflow = ''
 
     for workflow in allowed_workflows:
-        workflow_manipulation.add_workflow(driver=driver, ent=ent, workflow_type=workflow, wf_owner='Marko P')
+        workflow_manipulation.add_workflow(driver=driver, ent=ent, workflow_type=workflow,
+                                           wf_owner='Marko P')
 
     # workflow = 'https://dev.salestrekker.com/board/'
     # af_wf_id = 'd7eedafa-d622-4ac9-b260-9199237de346'
@@ -332,11 +357,14 @@ def config_deal_create(driver: Chrome, ent: str, hl_workflow: str, con_arg: int)
     scen_8['contacts']['contact_types']['types'] = 'custom'
     scen_8['contacts']['contact_types']['custom'] = 'pers,pers,comp'
     scen_list = [scen_1, scen_2, scen_3, scen_4, scen_5, scen_6, scen_7, scen_8]
-    deal = CreateDeal(ent, driver, config=scen_list[con_arg - 1], deal_name=f'Scenario {con_arg} NANOBOT')
+    deal = CreateDeal(ent, driver, config=scen_list[con_arg - 1],
+                      deal_name=f'Scenario {con_arg} NANOBOT')
     if con_arg <= 5:
-        url = deal.run(workflow=hl_workflow, deal_owner_name='Salestrekker Help Desk', af_type="cons")
+        url = deal.run(workflow=hl_workflow, deal_owner_name='Salestrekker Help Desk',
+                       af_type="cons")
     else:
-        url = deal.run(workflow=hl_workflow, deal_owner_name='Salestrekker Help Desk', af_type="comm")
+        url = deal.run(workflow=hl_workflow, deal_owner_name='Salestrekker Help Desk',
+                       af_type="comm")
     with open("edit_config.json") as fill_config:
         edit_config = json.load(fill_config)
     scen1_fill = copy.deepcopy(edit_config)
@@ -493,7 +521,8 @@ class ContactCreate:
                     elif ng_change == '$ctrl.saveAddress()':
                         continue
 
-                    elif ng_model in ['$ctrl.contact.person.contact.work', '$ctrl.contact.person.contact.home',
+                    elif ng_model in ['$ctrl.contact.person.contact.work',
+                                      '$ctrl.contact.person.contact.home',
                                       '$ctrl.contact.person.contact.primary']:
                         input_el.send_keys("".join(random.sample(string.digits, 9)))
                     elif ng_model == '$ctrl.contact.person.contact.secondaryEmail':
@@ -516,7 +545,8 @@ class ContactCreate:
                 md_select_id = str(md_select.get_attribute('id'))
                 md_select_container_id = str(int(md_select_id.split("_")[-1]) + 1)
                 WdWait(self.driver, 5).until(
-                    ec.element_to_be_clickable((By.ID, 'select_container_' + md_select_container_id)))
+                    ec.element_to_be_clickable(
+                        (By.ID, 'select_container_' + md_select_container_id)))
                 md_select_container = self.driver.find_elements(by=By.CSS_SELECTOR,
                                                                 value='#select_container_' + md_select_container_id + ' md-option')
 
@@ -587,9 +617,11 @@ class ContactCreate:
         if b:
             self.driver.get('https://sfg.salestrekker.com/contact/edit/person/0')
             WdWait(self.driver, 15).until(
-                ec.presence_of_element_located((By.CSS_SELECTOR, 'st-contact[form-name="contactEditForm"]')))
+                ec.presence_of_element_located(
+                    (By.CSS_SELECTOR, 'st-contact[form-name="contactEditForm"]')))
 
-            all_buttons = self.driver.find_elements(by=By.CSS_SELECTOR, value='div.group-items > button')
+            all_buttons = self.driver.find_elements(by=By.CSS_SELECTOR,
+                                                    value='div.group-items > button')
 
             for count, button in enumerate(all_buttons):
                 button.click()
@@ -704,81 +736,120 @@ class ContactCreate:
         else:
             self.driver.get('https://sfg.salestrekker.com/contact/edit/company/0')
             WdWait(self.driver, 15).until(
-                ec.presence_of_element_located((By.CSS_SELECTOR, 'st-contact[form-name="contactEditForm"]')))
+                ec.presence_of_element_located(
+                    (By.CSS_SELECTOR, 'st-contact[form-name="contactEditForm"]')))
 
     def contact_details(self):
-        first_names = ['Misty', 'Karl', 'Tanisha', 'Jasmin', 'Lexi-Mai', 'Chandni', 'Musab', 'Spike', 'Doris',
+        first_names = ['Misty', 'Karl', 'Tanisha', 'Jasmin', 'Lexi-Mai', 'Chandni', 'Musab',
+                       'Spike', 'Doris',
                        'Dominick', 'Rudi',
-                       'Saira', 'Keeleigh', 'Nana', 'Andrew', 'Kirandeep', 'Roland', 'Harry', 'Alexie', 'Adelaide',
+                       'Saira', 'Keeleigh', 'Nana', 'Andrew', 'Kirandeep', 'Roland', 'Harry',
+                       'Alexie', 'Adelaide',
                        'Finbar', 'Nasir',
-                       'Patrycja', 'Nela', 'Belinda', 'Amaya', 'Husnain', 'Tiana', 'Wyatt', 'Kenneth', 'April',
+                       'Patrycja', 'Nela', 'Belinda', 'Amaya', 'Husnain', 'Tiana', 'Wyatt',
+                       'Kenneth', 'April',
                        'Leia',
                        'Bushra',
-                       'Levi', 'Keira', 'Amin', 'Samiha', 'Marianne', 'Habib', 'Yousuf', 'Nicola', 'Samanta',
+                       'Levi', 'Keira', 'Amin', 'Samiha', 'Marianne', 'Habib', 'Yousuf', 'Nicola',
+                       'Samanta',
                        'Benedict', 'Nikhil',
-                       'Aurora', 'Giulia', 'Rosa', 'Alannah', 'Marian', 'Dionne', 'Xanthe', 'Anabel', 'Samira',
+                       'Aurora', 'Giulia', 'Rosa', 'Alannah', 'Marian', 'Dionne', 'Xanthe',
+                       'Anabel', 'Samira',
                        'Mason',
                        'Colleen',
-                       'Esther', 'Faheem', 'Rachael', 'Kuba', 'Callam', 'Nick', 'Ayub', 'Esmay', 'Aimee', 'Sarah',
+                       'Esther', 'Faheem', 'Rachael', 'Kuba', 'Callam', 'Nick', 'Ayub', 'Esmay',
+                       'Aimee', 'Sarah',
                        'Billy', 'Enid',
-                       'Katie-Louise', 'Ashlee', 'Tamar', 'Darla', 'Whitney', 'Helena', 'Rachelle', 'Maisie',
+                       'Katie-Louise', 'Ashlee', 'Tamar', 'Darla', 'Whitney', 'Helena', 'Rachelle',
+                       'Maisie',
                        'Julia',
                        'Mandy',
-                       'Isaiah', 'Sally', 'Marianna', 'Jasleen', 'Evie-Mae', 'Lana', 'Kiana', 'Preston', 'Rae',
+                       'Isaiah', 'Sally', 'Marianna', 'Jasleen', 'Evie-Mae', 'Lana', 'Kiana',
+                       'Preston', 'Rae',
                        'Poppy-Rose', 'Lyla',
-                       'Christy', 'Maheen', 'Cordelia', 'Mariya', 'Amelia-Grace', 'Kier', 'Sonny', 'Alessia',
+                       'Christy', 'Maheen', 'Cordelia', 'Mariya', 'Amelia-Grace', 'Kier', 'Sonny',
+                       'Alessia',
                        'Inigo',
                        'Hareem',
-                       'Caitlyn', 'Ayana', 'Danielle', 'Charlotte', 'Bronwyn', 'Eliot', 'Lesley', 'Ada', 'Azra',
+                       'Caitlyn', 'Ayana', 'Danielle', 'Charlotte', 'Bronwyn', 'Eliot', 'Lesley',
+                       'Ada', 'Azra',
                        'Wilbur', 'Lillian',
-                       'Yannis', 'Sherri', 'Cosmo', 'Nella', 'Hasan', 'Tyrique', 'Jonah', 'Lexi-Mae', 'Nigel',
+                       'Yannis', 'Sherri', 'Cosmo', 'Nella', 'Hasan', 'Tyrique', 'Jonah',
+                       'Lexi-Mae', 'Nigel',
                        'Zavier',
                        'Bevan',
-                       'Leo', 'Israel', 'Sharna', 'Jagoda', 'Deborah', 'Claire', 'Anabelle', 'Kobie', 'Nabeel',
+                       'Leo', 'Israel', 'Sharna', 'Jagoda', 'Deborah', 'Claire', 'Anabelle',
+                       'Kobie', 'Nabeel',
                        'Kayley', 'Zahrah',
-                       'Beck', 'Kingsley', 'Micah', 'Jerry', 'Haydn', 'Robyn', 'Carwyn', 'Rhys', 'Seamus', 'Maia',
+                       'Beck', 'Kingsley', 'Micah', 'Jerry', 'Haydn', 'Robyn', 'Carwyn', 'Rhys',
+                       'Seamus', 'Maia',
                        'Iman', 'Rahul',
-                       'Judy', 'Arwa', 'Jeevan', 'Francesco', 'Shyam', 'Amal', 'Gabrielle', 'Kellie', 'Derry',
+                       'Judy', 'Arwa', 'Jeevan', 'Francesco', 'Shyam', 'Amal', 'Gabrielle',
+                       'Kellie', 'Derry',
                        'Quentin', 'Hashir',
-                       'Alma', 'Rheanna', 'Sebastian', 'Sahara', 'Miriam', 'Debbie', 'Niyah', 'Lillie-May', 'Petra',
+                       'Alma', 'Rheanna', 'Sebastian', 'Sahara', 'Miriam', 'Debbie', 'Niyah',
+                       'Lillie-May', 'Petra',
                        'Khalil', 'Lena',
-                       'Isabell', 'Howard', 'Lennie', 'Jibril', 'Christiana', 'Alan', 'Kimora', 'Muneeb', 'Iqrah',
+                       'Isabell', 'Howard', 'Lennie', 'Jibril', 'Christiana', 'Alan', 'Kimora',
+                       'Muneeb', 'Iqrah',
                        'Hanna', 'Akbar',
-                       'Beverly', 'Jill', 'Shania', 'T-Jay', 'George', 'Lexie', 'Gerard', 'Weronika', 'Alison',
+                       'Beverly', 'Jill', 'Shania', 'T-Jay', 'George', 'Lexie', 'Gerard',
+                       'Weronika', 'Alison',
                        'Reon',
                        'Piotr',
-                       'Alya', 'Mitchel', 'Sally', 'Alfie-Lee', 'Abbie', 'Pola', 'Laylah', 'Zubair', 'Ali',
+                       'Alya', 'Mitchel', 'Sally', 'Alfie-Lee', 'Abbie', 'Pola', 'Laylah', 'Zubair',
+                       'Ali',
                        'Nicole',
                        'Lorna',
                        'Ember', 'Cora']
-        surnames = ['Banks', 'Berg', 'Obrien', 'Talley', 'Mccray', 'Kramer', 'Cunningham', 'Dunn', 'Vu', 'Ferry',
-                    'Wolfe', 'Haas', 'Bate', 'Tomlinson', 'Phelps', 'Goulding', 'Penn', 'Slater', 'Aguilar',
+        surnames = ['Banks', 'Berg', 'Obrien', 'Talley', 'Mccray', 'Kramer', 'Cunningham', 'Dunn',
+                    'Vu', 'Ferry',
+                    'Wolfe', 'Haas', 'Bate', 'Tomlinson', 'Phelps', 'Goulding', 'Penn', 'Slater',
+                    'Aguilar',
                     'Mellor',
-                    'Bray', 'Potter', 'Metcalfe', 'Burch', 'Houston', 'Brandt', 'Nixon', 'Allison', 'Stephens',
-                    'Webster', 'Lawrence', 'Wright', 'Knowles', 'Davidson', 'Dalton', 'Flower', 'Cameron', 'Baker',
-                    'Portillo', 'Lord', 'Goodman', 'Roman', 'Wardle', 'Hayden', 'Bains', 'Romero', 'Iles',
+                    'Bray', 'Potter', 'Metcalfe', 'Burch', 'Houston', 'Brandt', 'Nixon', 'Allison',
+                    'Stephens',
+                    'Webster', 'Lawrence', 'Wright', 'Knowles', 'Davidson', 'Dalton', 'Flower',
+                    'Cameron', 'Baker',
+                    'Portillo', 'Lord', 'Goodman', 'Roman', 'Wardle', 'Hayden', 'Bains', 'Romero',
+                    'Iles',
                     'Navarro',
-                    'Malone', 'Molina', 'Macfarlane', 'Hilton', 'Mckay', 'Novak', 'Gaines', 'Ratliff', 'Valdez',
-                    'Zavala', 'Gibbons', 'Almond', 'Bruce', 'Felix', 'Reeve', 'Chang', 'Patrick', 'Hutchings',
+                    'Malone', 'Molina', 'Macfarlane', 'Hilton', 'Mckay', 'Novak', 'Gaines',
+                    'Ratliff', 'Valdez',
+                    'Zavala', 'Gibbons', 'Almond', 'Bruce', 'Felix', 'Reeve', 'Chang', 'Patrick',
+                    'Hutchings',
                     'Ayala',
-                    'Russell', 'Burn', 'Parra', 'Sharma', 'Emery', 'Burris', 'Southern', 'Mcleod', 'Mckee',
+                    'Russell', 'Burn', 'Parra', 'Sharma', 'Emery', 'Burris', 'Southern', 'Mcleod',
+                    'Mckee',
                     'Duggan',
-                    'William', 'Dalby', 'Carr', 'Carty', 'Read', 'Marsh', 'Chase', 'Greene', 'Stafford', 'Greig',
-                    'Woolley', 'Bird', 'Wyatt', 'Escobar', 'Bradley', 'Kirby', 'Whitney', 'Cartwright', 'Sargent',
-                    'Plummer', 'Lucero', 'Reynolds', 'Melia', 'Davenport', 'Irving', 'Barrow', 'Senior', 'Mcgowan',
-                    'Hancock', 'Povey', 'Mcmanus', 'Tyson', 'Hunt', 'Betts', 'Lopez', 'Molloy', 'Plant', 'Kirk',
-                    'Cantu', 'Reid', 'Whelan', 'Dupont', 'Berry', 'Mueller', 'Lowery', 'Powell', 'Porter',
+                    'William', 'Dalby', 'Carr', 'Carty', 'Read', 'Marsh', 'Chase', 'Greene',
+                    'Stafford', 'Greig',
+                    'Woolley', 'Bird', 'Wyatt', 'Escobar', 'Bradley', 'Kirby', 'Whitney',
+                    'Cartwright', 'Sargent',
+                    'Plummer', 'Lucero', 'Reynolds', 'Melia', 'Davenport', 'Irving', 'Barrow',
+                    'Senior', 'Mcgowan',
+                    'Hancock', 'Povey', 'Mcmanus', 'Tyson', 'Hunt', 'Betts', 'Lopez', 'Molloy',
+                    'Plant', 'Kirk',
+                    'Cantu', 'Reid', 'Whelan', 'Dupont', 'Berry', 'Mueller', 'Lowery', 'Powell',
+                    'Porter',
                     'Krueger',
-                    'Griffiths', 'Garrett', 'Barrett', 'Gibbs', 'Calvert', 'Hills', 'Rice', 'Correa', 'Pineda',
-                    'Beasley', 'Sanderson', 'Frye', 'Garrison', 'Trevino', 'Stafford', 'Rankin', 'Huerta', 'Luna',
-                    'Mustafa', 'Lane', 'Russo', 'Richmond', 'Ferry', 'Wolfe', 'Schmidt', 'Mcnally', 'Power',
-                    'Castaneda', 'Wickens', 'Romero', 'Smyth', 'Coulson', 'Riley', 'Carty', 'Hogan', 'Bonilla',
+                    'Griffiths', 'Garrett', 'Barrett', 'Gibbs', 'Calvert', 'Hills', 'Rice',
+                    'Correa', 'Pineda',
+                    'Beasley', 'Sanderson', 'Frye', 'Garrison', 'Trevino', 'Stafford', 'Rankin',
+                    'Huerta', 'Luna',
+                    'Mustafa', 'Lane', 'Russo', 'Richmond', 'Ferry', 'Wolfe', 'Schmidt', 'Mcnally',
+                    'Power',
+                    'Castaneda', 'Wickens', 'Romero', 'Smyth', 'Coulson', 'Riley', 'Carty', 'Hogan',
+                    'Bonilla',
                     'Mcgee',
-                    'Buck', 'Mccoy', 'Schneider', 'Gordon', 'Hardy', 'Ferreira', 'Jarvis', 'Haley', 'Bray',
+                    'Buck', 'Mccoy', 'Schneider', 'Gordon', 'Hardy', 'Ferreira', 'Jarvis', 'Haley',
+                    'Bray',
                     'Barnett',
-                    'Finch', 'Cox', 'Lawrence', 'Leech', 'Bain', 'Cross', 'Hyde', 'Soto', 'Bates', 'Knowles',
+                    'Finch', 'Cox', 'Lawrence', 'Leech', 'Bain', 'Cross', 'Hyde', 'Soto', 'Bates',
+                    'Knowles',
                     'Douglas',
-                    'Roberts', 'Cornish', 'Robles', 'Macgregor', 'Hines', 'Oakley', 'Santos', 'Kirkpatrick',
+                    'Roberts', 'Cornish', 'Robles', 'Macgregor', 'Hines', 'Oakley', 'Santos',
+                    'Kirkpatrick',
                     'Alvarez',
                     'Piper', 'Murphy', 'Boyd', 'Haas', 'Corbett', 'Short', 'Alexander', 'Sloan']
         first_name = random.choice(first_names)
@@ -786,7 +857,8 @@ class ContactCreate:
         _person_name_merge = first_name.lower() + surname.lower()
         client_email_input = f'matthew+{_person_name_merge}@salestrekker.com'
         WdWait(self.driver, 15).until(
-            ec.presence_of_element_located((By.CSS_SELECTOR, 'st-contact[form-name="contactEditForm"]')))
+            ec.presence_of_element_located(
+                (By.CSS_SELECTOR, 'st-contact[form-name="contactEditForm"]')))
         self.driver.find_element(by=By.CSS_SELECTOR,
                                  value='input[ng-model="$ctrl.contact.person.information.firstName"]').send_keys(
             first_name)
@@ -807,10 +879,12 @@ def glass_test(driver: Chrome, ent: str, link: str):
 
     driver.get(link)
     element_waiter(driver, css_selector='st-contact')
-    asset_finance = driver.find_element(by=By.XPATH, value="//span[contains(text(), 'Asset to be financed')]/..")
+    asset_finance = driver.find_element(by=By.XPATH,
+                                        value="//span[contains(text(), 'Asset to be financed')]/..")
     element_clicker(driver, web_element=asset_finance)
     element_dissapear(driver, css_selector='alert-progress > md-progress-linear')
-    returned_el = element_waiter(driver, css_selector='button[aria-label="Search asset with Glass\'s"]')
+    returned_el = element_waiter(driver,
+                                 css_selector='button[aria-label="Search asset with Glass\'s"]')
     element_clicker(driver, web_element=returned_el)
     element_waiter(driver, css_selector='md-dialog[aria-label="Glass"]')
 
@@ -834,7 +908,8 @@ def glass_test(driver: Chrome, ent: str, link: str):
         md_select_container_id = str(int(md_select_id.split("_")[-1]) + 1)
         try:
             WdWait(driver, 5).until(
-                ec.element_to_be_clickable((By.CSS_SELECTOR, f'#select_container_{md_select_container_id}')))
+                ec.element_to_be_clickable(
+                    (By.CSS_SELECTOR, f'#select_container_{md_select_container_id}')))
 
         except exceptions.TimeoutException:
             if key not in ['variantName', 'seriesCode']:
@@ -863,7 +938,8 @@ def glass_test(driver: Chrome, ent: str, link: str):
         except exceptions.TimeoutException:
             element_clicker(driver, web_element=md_select_container[0])
 
-        driver.find_element(by=By.CSS_SELECTOR, value='input[ng-model="$ctrl.actualKilometers"]').send_keys(kms)
+        driver.find_element(by=By.CSS_SELECTOR,
+                            value='input[ng-model="$ctrl.actualKilometers"]').send_keys(kms)
         element_clicker(driver, css_selector="button[ng-click='$ctrl.search()']")
         sleep(2)
         finished_glass(driver, ent)
@@ -876,7 +952,8 @@ def finished_glass(driver: Chrome, ent: str):
     element_clicker(driver, web_element=vehicles[vehicle_click])
     try:
         WdWait(driver, 5).until(
-            ec.presence_of_element_located((By.XPATH, "//md-toast/div/span/span[contains(text(), 'Error')]")))
+            ec.presence_of_element_located(
+                (By.XPATH, "//md-toast/div/span/span[contains(text(), 'Error')]")))
     except exceptions.TimeoutException:
         element_clicker(driver, css_selector='button[ng-click="$ctrl.importVehicle()"]')
         sleep(2)
@@ -888,7 +965,8 @@ def finished_glass(driver: Chrome, ent: str):
         current_sel = Select(asset_age)
         select_value = random.randrange(1, len(current_sel.options))
         current_sel.select_by_index(select_value)
-        driver.find_element(by=By.CSS_SELECTOR, value='input[ng-model="asset.deposit"]').send_keys('500')
+        driver.find_element(by=By.CSS_SELECTOR, value='input[ng-model="asset.deposit"]').send_keys(
+            '500')
         sleep(10)
     else:
         element_clicker(driver, css_selector='button[ng-click="$ctrl.back()"]')
@@ -896,7 +974,8 @@ def finished_glass(driver: Chrome, ent: str):
         captured_time = datetime.now().strftime("%H:%M:%S")
         driver.get_screenshot_as_file(
             f'Reports/{date.today()}/Screenshots/Glass Error {vehicle_click} {captured_time} {ent}.png')
-        print(f'Captured - Reports/{date.today()}/Screenshots/Glass Error {vehicle_click} {captured_time} {ent}.png')
+        print(
+            f'Captured - Reports/{date.today()}/Screenshots/Glass Error {vehicle_click} {captured_time} {ent}.png')
 
 
 # The logic here is mostly static and includes the main rundown. Login, create an organization, add users,
@@ -980,12 +1059,14 @@ def worker_main(driver: Chrome, ent: str, password: str, email: str = 'helpdesk@
     sleep(5)
     user_manipulation.add_user(driver, ent,
                                email=test_users['matthew']['email'], username='Marko P',
-                               broker=test_users['matthew']['broker'], admin=test_users['matthew']['admin'],
+                               broker=test_users['matthew']['broker'],
+                               admin=test_users['matthew']['admin'],
                                mentor=test_users['matthew']['mentor'])
 
     user_manipulation.add_user(driver, ent,
                                email=test_users['phillip']['email'], username='Phillip Djukanovic',
-                               broker=test_users['phillip']['broker'], admin=test_users['phillip']['admin'],
+                               broker=test_users['phillip']['broker'],
+                               admin=test_users['phillip']['admin'],
                                mentor=test_users['phillip']['mentor'])
 
     # for name, values in test_users.items():
@@ -1018,11 +1099,13 @@ def worker_main(driver: Chrome, ent: str, password: str, email: str = 'helpdesk@
                                         client_email='matthew@salestrekker.com')
             deal_fill.run(deal_link)
         if af_workflow:
-            deal_link = deal_create.run(workflow=af_workflow, deal_owner_name='Phillip Djukanovic', af_type='cons',
+            deal_link = deal_create.run(workflow=af_workflow, deal_owner_name='Phillip Djukanovic',
+                                        af_type='cons',
                                         client_email='matthew@salestrekker.com')
             deal_fill.run(deal_link)
 
-            deal_link = deal_create.run(workflow=af_workflow, deal_owner_name='Phillip Djukanovic', af_type='comm',
+            deal_link = deal_create.run(workflow=af_workflow, deal_owner_name='Phillip Djukanovic',
+                                        af_type='comm',
                                         client_email='matthew@salestrekker.com')
             deal_fill.run(deal_link)
 
@@ -1061,4 +1144,4 @@ def api(driver: Chrome, ent: str, password: str, email: str = 'helpdesk@salestre
 
 
 if __name__ == "__main__":
-    pass
+    test_worker()

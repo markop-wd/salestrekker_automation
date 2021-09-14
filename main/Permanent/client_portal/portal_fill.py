@@ -9,9 +9,9 @@ from selenium.common import exceptions
 from selenium.webdriver import Chrome, ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait as wd_wait
-from selenium.webdriver.support import expected_conditions as ec
 
 from main.Permanent import helper_funcs
 
@@ -187,8 +187,10 @@ class _InputElHandler:
         all_inputs = content.find_elements(by=By.TAG_NAME, value='input')
 
         if all_inputs:
-            checkboxes = [input_el for input_el in all_inputs if input_el.get_attribute('type') == 'checkbox']
-            reg_input = [input_el for input_el in all_inputs if input_el.get_attribute('type') != 'checkbox']
+            checkboxes = [input_el for input_el in all_inputs if
+                          input_el.get_attribute('type') == 'checkbox']
+            reg_input = [input_el for input_el in all_inputs if
+                         input_el.get_attribute('type') != 'checkbox']
 
             if checkboxes:
                 for input_el in checkboxes:
@@ -282,7 +284,8 @@ class PortalFill:
 
             for li_num in range(current_li_num, len_li_els):
 
-                if self.li_els != self.header_div.find_elements(by=By.CSS_SELECTOR, value='ul.steps > li'):
+                if self.li_els != self.header_div.find_elements(by=By.CSS_SELECTOR,
+                                                                value='ul.steps > li'):
                     break
 
                 # TODO - Testing li_text text
@@ -310,7 +313,8 @@ class PortalFill:
                 except IndexError:
                     continue
 
-                if self.li_els != self.header_div.find_elements(by=By.CSS_SELECTOR, value='ul.steps > li'):
+                if self.li_els != self.header_div.find_elements(by=By.CSS_SELECTOR,
+                                                                value='ul.steps > li'):
                     break
 
             else:
@@ -322,14 +326,16 @@ class PortalFill:
         current_section_num = 0
         while True:
 
-            section_divs = self.driver.find_elements(by=By.CSS_SELECTOR, value="#wizardSection > div")
+            section_divs = self.driver.find_elements(by=By.CSS_SELECTOR,
+                                                     value="#wizardSection > div")
             len_section_divs = len(section_divs)
             if not section_divs:
                 print('Section div first break')
 
                 self._main_header_reselect(header_num)
 
-                self.li_els = self.header_div.find_elements(by=By.CSS_SELECTOR, value='ul.steps > li')
+                self.li_els = self.header_div.find_elements(by=By.CSS_SELECTOR,
+                                                            value='ul.steps > li')
 
                 self.driver.execute_script("arguments[0].click();", self.li_els[li_num])
 
@@ -463,7 +469,8 @@ class PortalFill:
                 break
 
         try:
-            div = self.driver.find_element(by=By.XPATH, value=f"//span[text() = '{header_title}']/../..")
+            div = self.driver.find_element(by=By.XPATH,
+                                           value=f"//span[text() = '{header_title}']/../..")
         except exceptions.NoSuchElementException:
             header_text_els = self.driver.find_elements(by=By.CSS_SELECTOR,
                                                         value='div.sections > div.section > div.section-header > span:nth-of-type(2)')
@@ -472,11 +479,13 @@ class PortalFill:
                                      for div in header_text_els]
 
             header_text = section_header_titles[pos]
-            div = self.driver.find_element(by=By.XPATH, value=f"//span[text() = '{header_text}']/../..")
+            div = self.driver.find_element(by=By.XPATH,
+                                           value=f"//span[text() = '{header_text}']/../..")
 
             # return section_header_titles, section_header_titles[pos]
 
-        steps = str(div.find_element(by=By.CSS_SELECTOR, value='ul.steps').get_attribute('class')).split()
+        steps = str(
+            div.find_element(by=By.CSS_SELECTOR, value='ul.steps').get_attribute('class')).split()
 
         # In case the header is not open
         if 'steps-hidden' in steps:
@@ -494,12 +503,13 @@ class PortalFill:
 
     def screenshot(self):
 
-        deal_id = datetime.now().strftime("%d-%m-%Y-%H-%M") + ' ' + ''.join(random.sample(string.ascii_letters, 7))
+        deal_id = datetime.now().strftime("%d-%m-%Y-%H-%M") + ' ' + ''.join(
+            random.sample(string.ascii_letters, 7))
 
         os.mkdir(f"CP_Screenshots/{deal_id}")
 
         header_titles_els = self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                 value='div.sections > div.section > div.section-header > span:nth-of-type(2)')
+                                                      value='div.sections > div.section > div.section-header > span:nth-of-type(2)')
 
         self.header_titles = [span.text
                               for span in header_titles_els]
@@ -511,10 +521,10 @@ class PortalFill:
             self._main_header_reselect(header_num)
 
             try:
-                os.mkdir(f"CP_Screenshots/{deal_id}/{header_num + 1}. {self.header_titles[header_num]}")
+                os.mkdir(
+                    f"CP_Screenshots/{deal_id}/{header_num + 1}. {self.header_titles[header_num]}")
             except FileExistsError:
                 pass
-
 
             self.li_els = self.header_div.find_elements(by=By.CSS_SELECTOR, value='ul.steps > li')
             len_li_els = len(self.li_els)
@@ -532,4 +542,3 @@ class PortalFill:
 
                 self.driver.get_screenshot_as_file(
                     f"CP_Screenshots/{deal_id}/{header_num + 1}. {self.header_titles[header_num]}/{li_num + 1}. {li_text}.png")
-

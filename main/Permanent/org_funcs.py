@@ -1,13 +1,13 @@
-from selenium.webdriver.support.wait import WebDriverWait as WdWait
-from selenium.common import exceptions
-from selenium.webdriver.support import expected_conditions as ec
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver import Chrome
-from selenium.webdriver.remote.webelement import WebElement
-
 from datetime import date
 from time import sleep
+
+from selenium.common import exceptions
+from selenium.webdriver import Chrome
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.support.wait import WebDriverWait as WdWait
 
 from main.Permanent.helper_funcs import element_clicker
 from main.Permanent.user_manipulation import get_current_username
@@ -24,7 +24,8 @@ def org_changer(driver: Chrome, org_name):
     if not _check_current_org(driver, org_name):
         element_clicker(driver, css_selector='#navBar > div > md-menu > a')
         # TODO - Sandwich click handler (if the screen is narrow)
-        element_clicker(driver, css_selector='button[ng-click="::$ctrl.organizationChange($event)"]')
+        element_clicker(driver,
+                        css_selector='button[ng-click="::$ctrl.organizationChange($event)"]')
 
         try:
             WdWait(driver, 15).until(

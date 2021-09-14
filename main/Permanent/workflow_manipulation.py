@@ -1,18 +1,22 @@
+"""
+All the functions specific to manipulating a workflow
+# TODO - move what can be moved to API calls instead as they are more efficient
+"""
 import json
-from datetime import date, datetime
 import random
-from time import sleep
+from datetime import date, datetime
 from pathlib import Path
+from time import sleep
 
-from selenium.webdriver.support.wait import WebDriverWait as WdWait
 from selenium.common import exceptions
-from selenium.webdriver.support import expected_conditions as ec
-from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.support.wait import WebDriverWait as WdWait
 
 from main import filelock
-from main.Permanent import user_manipulation
+from main.Permanent import user_manipulation, helper_funcs
 from main.Permanent.helper_funcs import element_waiter, element_clicker, element_dissapear
 from main.Permanent.user_manipulation import return_all_users, get_current_username
 
@@ -21,27 +25,18 @@ def get_deals(driver, ent: str, all_deals=True, workflow_id=''):
     all_deals_list = []
 
     if all_deals:
+        # TODO - move this to API
         all_wfs = get_all_workflows(driver, ent)
 
         for wf in all_wfs:
-            driver.get(wf)
+            driver.get(wf['link'])
             WdWait(driver, 15).until(
                 ec.visibility_of_element_located((By.CSS_SELECTOR, 'body > md-content > board')))
 
             element_with_scroll = WdWait(driver, 15).until(
                 ec.visibility_of_element_located((By.CSS_SELECTOR, 'body > md-content > board')))
 
-            scroll_height_total = driver.execute_script("return arguments[0].scrollHeight",
-                                                        element_with_scroll)
-            scroll_height_new = 0
-            while scroll_height_total != scroll_height_new:
-                driver.execute_script(f"arguments[0].scroll(0,{scroll_height_total});",
-                                      element_with_scroll)
-                sleep(1)
-                # WdWait(driver, 50).until(ec.invisibility_of_element_located((By.TAG_NAME, 'md-progress-linear.ng-scope')))
-                scroll_height_new = scroll_height_total
-                scroll_height_total = driver.execute_script("return arguments[0].scrollHeight",
-                                                            element_with_scroll)
+            helper_funcs.element_scroll(driver=driver, main_documents=element_with_scroll)
 
             all_deals_list = [deal.get_attribute('href') for deal in
                               driver.find_elements(by=By.CSS_SELECTOR, value='st-ticket-tile > a')]
@@ -186,14 +181,23 @@ def _wf_type(driver: Chrome, workflow_type: str):
 
 
 def extract_all_users(driver: Chrome, ent: str):
-    org_name = driver.find_element(by=By.CSS_SELECTOR, value='st-avatar[organization] > img').get_attribute('alt')
-    # This works as the main runner is started from InitTest/Main
+    """
+    Find all users in a given organization and store them in the current_vars.json
+    Args:
+        driver ():
+        ent ():
+
+    Returns:
+
+    """
+    org_name = driver.find_element(by=By.CSS_SELECTOR,
+                                   value='st-avatar[organization] > img').get_attribute('alt')
     current_vars_path = Path.cwd() / 'current_vars.json'
 
-    fl = filelock.FileLock(str(current_vars_path.resolve()))
+    file_lock = filelock.FileLock(str(current_vars_path.resolve()))
 
-    with fl:
-        with open(current_vars_path, "r") as json_file:
+    with file_lock:
+        with open(current_vars_path, "r", encoding='utf-8') as json_file:
             load_dict = json.load(json_file)
             # If we don't have a date we don't have anything and if we do we want to save it
             try:
@@ -201,7 +205,8 @@ def extract_all_users(driver: Chrome, ent: str):
             except KeyError:
                 # Missing the date and the whole entry get all users and fill them in the dict
                 all_users = user_manipulation.return_all_users(driver, ent)
-                load_dict[ent].update({org_name: {"users": all_users, "date": str(datetime.today())}})
+                load_dict[ent].update(
+                    {org_name: {"users": all_users, "date": str(datetime.today())}})
                 to_dump = load_dict
                 # json.dump(load_dict, json_file)
                 # add_users_to_workflow(driver=driver, ent=ent, users=all_users)
@@ -212,7 +217,8 @@ def extract_all_users(driver: Chrome, ent: str):
                 dict_date = datetime.strptime(date_updated.split(' ')[0], '%Y-%m-%d').date()
                 if dict_date < date.today():
                     all_users = user_manipulation.return_all_users(driver, ent)
-                    load_dict[ent][org_name].update({"users": all_users, "date": str(datetime.today())})
+                    load_dict[ent][org_name].update(
+                        {"users": all_users, "date": str(datetime.today())})
                     to_dump = load_dict
                     # json.dump(load_dict, json_file)
                     # add_users_to_workflow(driver=driver, ent=ent, users=all_users)
@@ -222,14 +228,25 @@ def extract_all_users(driver: Chrome, ent: str):
                     all_users = load_dict[ent][org_name]['users']
 
     if to_dump:
-        with fl:
-            with open('current_vars.json', "w") as json_file:
+        with file_lock:
+            with open('current_vars.json', "w", encoding='utf-8') as json_file:
                 json.dump(to_dump, json_file)
 
     return all_users
 
 
 def add_users_to_workflow(driver, ent: str, workflow_id='New', users="All"):
+    """
+
+    Args:
+        driver ():
+        ent (str):
+        workflow_id ():
+        users (): either "All" or a string of users to be added in the form "User1-User2-User3"
+
+    Returns:
+
+    """
     main_url = "https://" + ent + ".salestrekker.com"
 
     if users == 'All':
@@ -255,6 +272,7 @@ def add_users_to_workflow(driver, ent: str, workflow_id='New', users="All"):
     element_dissapear(driver, 'div.md-toast-content')
 
 
+# TODO Move this to API
 def get_all_workflows(driver: Chrome, ent: str):
     """
     Returns list of full hrefs of the workflows - example href https://dev.salestrekker.com/board/jaoj0342-joadf203-wraf
@@ -280,4 +298,3 @@ def get_all_workflows(driver: Chrome, ent: str):
         workflow_list = [{"name": workflow.find_element(by=By.TAG_NAME, value="span").text,
                           "link": workflow.get_attribute('href')} for workflow in workflows]
     return workflow_list
-
