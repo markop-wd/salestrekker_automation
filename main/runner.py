@@ -2,6 +2,8 @@
 This encapsulatese the logic.py with the reports, threads and exceptions.
 """
 import concurrent.futures
+import os
+
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
@@ -14,16 +16,17 @@ from os import mkdir
 
 from urllib3 import exceptions as http_execs
 
-from logic import worker, cp_worker, worker_main, api
+from logic import worker, cp_worker, worker_main, api, simple_worker
 from main.Permanent.login import LogIn
 
 # Details are the logins stored
 with open("details.json") as details:
     info = json.load(details)
 
-# Detach it so the program can end but the Chrome will remain open until you quit
 options = Options()
-options.add_experimental_option("detach", True)
+options.headless = True
+# Detach it so the program can end but the Chrome will remain open until you close it manually
+# options.add_experimental_option("detach", True)
 
 all_ents = [
     'ynet', 'vownet', 'gem', 'gemnz', 'platform', 'nlgconnect', 'app',
@@ -33,7 +36,6 @@ login_ents = [
     'ynet', 'gem', 'gemnz', 'platform', 'nlgconnect', 'app',
     'ioutsource', 'chief', 'sfg'
 ]
-my_test_ents = ['sfg', 'platform', 'nlgconnect']
 
 
 # TODO - Extract into a report creating module
@@ -58,7 +60,7 @@ def csv_writer(write_dict: dict, ent_name: str):
             rundown.write('\n')
 
 
-def main_runner(ent, email="helpdesk@salestrekker.com", cp_pin: str = '', cp_link: str = ''):
+def main_runner(ent='gemnz', email="helpdesk@salestrekker.com", cp_pin: str = '', cp_link: str = '', conccurent_arg=None):
     """
     This is the main caller and it also is the endpoint of the exceptions I have not handled in the logic iteslf, if any it will store them in a report.
     """
@@ -73,13 +75,14 @@ def main_runner(ent, email="helpdesk@salestrekker.com", cp_pin: str = '', cp_lin
             pass
 
     completed = {}
+    os.environ['WDM_LOG_LEVEL'] = '0'
 
-    driver = Chrome(executable_path=ChromeDriverManager().install())
+    driver = Chrome(executable_path=ChromeDriverManager(log_level=0, print_first_line=False).install(), options=options)
 
     # driver_ids = {"url": driver.command_executor._url, "id": driver.session_id}
     # with open("new_session.json", "w") as new:
     #     json.dump(driver_ids, new)
-
+    driver.set_window_size(1920, 1080)
     driver.maximize_window()
 
     try:
@@ -89,7 +92,10 @@ def main_runner(ent, email="helpdesk@salestrekker.com", cp_pin: str = '', cp_lin
             cp_worker(driver=driver, pin=cp_pin, link=cp_link)
         else:
             # If no cp link or pin then call the main worker with parameters you get from perm vars and details
-            worker(driver=driver, ent=ent, password=info[ent][email], email=email)
+            # worker_main(driver=driver, ent=ent, password=info[ent][email], email=email)
+            simple_worker(driver=driver, ent=ent, password=info[ent][email], email=email, con_arg=conccurent_arg)
+            # worker(driver=driver, ent=ent, password=info[ent][email], email=email, con_arg=conccurent_arg)
+
             # api(driver=driver, ent=ent, password=info[ent][email], email=email)
 
     # Exception catching and storing the exceptions, time when it happened and the traceback for reporting and also include a screenshot.
@@ -163,13 +169,13 @@ if __name__ == '__main__':
     #      "cp_pin": "268132"}
     # ]
 
-    # with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
+    # with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
     #     future_runner = {executor.submit(main_runner, ent): ent for ent in
     #                      my_test_ents}
 
     # with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
     #     future_runner = {executor.submit(main_runner, 'dev'): _ for _ in
-    #                      range(5)}
+    #                      range(3)}
 
     # import_ents = [
     #     'platform', 'sfg'
@@ -200,12 +206,14 @@ if __name__ == '__main__':
     # main_runner('ioutsource', email='helpdesk@salestrekker.com')
     # main_runner('dev', email='matthew+291220@salestrekker.com')
 
-    main_runner('dev')
+    # main_runner('dev')
 
-    # with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
-    #     future_runner = {executor.submit(main_runner, 'dev'): i for i in
-    #                      range(5)}
-
+    # start_time = datetime.now()
+    with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
+        future_runner = {executor.submit(main_runner, conccurent_arg=i): i for i in
+                         range(1, 4)}
+    # print('end:', datetime.now() - start_time)
+    #
     # email_date = date.today().strftime("%d%m%y")
     # for ent in import_ents:
     #     main_runner(ent, email=f'matthew+{email_date}@salestrekker.com')
