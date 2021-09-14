@@ -48,9 +48,9 @@ def add_user(driver: Chrome, ent: str, email: str, username: str, broker: bool =
 
     send_text_to_element('div:nth-child(1) > md-input-container > input', email)
 
-    send_text_to_element('div:nth-child(2) > md-input-container:nth-child(1) > input', first_name)
+    send_text_to_element('div:nth-child(2) > md-input-container > input', first_name)
 
-    send_text_to_element('div:nth-child(2) > md-input-container:nth-child(2) > input', last_name)
+    send_text_to_element('div:nth-child(3) > md-input-container > input', last_name)
 
     try:
         WdWait(driver, 10).until(ec.element_to_be_clickable(

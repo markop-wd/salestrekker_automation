@@ -14,6 +14,9 @@ from selenium.webdriver.support.wait import WebDriverWait as WdWait
 
 # TODO - Empty lender accreditation check
 # TODO -
+from main.Permanent.helper_funcs import element_dissapear
+
+
 class GroupsAndBranches:
 
     def __init__(self, driver: Chrome, ent):
@@ -109,35 +112,14 @@ class GroupsAndBranches:
                 return True
 
     def group_and_branches_scroller(self, element_with_scroll):
-
-        scroll_total = self.driver.execute_script("return arguments[0].scrollHeight;",
-                                                  element_with_scroll)
-
         while True:
+            last_height = self.driver.execute_script("return arguments[0].scrollHeight", element_with_scroll)
+            self.driver.execute_script(f"arguments[0].scroll(0,{last_height});", element_with_scroll)
+            element_dissapear(driver=self.driver, css_selector='md-progress-linear#whenScrolled')
+            new_height = self.driver.execute_script("return arguments[0].scrollHeight", element_with_scroll)
 
-            sleep(1)
-
-            self.driver.execute_script(f"arguments[0].scroll(0,{scroll_total});",
-                                       element_with_scroll)
-
-            scroll_new = self.driver.execute_script("return arguments[0].scrollHeight;",
-                                                    element_with_scroll)
-
-            self.driver.execute_script(f"arguments[0].scroll(0,{scroll_new});", element_with_scroll)
-
-            scroll_total = self.driver.execute_script("return arguments[0].scrollHeight;",
-                                                      element_with_scroll)
-
-            if scroll_new == scroll_total:
-                try:
-                    WdWait(self.driver, 2).until(
-                        ec.invisibility_of_element_located(
-                            (By.CSS_SELECTOR, 'md-progress-linear#whenScrolled')))
-                except exceptions.TimeoutException:
-                    self.driver.execute_script(f"arguments[0].scroll(0,0);", element_with_scroll)
-                    continue
-                else:
-                    break
+            if new_height == last_height:
+                break
 
     def groups_and_branches_main(self, organizations: list, identification: str,
                                  organization_name: str):

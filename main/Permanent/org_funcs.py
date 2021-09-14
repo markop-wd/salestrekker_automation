@@ -55,14 +55,14 @@ def org_changer(driver: Chrome, org_name):
                                                   value='md-content > div > div > div')
         if not organisation_names:
             print(
-                'No organisation with such a name please input the correct name or press Q to quit',
-                org_name)
-
-            new_org_name = input("organisation name")
-            if new_org_name.lower() == 'q':
-                raise Exception
-            else:
-                org_changer(driver, new_org_name)
+                'No organisation with such a name')
+            raise ValueError
+            # TODO - sensible concurrent agnostic org name picker
+            # new_org_name = input("organisation name")
+            # if new_org_name.lower() == 'q':
+            #     raise Exception
+            # else:
+            #     org_changer(driver, new_org_name)
 
         try:
             org_el = driver.find_element(by=By.XPATH,
@@ -76,13 +76,15 @@ def org_changer(driver: Chrome, org_name):
                     _organization_change(driver, organisation, org_name)
                     break
                 else:
-                    print('No element with that name - input a new name')
-                    new_org_name = input("Organisation name")
-
-                    if new_org_name.lower() == 'q':
-                        raise Exception
-                    else:
-                        org_changer(driver, new_org_name)
+                    # TODO
+                    print('No element with that name')
+                    raise ValueError
+                    # new_org_name = input("Organisation name")
+                    #
+                    # if new_org_name.lower() == 'q':
+                    #     raise Exception
+                    # else:
+                    #     org_changer(driver, new_org_name)
         else:
             _organization_change(driver, org_el, org_name)
 
@@ -112,7 +114,6 @@ def _organization_change(driver: Chrome, org_el: WebElement, org_name: str):
                     # driver.quit()
         else:
             # TODO - Add a proper way to wait for the org change instead of the single name wait
-            sleep(5)
             try:
                 WdWait(driver, 20).until(ec.title_contains(org_name))
             except exceptions.TimeoutException:

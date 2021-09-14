@@ -2,11 +2,14 @@
 When something out of the ordinary has to be done
 Instead of programming in the main business logic just implement it here and import it there
 """
+import datetime
 import random
 import threading
 import traceback
 import string
 from time import sleep
+from datetime import date, timedelta
+from random import choice
 
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
@@ -189,6 +192,16 @@ def user_setup_raw(driver: Chrome, ent: str):
         print('Oj dios mio no email information')
 
 
+# TODO make an element waiter, like WebdriverWait but for web-elements (input a web element, find its child element or just wait for it to be visible)
+def waiter(driver: Chrome, el_selector, by, timeout: WebElement):
+    poll_freq = 0.5
+    try:
+        timeout.is_displayed()
+        driver.find_element(by=by, value=el_selector)
+    except exceptions.NoSuchElementException:
+        pass
+
+
 class AddressInput:
     """
     This is just a hacky way to input addresses,
@@ -199,13 +212,25 @@ class AddressInput:
     def __init__(self):
         self.address_repeat = 0
 
-    def ul_list_selector(self, driver: Chrome, input_el, input_text):
-        sleep(5)
+    # TODO TODO
+    # def ul_progress_linear(self, driver: Chrome, input_el: WebElement, input_text):
+    #     input_el.send_keys(input_text)
+    #     try:
+    #         progress_el = WdWait(driver, 5).until(ec.visibility_of_element_located((By.XPATH,
+    #                                                                                 '../../md-progress-linear')))
+    #     except exceptions.TimeoutException:
+    #         sleep(5)
+    #     else:
+    #         WdWait(driver, 10).until(ec.invisibility_of_element_located((By.XPATH, 'tt')))
+
+    def ul_list_selector(self, driver: Chrome, input_el: WebElement, input_text):
+        sleep(2)
         self.address_repeat += 1
+        input_el.clear()
         input_el.send_keys(input_text)
         ul_el_id = 'ul-' + str(input_el.get_attribute('id')).split('-')[-1]
         try:
-            WdWait(driver, 15).until(ec.visibility_of_element_located((By.ID, ul_el_id)))
+            WdWait(driver, 10).until(ec.visibility_of_element_located((By.ID, ul_el_id)))
         except exceptions.TimeoutException:
             # print('No list returned after 15 seconds')
             if self.address_repeat > 1:
@@ -262,21 +287,18 @@ def md_toast_remover(driver: Chrome):
                     sleep(3)
 
 
-def md_toast_wait(driver: Chrome, second_sleep=0):
+def md_toast_wait(driver: Chrome):
     try:
-        WdWait(driver, 15).until(ec.invisibility_of_element_located((By.TAG_NAME, 'md-toast')))
-    except exceptions.NoSuchElementException:
-        sleep(5)
-        try:
-            WdWait(driver, 15).until(ec.invisibility_of_element_located((By.TAG_NAME, 'md-toast')))
-        except exceptions.NoSuchElementException:
-            sleep(second_sleep)
-        else:
-            sleep(5)
+        WdWait(driver, 5).until(ec.visibility_of_element_located((By.TAG_NAME, 'md-toast')))
     except exceptions.TimeoutException:
-        pass
+        print('no md_toast')
     else:
-        sleep(5)
+        try:
+            WdWait(driver, 10).until(ec.invisibility_of_element_located((By.TAG_NAME, 'md-toast')))
+        except exceptions.TimeoutException:
+            pass
+        else:
+            sleep(2)
 
 
 def element_clicker(driver: Chrome, web_element: WebElement = None, css_selector: str = ''):
@@ -431,7 +453,8 @@ def simple_expense_calc(driver: Chrome, deal_url: str):
     hem_total = 0
     no_hem_total = 0
     driver.get(deal_url)
-    expense_button = WdWait(driver, 10).until(ec.visibility_of_element_located((By.XPATH, '//*[@id="top"]/st-sidebar/st-sidebar-content/st-sidebar-block[1]/div/div/button[2]')))
+    expense_button = WdWait(driver, 10).until(ec.visibility_of_element_located(
+        (By.XPATH, '//*[@id="top"]/st-sidebar/st-sidebar-content/st-sidebar-block[1]/div/div/button[2]')))
     expense_button.click()
     sleep(2)
     expenses = WdWait(driver, 10).until(ec.visibility_of_element_located((By.TAG_NAME, 'st-household-expenses')))
@@ -512,10 +535,12 @@ def simple_expense_calc(driver: Chrome, deal_url: str):
 def income_calc(driver: Chrome, deal_url: str):
     total = 0
     driver.get(deal_url)
-    income_button = WdWait(driver,10).until(ec.visibility_of_element_located((By.XPATH, '//*[@id="top"]/st-sidebar/st-sidebar-content/st-sidebar-block[1]/div/div/button[1]')))
+    income_button = WdWait(driver, 10).until(ec.visibility_of_element_located(
+        (By.XPATH, '//*[@id="top"]/st-sidebar/st-sidebar-content/st-sidebar-block[1]/div/div/button[1]')))
     income_button.click()
     sleep(2)
-    WdWait(driver, 10).until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div.flex.layout-column.ng-scope.layout-gt-sm-row')))
+    WdWait(driver, 10).until(
+        ec.visibility_of_element_located((By.CSS_SELECTOR, 'div.flex.layout-column.ng-scope.layout-gt-sm-row')))
     paygs = driver.find_elements(by=By.CSS_SELECTOR,
                                  value='div.flex.layout-column.ng-scope.layout-gt-sm-row')
     for payg in paygs:
@@ -545,13 +570,13 @@ def income_calc(driver: Chrome, deal_url: str):
     print('Income total:', total)
 
 
-def element_waiter(driver: Chrome, css_selector: str, url: str = ''):
+def element_waiter(driver: Chrome, css_selector: str, url: str = '') -> WebElement:
     """
     Pass in a css selector and a URL and this will retry finding it
     """
-    condition = ec.visibility_of_element_located((By.CSS_SELECTOR, css_selector))
+    condition = ec.presence_of_element_located((By.CSS_SELECTOR, css_selector))
     try:
-        WdWait(driver, 20).until(condition)
+        ret_el = WdWait(driver, 20).until(condition)
     except exceptions.TimeoutException:
         if url:
             driver.get(url)
@@ -559,10 +584,136 @@ def element_waiter(driver: Chrome, css_selector: str, url: str = ''):
             driver.refresh()
 
         try:
-            WdWait(driver, 10).until(condition)
+            ret_el = WdWait(driver, 10).until(condition)
         except exceptions.TimeoutException:
             if url:
                 driver.get(url)
             else:
                 driver.refresh()
-            WdWait(driver, 20).until(condition)
+            ret_el = WdWait(driver, 20).until(condition)
+
+    return ret_el
+
+
+def element_dissapear(driver, css_selector):
+    try:
+        WdWait(driver, 5).until(
+            ec.visibility_of_element_located((By.CSS_SELECTOR, css_selector)))
+    except exceptions.TimeoutException:
+        sleep(5)
+    else:
+        WdWait(driver, 10).until(
+            ec.invisibility_of_element_located((By.CSS_SELECTOR, css_selector)))
+
+
+def element_scroll(driver, main_documents):
+    while True:
+        last_height = driver.execute_script("return arguments[0].scrollHeight", main_documents)
+        driver.execute_script(f"arguments[0].scroll(0,{last_height});", main_documents)
+        sleep(5)
+        new_height = driver.execute_script("return arguments[0].scrollHeight", main_documents)
+
+        if new_height == last_height:
+            break
+
+
+def add_contact(driver: Chrome):
+    driver.get('https://dev.salestrekker.com/contact/edit/person/0')
+    WdWait(driver, 10).until(ec.visibility_of_element_located((By.TAG_NAME, 'st-contact')))
+
+    first_names = ['Misty', 'Karl', 'Tanisha', 'Jasmin', 'Lexi-Mai', 'Chandni', 'Musab', 'Spike', 'Doris',
+                   'Dominick', 'Rudi',
+                   'Saira', 'Keeleigh', 'Nana', 'Andrew', 'Kirandeep', 'Roland', 'Harry', 'Alexie', 'Adelaide',
+                   'Finbar', 'Nasir',
+                   'Patrycja', 'Nela', 'Belinda', 'Amaya', 'Husnain', 'Tiana', 'Wyatt', 'Kenneth', 'April', 'Leia',
+                   'Bushra',
+                   'Levi', 'Keira', 'Amin', 'Samiha', 'Marianne', 'Habib', 'Yousuf', 'Nicola', 'Samanta',
+                   'Benedict', 'Nikhil',
+                   'Aurora', 'Giulia', 'Rosa', 'Alannah', 'Marian', 'Dionne', 'Xanthe', 'Anabel', 'Samira', 'Mason',
+                   'Colleen',
+                   'Esther', 'Faheem', 'Rachael', 'Kuba', 'Callam', 'Nick', 'Ayub', 'Esmay', 'Aimee', 'Sarah',
+                   'Billy', 'Enid',
+                   'Katie-Louise', 'Ashlee', 'Tamar', 'Darla', 'Whitney', 'Helena', 'Rachelle', 'Maisie', 'Julia',
+                   'Mandy',
+                   'Isaiah', 'Sally', 'Marianna', 'Jasleen', 'Evie-Mae', 'Lana', 'Kiana', 'Preston', 'Rae',
+                   'Poppy-Rose', 'Lyla',
+                   'Christy', 'Maheen', 'Cordelia', 'Mariya', 'Amelia-Grace', 'Kier', 'Sonny', 'Alessia', 'Inigo',
+                   'Hareem',
+                   'Caitlyn', 'Ayana', 'Danielle', 'Charlotte', 'Bronwyn', 'Eliot', 'Lesley', 'Ada', 'Azra',
+                   'Wilbur', 'Lillian',
+                   'Yannis', 'Sherri', 'Cosmo', 'Nella', 'Hasan', 'Tyrique', 'Jonah', 'Lexi-Mae', 'Nigel', 'Zavier',
+                   'Bevan',
+                   'Leo', 'Israel', 'Sharna', 'Jagoda', 'Deborah', 'Claire', 'Anabelle', 'Kobie', 'Nabeel',
+                   'Kayley', 'Zahrah',
+                   'Beck', 'Kingsley', 'Micah', 'Jerry', 'Haydn', 'Robyn', 'Carwyn', 'Rhys', 'Seamus', 'Maia',
+                   'Iman', 'Rahul',
+                   'Judy', 'Arwa', 'Jeevan', 'Francesco', 'Shyam', 'Amal', 'Gabrielle', 'Kellie', 'Derry',
+                   'Quentin', 'Hashir',
+                   'Alma', 'Rheanna', 'Sebastian', 'Sahara', 'Miriam', 'Debbie', 'Niyah', 'Lillie-May', 'Petra',
+                   'Khalil', 'Lena',
+                   'Isabell', 'Howard', 'Lennie', 'Jibril', 'Christiana', 'Alan', 'Kimora', 'Muneeb', 'Iqrah',
+                   'Hanna', 'Akbar',
+                   'Beverly', 'Jill', 'Shania', 'T-Jay', 'George', 'Lexie', 'Gerard', 'Weronika', 'Alison', 'Reon',
+                   'Piotr',
+                   'Alya', 'Mitchel', 'Sally', 'Alfie-Lee', 'Abbie', 'Pola', 'Laylah', 'Zubair', 'Ali', 'Nicole',
+                   'Lorna',
+                   'Ember', 'Cora']
+
+    surnames = ['Banks', 'Berg', 'Obrien', 'Talley', 'Mccray', 'Kramer', 'Cunningham', 'Dunn', 'Vu', 'Ferry',
+                'Wolfe', 'Haas', 'Bate', 'Tomlinson', 'Phelps', 'Goulding', 'Penn', 'Slater', 'Aguilar', 'Mellor',
+                'Bray', 'Potter', 'Metcalfe', 'Burch', 'Houston', 'Brandt', 'Nixon', 'Allison', 'Stephens',
+                'Webster', 'Lawrence', 'Wright', 'Knowles', 'Davidson', 'Dalton', 'Flower', 'Cameron', 'Baker',
+                'Portillo', 'Lord', 'Goodman', 'Roman', 'Wardle', 'Hayden', 'Bains', 'Romero', 'Iles', 'Navarro',
+                'Malone', 'Molina', 'Macfarlane', 'Hilton', 'Mckay', 'Novak', 'Gaines', 'Ratliff', 'Valdez',
+                'Zavala', 'Gibbons', 'Almond', 'Bruce', 'Felix', 'Reeve', 'Chang', 'Patrick', 'Hutchings', 'Ayala',
+                'Russell', 'Burn', 'Parra', 'Sharma', 'Emery', 'Burris', 'Southern', 'Mcleod', 'Mckee', 'Duggan',
+                'William', 'Dalby', 'Carr', 'Carty', 'Read', 'Marsh', 'Chase', 'Greene', 'Stafford', 'Greig',
+                'Woolley', 'Bird', 'Wyatt', 'Escobar', 'Bradley', 'Kirby', 'Whitney', 'Cartwright', 'Sargent',
+                'Plummer', 'Lucero', 'Reynolds', 'Melia', 'Davenport', 'Irving', 'Barrow', 'Senior', 'Mcgowan',
+                'Hancock', 'Povey', 'Mcmanus', 'Tyson', 'Hunt', 'Betts', 'Lopez', 'Molloy', 'Plant', 'Kirk',
+                'Cantu', 'Reid', 'Whelan', 'Dupont', 'Berry', 'Mueller', 'Lowery', 'Powell', 'Porter', 'Krueger',
+                'Griffiths', 'Garrett', 'Barrett', 'Gibbs', 'Calvert', 'Hills', 'Rice', 'Correa', 'Pineda',
+                'Beasley', 'Sanderson', 'Frye', 'Garrison', 'Trevino', 'Stafford', 'Rankin', 'Huerta', 'Luna',
+                'Mustafa', 'Lane', 'Russo', 'Richmond', 'Ferry', 'Wolfe', 'Schmidt', 'Mcnally', 'Power',
+                'Castaneda', 'Wickens', 'Romero', 'Smyth', 'Coulson', 'Riley', 'Carty', 'Hogan', 'Bonilla', 'Mcgee',
+                'Buck', 'Mccoy', 'Schneider', 'Gordon', 'Hardy', 'Ferreira', 'Jarvis', 'Haley', 'Bray', 'Barnett',
+                'Finch', 'Cox', 'Lawrence', 'Leech', 'Bain', 'Cross', 'Hyde', 'Soto', 'Bates', 'Knowles', 'Douglas',
+                'Roberts', 'Cornish', 'Robles', 'Macgregor', 'Hines', 'Oakley', 'Santos', 'Kirkpatrick', 'Alvarez',
+                'Piper', 'Murphy', 'Boyd', 'Haas', 'Corbett', 'Short', 'Alexander', 'Sloan']
+
+    first_name = random.choice(first_names)
+    last_name = random.choice(surnames)
+    email = f'matthew+{first_name.lower()}{last_name.lower()}@salestrekker.com'
+    date_of_birth = f'09/07/{random.randrange(1950, 1990)}'
+
+    driver.find_element(by=By.CSS_SELECTOR,
+                        value='input[ng-model="$ctrl.contact.person.information.firstName"]').send_keys(first_name)
+    driver.find_element(by=By.CSS_SELECTOR,
+                        value='input[ng-model="$ctrl.contact.person.information.familyName"]').send_keys(last_name)
+    driver.find_element(by=By.CSS_SELECTOR,
+                        value='md-datepicker[ng-model="$ctrl.getSetDateOfBirth"] input').send_keys(date_of_birth)
+    phone_code = driver.find_element(by=By.CSS_SELECTOR,
+                                     value='input[ng-model="$ctrl.contact.person.contact.primaryCode"]')
+    phone_code.clear()
+    phone_code.send_keys('381')
+    driver.find_element(by=By.CSS_SELECTOR,
+                        value='input[ng-model="$ctrl.contact.person.contact.primary"]').send_keys('695242544')
+    driver.find_element(by=By.CSS_SELECTOR,
+                        value='input[ng-model="$ctrl.contact.person.contact.email"]').send_keys(email)
+    driver.find_element(by=By.CSS_SELECTOR,
+                        value='md-datepicker[ng-model="$ctrl.getSetPassportExpiryDate"] input').send_keys('09/07/2021')
+    try:
+        WdWait(driver, 10).until(
+            ec.visibility_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))
+    except exceptions.TimeoutException:
+        sleep(7)
+    else:
+        WdWait(driver, 10).until(
+            ec.invisibility_of_element_located((By.CSS_SELECTOR, 'md-progress-linear.mt1')))
+
+
+def random_date(test_date1: date = date(1980, 1, 1), test_date2: date = date.today()):
+    total_days = test_date2 - test_date1
+    randay = random.randrange(total_days.days)
+    return_date = test_date1 + timedelta(days=randay)
+    return return_date
