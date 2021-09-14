@@ -1,6 +1,7 @@
 import json
 import random
 from datetime import datetime
+from pathlib import Path
 from time import sleep
 
 from selenium.common import exceptions
@@ -15,10 +16,19 @@ from main.Permanent.helper_funcs import md_toast_remover, element_clicker, phone
 from main.Permanent.deal_create_selectors import *
 
 
-class EditDeal:
-    def __init__(self, ent: str, driver: Chrome):
-        with open("deal_config.json") as deal_config_json:
-            deal_config = json.load(deal_config_json)
+class CreateDeal:
+    def __init__(self, ent: str, driver: Chrome, config: dict = None, deal_name: str = ''):
+        if deal_name:
+            self.deal_name = deal_name
+        else:
+            self.deal_name = f'Test {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+
+        if config is None:
+            deal_config = Path(__file__).parent.resolve() / "../deal_config.json"
+            with open(deal_config) as deal_config_json:
+                deal_config = json.load(deal_config_json)
+        else:
+            deal_config = config
 
         self.users_in_workflow = ''
         self.driver = driver
@@ -46,6 +56,7 @@ class EditDeal:
         This is the main logic for the deal creation, this one calls the 'private' functions
         Also it makes sure we are at the correct place and the correct time when not filling in input fields
         """
+
         if workflow == 'test':
             self.driver.get(self.main_url)
             in_workflow = self.driver.current_url.split('/')[-1]
@@ -109,42 +120,59 @@ class EditDeal:
 
     def _contact_add(self):
 
-        incrementer = 0
-        no_of_companies = self.contacts['contact_types']['no_of_companies']
-
         add_contact = WdWait(self.driver, 10).until(
             ec.presence_of_element_located((
                 eval(ADD_CONTACT['by']),
                 ADD_CONTACT['value']
             )))
 
-        for contact in range(self.number_of_contacts):
-            element_clicker(self.driver, web_element=add_contact)
+        if self.contacts['contact_types']['types'] == 'custom':
 
-            add_contact_container_id = add_contact.get_attribute('aria-owns')
-            contact_type_container = WdWait(self.driver, 5).until(
-                ec.presence_of_element_located((By.ID, add_contact_container_id)))
+            element_clicker(self.driver, css_selector='button[aria-label="Remove Contact"]')
 
-            if self.contacts['contact_types']['types'] == 'mixed':
+            order = self.contacts['contact_types']['custom']
+            for el in order.split(','):
+                element_clicker(self.driver, web_element=add_contact)
 
-                if 0 < no_of_companies > incrementer:
-                    contact_type = contact_type_container.find_elements(by=By.TAG_NAME,
-                                                                        value='button')[1]
-                    element_clicker(self.driver, web_element=contact_type)
-
-                    incrementer += 1
+                add_contact_container_id = add_contact.get_attribute('aria-owns')
+                contact_type_container = WdWait(self.driver, 5).until(
+                    ec.presence_of_element_located((By.ID, add_contact_container_id)))
+                contact_type = contact_type_container.find_elements(by=By.TAG_NAME,
+                                                                    value='button')
+                if el == 'pers':
+                    element_clicker(self.driver, web_element=contact_type[0])
+                elif el == 'comp':
+                    element_clicker(self.driver, web_element=contact_type[1])
                 else:
-                    contact_type = contact_type_container.find_elements(by=By.TAG_NAME,
-                                                                        value='button')[0]
-                    element_clicker(self.driver, web_element=contact_type)
+                    # TODO raise a warning here
+                    print('Bad deal_config custom values')
+        else:
+            incrementer = 0
+            no_of_companies = self.contacts['contact_types']['no_of_companies']
 
-            elif self.contacts['contact_types']['types'] == 'company':
-                contact_type = contact_type_container.find_elements(by=By.TAG_NAME, value='button')[1]
-                element_clicker(self.driver, web_element=contact_type)
+            for contact in range(self.number_of_contacts):
+                element_clicker(self.driver, web_element=add_contact)
 
-            elif self.contacts['contact_types']['types'] == 'person':
-                contact_type = contact_type_container.find_elements(by=By.TAG_NAME, value='button')[0]
-                element_clicker(self.driver, web_element=contact_type)
+                add_contact_container_id = add_contact.get_attribute('aria-owns')
+                contact_type_container = WdWait(self.driver, 5).until(
+                    ec.presence_of_element_located((By.ID, add_contact_container_id)))
+                contact_type = contact_type_container.find_elements(by=By.TAG_NAME,
+                                                                    value='button')
+                if self.contacts['contact_types']['types'] == 'mixed':
+
+                    if 0 < no_of_companies > incrementer:
+                        element_clicker(self.driver, web_element=contact_type[1])
+
+                        incrementer += 1
+                    else:
+
+                        element_clicker(self.driver, web_element=contact_type[0])
+
+                elif self.contacts['contact_types']['types'] == 'company':
+                    element_clicker(self.driver, web_element=contact_type[1])
+
+                elif self.contacts['contact_types']['types'] == 'person':
+                    element_clicker(self.driver, web_element=contact_type[0])
 
     # TODO - Get a better way to pass in names
     def _contact_input(self, client_email):
@@ -339,7 +367,7 @@ class EditDeal:
                 surname = random.choice(surnames)
 
                 if not client_email:
-                    client_email_input = f'{first_name.lower()}@{surname[1].lower()}.com'
+                    client_email_input = f'{first_name.lower()}@{surname.lower()}.com'
                 else:
                     _mejl_split = client_email.split('@')
                     _person_name_merge = first_name.lower() + surname.lower()
@@ -347,11 +375,12 @@ class EditDeal:
 
                 person.find_element(by=eval(PERSON_NAME['by']),
                                     value=PERSON_NAME['value']).send_keys(first_name)
+                sleep(0.1)
                 person.find_element(by=eval(PERSON_SURNAME['by']),
                                     value=PERSON_SURNAME['value']).send_keys(surname)
 
                 person.find_element(by=eval(PHONE_NUM['by']),
-                                    value=PHONE_NUM['value']).send_keys(phone_num_gen())
+                                    value=PHONE_NUM['value']).send_keys('0412341234')
                 person.find_element(by=eval(PERSON_EMAIL['by']),
                                     value=PERSON_EMAIL['value']).send_keys(client_email_input)
 
@@ -360,13 +389,15 @@ class EditDeal:
 
                 if self.contacts['non_client']['active']:
                     if count < int(self.contacts['non_client']['no_of_clients']):
-                        # TODO - Re-do this maybe put it in a separate function as it repeats a couple of times
                         selector(self.driver, client_type, rand_range="0-4")
                     else:
                         client_type_len = int(len(Select(client_type).options))
                         selector(self.driver, client_type, rand_range=f'4-{client_type_len}')
                 else:
-                    selector(self.driver, client_type, rand_range="0-4")
+                    if count == 0:
+                        selector(self.driver, client_type, index=0)
+                    else:
+                        selector(self.driver, client_type, rand_range="1-4")
 
         if company_list:
             for count, company in enumerate(company_list):
@@ -382,7 +413,7 @@ class EditDeal:
 
                 company.find_element(
                     by=eval(PHONE_NUM['by']),
-                    value=PHONE_NUM['value']).send_keys(phone_num_gen())
+                    value=PHONE_NUM['value']).send_keys('0412341234')
 
                 company.find_element(by=eval(COMPANY_EMAIL['by']),
                                      value=COMPANY_EMAIL['value']).send_keys(client_email_input)
@@ -394,29 +425,19 @@ class EditDeal:
 
                 if self.contacts['non_client']['active']:
                     if count < int(self.contacts['non_client']['no_of_clients']):
-                        try:
-                            Select(client_type).select_by_index(random.randrange(0, 4))
-                        except exceptions.ElementClickInterceptedException:
-                            md_toast_remover(self.driver)
-                            Select(client_type).select_by_index(random.randrange(0, 4))
+                        selector(self.driver, client_type, rand_range='0-4')
                     else:
-                        try:
-                            Select(client_type).select_by_index(
-                                random.randrange(0, len(Select(client_type).options)))
-                        except exceptions.ElementClickInterceptedException:
-                            md_toast_remover(self.driver)
-                            Select(client_type).select_by_index(
-                                random.randrange(0, len(Select(client_type).options)))
+                        client_type_len = int(len(Select(client_type).options))
+
+                        selector(self.driver, client_type, rand_range=f'0-{client_type_len}')
+
                 else:
-                    try:
-                        Select(client_type).select_by_index(random.randrange(0, 4))
-                    except exceptions.ElementClickInterceptedException:
-                        md_toast_remover(self.driver)
-                        Select(client_type).select_by_index(random.randrange(0, 4))
+                    if count == 0:
+                        selector(self.driver, client_type, index=0)
+                    else:
+                        selector(self.driver, client_type, rand_range='1-4')
 
     def _deal_info_input(self):
-        deal_prefix = 'Test'
-        deal_name = f'{deal_prefix} {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
 
         main_info_block = self.driver.find_element(by=eval(MAIN_INFO_BLOCK['by']),
                                                    value=MAIN_INFO_BLOCK['value'])
@@ -426,7 +447,7 @@ class EditDeal:
                                                        value=DEAL_NAME['value'])
 
         deal_name_input.send_keys(Keys.CONTROL + 'a')
-        deal_name_input.send_keys(deal_name)
+        deal_name_input.send_keys(self.deal_name)
 
         # self.select_deal_owner(main_info_block, 'Salestrekker Help Desk')
 
@@ -504,10 +525,15 @@ class EditDeal:
         element_clicker(driver=self.driver, web_element=deal_owner_select_element)
 
         deal_owner_id = str(deal_owner_select_element.get_attribute('aria-owns'))
-
-        deal_owner_list = WdWait(self.driver, 10).until(
-            ec.visibility_of_element_located(
-                (By.ID, deal_owner_id)))
+        try:
+            deal_owner_list = WdWait(self.driver, 5).until(
+                ec.visibility_of_element_located(
+                    (By.ID, deal_owner_id)))
+        except exceptions.TimeoutException:
+            element_clicker(driver=self.driver, web_element=deal_owner_select_element)
+            deal_owner_list = WdWait(self.driver, 5).until(
+                ec.visibility_of_element_located(
+                    (By.ID, deal_owner_id)))
 
         _deal_owners = []
         sleep(0.1)
@@ -520,10 +546,12 @@ class EditDeal:
             _deal_owners.append({'name': owner.text, 'el': owner})
         else:
             print('No owner with that name')
-            for count, owner in enumerate(_deal_owners, start=1):
-                print(count, owner['name'])
-            owner_index = int(input('Select a owner index: ')) - 1
-            element_clicker(self.driver, web_element=_deal_owners[owner_index]['el'])
+            raise ValueError
+            # TODO - sensible, concurrent agnostic owner picker
+            # for count, owner in enumerate(_deal_owners, start=1):
+            #     print(count, owner['name'])
+            # # owner_index = int(input('Select a owner index: ')) - 1
+            # element_clicker(self.driver, web_element=_deal_owners[owner_index]['el'])
 
     def _save(self):
         sleep(5)

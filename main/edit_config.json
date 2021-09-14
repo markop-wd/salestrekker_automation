@@ -1,0 +1,19 @@
+{
+  "income": {
+    "type": "all",
+    "num": 1
+  },
+
+  "assets": {
+    "type": "all",
+    "num": 1
+  },
+  "liabilities":{
+    "type": "all",
+    "num": 1
+  },
+  "employment": {
+    "num": 2
+  }
+}
+

@@ -1,3 +1,6 @@
+import datetime
+import math
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait as WdWait
@@ -5,7 +8,8 @@ from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver import Chrome
 from selenium.common import exceptions
 
-from main.Permanent.helper_funcs import random_string_create, AddressInput, element_clicker, selector
+from main.Permanent.helper_funcs import random_string_create, AddressInput, element_clicker, selector, element_waiter, \
+    random_date, md_toast_wait
 from main.Permanent.deal_fill_selectors import *
 
 from time import sleep
@@ -16,9 +20,9 @@ import traceback
 from pathlib import Path
 
 
-class MultipleDealCreator:
+class FillDeal:
 
-    def __init__(self, driver: Chrome):
+    def __init__(self, driver: Chrome, config: dict = None):
         # TODO - Review working with paths
 
         # These two below are for employment information (occupation and industry codes)
@@ -31,9 +35,17 @@ class MultipleDealCreator:
             self.industries = json.load(industry_codes)
 
         # This is the main deal config file
-        deal_config = Path(__file__).parent.resolve() / "../deal_config.json"
-        with open(deal_config) as deal_config_json:
-            self.deal_config = json.load(deal_config_json)
+        if config is None:
+            deal_config = Path(__file__).parent.resolve() / "../edit_config.json"
+            with open(deal_config) as edit_config_json:
+                edit_config = json.load(edit_config_json)
+        else:
+            edit_config = config
+
+        self.employment = edit_config['employment']
+        self.income = edit_config['income']
+        self.assets = edit_config['assets']
+        self.liabilities = edit_config['liabilities']
 
         self.driver = driver
         self.address_placeholders = ['Search Property (eg. 1 Walker Avenue)',
@@ -80,39 +92,50 @@ class MultipleDealCreator:
     def employment_handler(self):
 
         self._first_employment()
-        employ_num = self.deal_config["contacts"]["employment"]["num"]
-
+        employ_num = self.employment['num']
         try:
             employment = self.driver.find_element(by=eval(EMPLOYMENT_BUTTON['by']),
                                                   value=EMPLOYMENT_BUTTON['value'])
         except exceptions.NoSuchElementException:
             print('Am in company, weird')
             return
-            # self.driver.get_screenshot_as_file(
-            #     f'Reports/{date.today()}/Screenshots/employment{random_string_create(3)}.png')
+        else:
+            for i in range(1, employ_num):
 
-        for i in range(1, employ_num):
-            element_clicker(self.driver, web_element=employment)
+                element_clicker(self.driver, web_element=employment)
 
-            employment_status = self.driver.find_elements(by=eval(EMPLOY_STATUS['by']),
-                                                          value=EMPLOY_STATUS['value'])[i]
-            selector(self.driver, select_element=employment_status, index='random', rand_range='0-2')
+                f_empl_content = self.driver.find_element(by=By.CSS_SELECTOR,
+                                                          value=f'st-contact> div:nth-of-type({2 + i}) > st-contact-employment')
 
-            employment_type = self.driver.find_elements(by=eval(EMPLOY_TYPE['by']),
-                                                        value=EMPLOY_TYPE['value'])[i]
-            selector(self.driver, select_element=employment_type, index='random', rand_range='1-5')
+                employment_status = f_empl_content.find_element(by=eval(EMPLOY_STATUS['by']),
+                                                                value=EMPLOY_STATUS['value'])
+                if i == 1:
+                    selector(self.driver, select_element=employment_status, index='0')
+                else:
+                    selector(self.driver, select_element=employment_status, index='random', rand_range='0-2')
 
-            employment_priority = self.driver.find_elements(by=eval(EMPLOY_PRIORITY['by']),
-                                                            value=EMPLOY_PRIORITY['value'])[i]
-            selector(self.driver, select_element=employment_priority, index='random', rand_range='1-3')
-            emply_els = self.driver.find_elements(by=eval(EMPLOY_BASIS['by']),
-                                                             value=EMPLOY_BASIS['value'])
-            try:
-                employment_basis = emply_els[i-1]
-            except exceptions.NoSuchElementException:
-                pass
-            else:
-                selector(self.driver, select_element=employment_basis, index='random')
+                employment_type = f_empl_content.find_element(by=eval(EMPLOY_TYPE['by']),
+                                                              value=EMPLOY_TYPE['value'])
+                if i == 1:
+                    selector(self.driver, select_element=employment_type, index='2')
+                else:
+                    selector(self.driver, select_element=employment_type, index='random', rand_range='1-5')
+
+                employment_priority = f_empl_content.find_element(by=eval(EMPLOY_PRIORITY['by']),
+                                                                  value=EMPLOY_PRIORITY['value'])
+                selector(self.driver, select_element=employment_priority, index='random', rand_range='1-3')
+
+                try:
+                    emply_el = f_empl_content.find_element(by=eval(EMPLOY_BASIS['by']),
+                                                           value=EMPLOY_BASIS['value'])
+                except exceptions.NoSuchElementException:
+                    pass
+                else:
+                    selector(self.driver, select_element=emply_el, index='random')
+
+                date_el = f_empl_content.find_element(by=By.CSS_SELECTOR, value='input[placeholder="DD/MM/YYYY"]')
+                date_el.send_keys(random_date().strftime("%d/%m/%Y"))
+                md_toast_wait(self.driver)
 
     def _first_employment(self):
         try:
@@ -127,21 +150,37 @@ class MultipleDealCreator:
 
             sleep(0.01)
 
-            employ_status = self.driver.find_element(by=eval(EMPLOY_STATUS['by']),
-                                                     value=EMPLOY_STATUS['value'])
+            f_empl_content = self.driver.find_element(by=By.CSS_SELECTOR,
+                                                      value='st-contact> div:nth-of-type(2) > st-contact-employment')
+
+            f_empl_content.find_element(by=By.CSS_SELECTOR,
+                                        value='select[ng-change="$ctrl.toggleEmployment()"]')
+
+            employ_status = f_empl_content.find_element(by=eval(EMPLOY_STATUS['by']),
+                                                        value=EMPLOY_STATUS['value'])
             selector(self.driver, select_element=employ_status, index='0')
 
-            employ_type = self.driver.find_element(by=eval(EMPLOY_TYPE['by']),
-                                                   value=EMPLOY_TYPE['value'])
-            selector(self.driver, select_element=employ_type, index='random', rand_range='1-3')
+            employ_type = f_empl_content.find_element(by=eval(EMPLOY_TYPE['by']),
+                                                      value=EMPLOY_TYPE['value'])
+            if self.income['type'] == 'all':
+                selector(self.driver, select_element=employ_type, index='2')
+            else:
+                if 'bus' in self.income['type']:
+                    selector(self.driver, select_element=employ_type, index='2')
 
-            employ_priority = self.driver.find_element(by=eval(EMPLOY_PRIORITY['by']),
-                                                       value=EMPLOY_PRIORITY['value'])
+            employ_priority = f_empl_content.find_element(by=eval(EMPLOY_PRIORITY['by']),
+                                                          value=EMPLOY_PRIORITY['value'])
             selector(self.driver, select_element=employ_priority, index='random', rand_range='1-3')
 
-            employ_basis = self.driver.find_element(by=eval(EMPLOY_BASIS['by']),
-                                                    value=EMPLOY_BASIS['value'])
+            employ_basis = f_empl_content.find_element(by=eval(EMPLOY_BASIS['by']),
+                                                       value=EMPLOY_BASIS['value'])
             selector(self.driver, select_element=employ_basis, index='random')
+
+            date_el = f_empl_content.find_element(by=By.CSS_SELECTOR, value='input[placeholder="DD/MM/YYYY"]')
+
+            end_date = datetime.date.today() - datetime.timedelta(days=(365 * 3) + 3)
+            date_el.send_keys(random_date(test_date2=end_date).strftime("%d/%m/%Y"))
+            md_toast_wait(self.driver)
 
     def ul_list_selector(self, input_el, input_text):
         sleep(5)
@@ -167,16 +206,21 @@ class MultipleDealCreator:
                                            li_els[random.randrange(0, len(li_els))])
 
     def input_el_handler(self, content):
+        # TODO - Maybe gather all statements that directly continue to the top
         input_els = content.find_elements(by=By.TAG_NAME, value='input')
         try:
             for input_el in input_els:
-
+                if random.choice([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) == (8 or 9):
+                    continue
                 value_test = input_el.get_attribute('value')
 
                 if value_test == '$0':
                     if input_el.get_attribute('ng-model') == 'householdExpense.value':
                         try:
-                            input_el.send_keys(random.randrange(0, 5000))
+                            value = random.randrange(0, 5000)
+                            x_len = 10 ** (len(str(value)) - 2)
+                            value = int(int(math.ceil(value / x_len)) * x_len)
+                            input_el.send_keys(value)
                         except:
                             print('Expense value error')
                             traceback.print_stack()
@@ -184,7 +228,8 @@ class MultipleDealCreator:
                             continue
                     else:
                         value = random.randrange(0, 50000)
-
+                        x_len = 10 ** (len(str(value)) - 2)
+                        value = int(int(math.ceil(value / x_len)) * x_len)
                         try:
                             input_el.send_keys(value)
                         except exceptions.ElementNotInteractableException:
@@ -192,6 +237,8 @@ class MultipleDealCreator:
 
                 elif value_test == '$0.00':
                     value = random.randrange(0, 500000)
+                    x_len = 10 ** (len(str(value)) - 2)
+                    value = int(int(math.ceil(value / x_len)) * x_len)
 
                     try:
                         input_el.send_keys(value)
@@ -200,6 +247,8 @@ class MultipleDealCreator:
 
                 elif value_test == '0.00%':
                     value = random.randrange(0, 10000)
+                    x_len = 10 ** (len(str(value)) - 2)
+                    value = int(int(math.ceil(value / x_len)) * x_len)
 
                     try:
                         input_el.send_keys(value)
@@ -211,15 +260,16 @@ class MultipleDealCreator:
                     ng_change = input_el.get_attribute('ng-change')
 
                     if input_el.get_attribute('class') == 'md-datepicker-input md-input':
-                        year = random.randrange(1930, 2010)
+                        ran_date = random_date()
+
                         if input_el.get_attribute('placeholder') == 'MM/YYYY':
                             try:
-                                input_el.send_keys(f'01/{year}')
+                                input_el.send_keys(ran_date.strftime("%m/%Y"))
                             except exceptions.ElementNotInteractableException:
                                 continue
                         else:
                             try:
-                                input_el.send_keys(f'01/01/{year}')
+                                input_el.send_keys(ran_date.strftime("%d/%m/%Y"))
                             except exceptions.ElementNotInteractableException:
                                 continue
                     elif ng_model == 'householdExpense.comments':
@@ -235,10 +285,10 @@ class MultipleDealCreator:
                         if input_aria_label in self.address_placeholders:
                             address_input = AddressInput()
                             if not address_input.ul_list_selector(self.driver, input_el,
-                                                                  f'{random.randrange(1, 100)} la'):
+                                                                  f'{random.randrange(1, 50)} {random_string_create(1)}'):
                                 address_input.address_repeat = 0
                                 address_input.ul_list_selector(self.driver, input_el,
-                                                               f'{random.randrange(1, 50)} te')
+                                                               f'{random.randrange(1, 20)} {random_string_create(1)}')
 
                         elif input_aria_label == 'Employer ABN':
                             input_el.send_keys(str(random.randrange(10000000000, 100000000000)))
@@ -277,6 +327,8 @@ class MultipleDealCreator:
 
     def md_select_handler(self, content):
         for md_select in content.find_elements(by=By.TAG_NAME, value='md-select'):
+            if random.choice([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) == (8 or 9):
+                continue
             try:
                 if not element_clicker(self.driver, web_element=md_select):
                     continue
@@ -315,7 +367,7 @@ class MultipleDealCreator:
             except exceptions.StaleElementReferenceException:
                 continue
 
-    def client_profile_input(self, deal_url):
+    def run(self, deal_url):
         if deal_url != self.driver.current_url:
             self.driver.get(deal_url)
 
@@ -327,14 +379,10 @@ class MultipleDealCreator:
         but getting all els and going for the last one seems solid enough
         """
         profile_buttons = self.driver.find_elements(by=By.CSS_SELECTOR, value='st-sidebar-block button')
+        # TODO - if the deal is settled the last element will be SWITCH, this needs to be changed
         element_clicker(self.driver, web_element=profile_buttons[-1])
         # TODO - 30 seconds wait for the st-contact which is in 90% of situations the first page, maybe try another way
-        try:
-            WdWait(self.driver, 10).until(
-                ec.presence_of_element_located((By.CSS_SELECTOR, 'st-contact')))
-        except exceptions.TimeoutException:
-            WdWait(self.driver, 20).until(
-                ec.presence_of_element_located((By.CSS_SELECTOR, 'st-contact')))
+        element_waiter(self.driver, css_selector='st-contact')
 
         contact_buttons = self.driver.find_elements(by=eval(CONTACT_BUTTONS['by']),
                                                     value=CONTACT_BUTTONS['value'])
@@ -346,7 +394,7 @@ class MultipleDealCreator:
                     'web_el': contact,
                     'type': contact.find_element(by=By.CSS_SELECTOR, value='small > span').text,
                     'contact_name': contact.find_element(by=By.CSS_SELECTOR, value='span.truncate').text
-                 }
+                }
             )
 
         for contact_button in contact_info:
@@ -427,12 +475,34 @@ class MultipleDealCreator:
                     ec.presence_of_element_located((eval(CONTENT['by']), CONTENT['value'])))
 
                 if separator == 'Income':
-                    income_buttons = self.driver.find_elements(by=eval(INFO_BUTTONS['by']),
-                                                               value=INFO_BUTTONS['value'])
-                    for income_button in income_buttons:
 
-                        if not element_clicker(self.driver, web_element=income_button):
-                            continue
+                    if self.income['type'] == 'all':
+                        income_buttons = self.driver.find_elements(by=eval(INFO_BUTTONS['by']),
+                                                                   value=INFO_BUTTONS['value'])
+                        for _ in range(0, self.income['num']):
+                            for income_button in income_buttons:
+                                if not element_clicker(self.driver, web_element=income_button):
+                                    continue
+                    else:
+                        order = self.income['type'].split(',')
+                        for inc_type in order:
+                            try:
+                                if inc_type == 'payg':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-incomes > div button[aria-label="Salaried employee"]')
+                                elif inc_type == 'bus':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-incomes > div button[aria-label="Business income"]')
+
+                                elif inc_type == 'tax':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-incomes > div button[aria-label="Other taxable income"]')
+
+                                elif inc_type == 'ntax':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-incomes > div button[aria-label="Non taxable income"]')
+                            except exceptions.ElementNotInteractableException:
+                                continue
 
                     sleep(0.1)
 
@@ -444,6 +514,8 @@ class MultipleDealCreator:
 
                 elif separator == 'Expenses':
                     # TODO - Make this smarter, check if one is already added and so forth
+                    # TODO - Check if there are more than 2 clients
+                    # TODO - Make sure the state of the page is good
                     WdWait(self.driver, 10).until(
                         ec.presence_of_element_located((By.TAG_NAME, 'st-households')))
                     self.driver.find_element(by=eval(ADD_HOUSEHOLD['by']),
@@ -472,14 +544,55 @@ class MultipleDealCreator:
 
                     self.select_el_handler(content)
 
-                if separator == 'Assets':
-                    assets = self.driver.find_elements(by=eval(INFO_BUTTONS['by']),
-                                                       value=INFO_BUTTONS['value'])
-                    for asset in assets:
-                        if not element_clicker(self.driver, web_element=asset):
-                            continue
-                        if not element_clicker(self.driver, web_element=asset):
-                            continue
+                elif separator == 'Assets':
+                    if self.assets['type'] == 'all':
+                        assets = self.driver.find_elements(by=eval(INFO_BUTTONS['by']),
+                                                           value=INFO_BUTTONS['value'])
+                        for _ in range(0, self.assets['num']):
+                            for asset in assets:
+                                if not element_clicker(self.driver, web_element=asset):
+                                    continue
+                    else:
+                        order = self.assets['type'].split(',')
+                        # TODO
+                        for ass_type in order:
+                            try:
+                                if ass_type == 'ooc':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-assets > div button[aria-label="Owner occupier property address"]')
+                                elif ass_type == 'inv':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-assets > div button[aria-label="Investment property address"]')
+
+                                elif ass_type == 'veh':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-assets > div button[aria-label="Vehicle make and model"]')
+
+                                elif ass_type == 'acc':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-assets > div button[aria-label="Bank accounts"]')
+
+                                elif ass_type == 'hco':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-assets > div button[aria-label="Home contents"]')
+
+                                elif ass_type == 'sfi':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-assets > div button[aria-label="Super fund institution"]')
+
+                                elif ass_type == 'shr':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-assets > div button[aria-label="Shares"]')
+
+                                elif ass_type == 'oth':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-assets > div button[aria-label="Other"]')
+
+                                elif ass_type == 'bsh':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-assets > div button[aria-label="Balance sheet"]')
+                            except exceptions.ElementNotInteractableException:
+                                continue
 
                     self.checkbox_handler(content)
 
@@ -490,18 +603,49 @@ class MultipleDealCreator:
                     self.md_select_handler(content)
 
                 elif separator == 'Liabilities':
+                    if self.liabilities['type'] == 'all':
+                        liabilities = self.driver.find_elements(by=eval(INFO_BUTTONS['by']),
+                                                                value=INFO_BUTTONS['value'])
+                        for _ in range(0, self.liabilities['num']):
+                            for liability in liabilities:
+                                if not element_clicker(self.driver, web_element=liability):
+                                    continue
+                    else:
+                        order = self.liabilities['type'].split(',')
+                        for liab_type in order:
+                            try:
+                                if liab_type == 'mtg':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-liabilities > div button[aria-label="Mortgage loan"]')
+                                elif liab_type == 'cca':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-liabilities > div button[aria-label="Credit card"]')
 
-                    liabilities = self.driver.find_elements(by=eval(INFO_BUTTONS['by']),
-                                                            value=INFO_BUTTONS['value'])
+                                elif liab_type == 'vhl':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-liabilities > div button[aria-label="Vehicle loan"]')
 
-                    for _ in range(0, random.randint(3, 7)):
-                        element_clicker(self.driver, web_element=random.choice(liabilities))
+                                elif liab_type == 'prl':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-liabilities > div button[aria-label="Personal loan"]')
 
-                    # for liability in liabilities:
-                    #     if not element_clicker(self.driver, web_element=liability):
-                    #         continue
-                    #     if not element_clicker(self.driver, web_element=liability):
-                    #         continue
+                                elif liab_type == 'sml':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-liabilities > div button[aria-label="SMSF loan"]')
+
+                                elif liab_type == 'stl':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-liabilities > div button[aria-label="Student loan"]')
+
+                                elif liab_type == 'oth':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-liabilities > div button[aria-label="Other"]')
+
+                                elif liab_type == 'bsh':
+                                    element_clicker(self.driver,
+                                                    css_selector='st-liabilities > div button[aria-label="Balance sheet"]')
+                            except exceptions.ElementNotInteractableException:
+                                continue
 
                     self.select_el_handler(content)
 
@@ -542,8 +686,7 @@ class MultipleDealCreator:
                     for insurance in insurances:
                         if not element_clicker(self.driver, web_element=insurance):
                             continue
-                        if not element_clicker(self.driver, web_element=insurance):
-                            continue
+
 
                     self.select_el_handler(content)
 
@@ -556,8 +699,6 @@ class MultipleDealCreator:
                     other_advisers = self.driver.find_elements(by=eval(INFO_BUTTONS['by']),
                                                                value=INFO_BUTTONS['value'])
                     for other_adviser in other_advisers:
-                        if not element_clicker(self.driver, web_element=other_adviser):
-                            continue
                         if not element_clicker(self.driver, web_element=other_adviser):
                             continue
 
