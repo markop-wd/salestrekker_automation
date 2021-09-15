@@ -22,10 +22,13 @@ from main.Permanent.login import LogIn
 from main.mail import mail_get
 
 
-def random_string_create(char_nums: int = 10):
-    result_str = ''.join(random.choice(string.ascii_letters) for i in range(char_nums))
-    return result_str
-
+def random_string_create(char_nums: int = 10, chars: bool = True):
+    if chars:
+        result_str = ''.join(random.choice(string.ascii_letters) for _ in range(char_nums))
+        return result_str
+    else:
+        result_str = ''.join(random.choice(string.digits) for _ in range(char_nums))
+        return result_str
 
 # TODO
 def accreditation_fill(driver: Chrome, ent: str, all_new: bool = True):

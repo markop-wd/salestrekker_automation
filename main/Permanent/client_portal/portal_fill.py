@@ -1,7 +1,6 @@
 import os
 import random
 import string
-import traceback
 from datetime import datetime
 from time import sleep
 
@@ -10,10 +9,11 @@ from selenium.webdriver import Chrome, ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as ec
-from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait as wd_wait
 
 from main.Permanent import helper_funcs
+
+# TODO - Adapt this to the pages model
 
 
 class _SelectElHandler:
@@ -31,43 +31,12 @@ class _SelectElHandler:
     def __call__(self, *args, **kwargs):
         self._select_el_handler(kwargs['section'])
 
-    def _select_logic(self, select_element, index='random'):
-        try:
-            current_sel = Select(select_element)
-        except exceptions.StaleElementReferenceException as inst:
-            print('Stale reference', inst)
-            print(inst.stacktrace)
-        except Exception as exc:
-            traceback.print_stack()
-            traceback.print_exc()
-            raise exc
-        else:
-            if index == 'random':
-                try:
-                    index = random.randrange(1, len(current_sel.options))
-                except ValueError:
-                    index = random.randrange(0, 2)
-            else:
-                index = int(index)
-            # TODO - Handle the selector exceptions properly
-            try:
-                current_sel.select_by_index(index)
-
-            except exceptions.NoSuchElementException:
-                print('No such sel')
-
-            except ValueError:
-                try:
-                    current_sel.select_by_index(1)
-                except ValueError:
-                    current_sel.select_by_index(0)
-
     def _select_el_handler(self, content):
         all_selects = content.find_elements(by=By.TAG_NAME, value='select')
         if all_selects:
             for select_el in all_selects:
                 try:
-                    self._select_logic(select_el)
+                    helper_funcs.selector(self.driver, select_element=select_el)
                 except exceptions.StaleElementReferenceException:
                     print('select el handler stale')
                     continue
@@ -88,7 +57,8 @@ class _TextAreaHandler:
     def __call__(self, *args, **kwargs):
         self._textarea_el_handler(kwargs['section'])
 
-    def _textarea_logic(self, text_area_el: WebElement):
+    @staticmethod
+    def _textarea_logic(text_area_el: WebElement):
 
         initial_value = text_area_el.get_attribute('value')
 
@@ -121,7 +91,8 @@ class _InputElHandler:
     def __call__(self, *args, **kwargs):
         self._input_el_handler(kwargs['section'])
 
-    def _input_logic(self, input_el: WebElement):
+    @staticmethod
+    def _input_logic(input_el: WebElement):
 
         initial_value = input_el.get_attribute('value')
         placeholder = input_el.get_attribute('placeholder')
@@ -129,15 +100,15 @@ class _InputElHandler:
 
         if initial_value == '$0':
             value = str(random.randrange(0, 50000))
-            self._input_send(input_el, value)
+            input_el.send_keys(value)
 
         elif initial_value == '$0.00':
             value = str(random.randrange(100, 500000))
-            self._input_send(input_el, value)
+            input_el.send_keys(value)
 
         elif initial_value == '0':
             value = str(random.randrange(0, 10000))
-            self._input_send(input_el, value)
+            input_el.send_keys(value)
 
         elif placeholder == 'DD/MM/YYYY':
             if not initial_value:
@@ -149,7 +120,7 @@ class _InputElHandler:
                 day = f"0{_day}" if _day in range(1, 10) else _day
                 month = f"0{_month}" if _month in range(1, 10) else _month
 
-                self._input_send(input_el, f'{day}/{month}/{year}')
+                input_el.send_keys(f'{day}/{month}/{year}')
 
         elif placeholder == 'MM/YYYY':
             if not initial_value:
@@ -159,7 +130,7 @@ class _InputElHandler:
 
                 month = f"0{_month}" if _month in range(1, 10) else _month
 
-                self._input_send(input_el, f'{month}/{year}')
+                input_el.send_keys(f'{month}/{year}')
 
         elif placeholder == 'Start typing address here...':
             print('Address')
@@ -167,13 +138,10 @@ class _InputElHandler:
 
         elif name in ['work', 'home']:
             if not initial_value:
-                random_string = ''.join(random.sample(string.digits, 9))
-                self._input_send(input_el, random_string)
+                input_el.send_keys(helper_funcs.random_string_create(char_nums=9, chars=False))
 
         elif not initial_value:
-
-            random_string = ''.join(random.sample(string.ascii_letters, random.randrange(4, 7)))
-            self._input_send(input_el, random_string)
+            input_el.send_keys(helper_funcs.random_string_create(char_nums=6))
 
     def _checkbox_logic(self, input_el):
         if bool(random.randrange(0, 2)):
@@ -194,14 +162,12 @@ class _InputElHandler:
 
             if checkboxes:
                 for input_el in checkboxes:
-                    # TODO - Here I get the input el, make him call different logic functions based on different properties
                     try:
                         if bool(random.randrange(0, 2)):
                             try:
                                 input_el.click()
-                                self.driver.execute_script("arguments[0].click();", input_el)
                             except exceptions.ElementClickInterceptedException:
-                                pass
+                                self.driver.execute_script("arguments[0].click();", input_el)
 
                     except exceptions.ElementNotInteractableException:
                         print('No interacto')
@@ -210,7 +176,8 @@ class _InputElHandler:
                         print('Stalino')
                         continue
             for input_el in reg_input:
-                # TODO - Here I get the input el, make him call different logic functions based on different properties
+                # TODO - Here I get the input el
+                #  make him call different logic functions based on different properties
                 try:
                     self._input_logic(input_el)
                 except exceptions.ElementNotInteractableException:
@@ -219,17 +186,6 @@ class _InputElHandler:
                 except exceptions.StaleElementReferenceException:
                     print('Stalino')
                     continue
-
-    # TODO this might be useless
-    def _input_send(self, input_el: WebElement, input_string: str):
-        # if input_el.get_attribute('value'):
-        #     input_el.send_keys(Keys.CONTROL + "a")
-        #     input_el.send_keys(Keys.DELETE)
-        #     sleep(.2)
-        input_el.send_keys(input_string)
-
-        # input_el.send_keys(Keys.CONTROL + "a")
-        # input_el.send_keys(Keys.DELETE)
 
 
 class PortalFill:
@@ -252,7 +208,9 @@ class PortalFill:
         #                                               value='div.sections > div.section')
 
         header_titles_els = self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                      value='div.sections > div.section > div.section-header > span:nth-of-type(2)')
+                                                      value='div.sections > div.section > '
+                                                            'div.section-header > '
+                                                            'span:nth-of-type(2)')
 
         self.header_titles = [span.text
                               for span in header_titles_els]
@@ -261,7 +219,8 @@ class PortalFill:
 
         for header_num in range(0, len_headers):
 
-            # TODO - Utilize the data-active attribute as it requires that the header is selected and any element within the header
+            # TODO - Utilize the data-active attribute as it requires that the header is selected
+            #  and any element within the header
             # if div_sections[header_num].get_attribute('data-active') != 'true':
             #     div_sections[header_num].click()
 
@@ -291,7 +250,8 @@ class PortalFill:
                 # TODO - Testing li_text text
                 li_text = self.li_els[li_num].text
                 current_li_num = li_num
-                # li_text = self.li_els[li_num].find_element(by=By.CSS_SELECTOR, value="span:nth-of-type(2)").text
+                # li_text = self.li_els[li_num].find_element(by=By.CSS_SELECTOR,
+                # value="span:nth-of-type(2)").text
 
                 self.driver.execute_script("arguments[0].click();", self.li_els[li_num])
                 sections_handled = self._section_loop_logic(header_num=header_num, li_num=li_num)
@@ -356,7 +316,7 @@ class PortalFill:
                 if section_class == 'top-header':
                     continue
 
-                elif section_class == 'select-box-container':
+                if section_class == 'select-box-container':
 
                     clicked = self._section_box_handler(section)
 
@@ -366,7 +326,6 @@ class PortalFill:
                         if self.li_els[li_num].get_attribute('class') != 'steps-active':
                             print('Moving on')
                             return False
-                            pass
 
                     # if clicked:
                     #     current_li_num += 1
@@ -379,8 +338,6 @@ class PortalFill:
                         input_h(section=section)
                     with _TextAreaHandler(self.driver) as text_h:
                         text_h(section=section)
-
-                    # TODO - Maybe make a textarea handler
 
                 elif section_class in ['row-compact', 'row row-singular']:
                     self._section_box_handler(section)
@@ -403,11 +360,10 @@ class PortalFill:
         div_box_to_click = random.choice(
             section.find_elements(by=By.CSS_SELECTOR, value='div.select-box'))
 
-        # div_box_to_click = driver.find_elements(by=By.CSS_SELECTOR, value='div.select-box')[-1]
-
         if 'select-box-has-dropdown' in div_box_to_click.get_attribute('class'):
             div_dropbox_options = div_box_to_click.find_elements(by=By.CSS_SELECTOR,
-                                                                 value='div.select-box-dropdown-option')
+                                                                 value='div.select-box-dropdown'
+                                                                       '-option')
             div_option_to_click = random.choice(div_dropbox_options)
             action = ActionChains(self.driver)
             for _ in range(3):
@@ -419,30 +375,26 @@ class PortalFill:
                 else:
                     break
 
-            # css_visibility(driver)
-
             try:
                 div_option_to_click.click()
-            except exceptions.ElementNotInteractableException:
-                return False
-            except exceptions.StaleElementReferenceException:
-                return False
             except exceptions.ElementClickInterceptedException:
                 self.driver.execute_script("arguments[0].click();", div_option_to_click)
                 return True
             else:
                 return True
+            finally:
+                return False
 
         else:
             try:
                 div_box_to_click.click()
             except exceptions.ElementClickInterceptedException:
                 self.driver.execute_script("arguments[0].click();", div_box_to_click)
-            except Exception as exc:
-                print(exc)
-                return False
+                return True
             else:
                 return True
+            finally:
+                return False
 
     def _main_header_reselect(self, pos, repeat=2):
         """
@@ -473,7 +425,9 @@ class PortalFill:
                                            value=f"//span[text() = '{header_title}']/../..")
         except exceptions.NoSuchElementException:
             header_text_els = self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                        value='div.sections > div.section > div.section-header > span:nth-of-type(2)')
+                                                        value='div.sections > div.section > '
+                                                              'div.section-header > '
+                                                              'span:nth-of-type(2)')
 
             section_header_titles = [div.text
                                      for div in header_text_els]
@@ -509,7 +463,9 @@ class PortalFill:
         os.mkdir(f"CP_Screenshots/{deal_id}")
 
         header_titles_els = self.driver.find_elements(by=By.CSS_SELECTOR,
-                                                      value='div.sections > div.section > div.section-header > span:nth-of-type(2)')
+                                                      value='div.sections > div.section > '
+                                                            'div.section-header > '
+                                                            'span:nth-of-type(2)')
 
         self.header_titles = [span.text
                               for span in header_titles_els]
@@ -531,14 +487,15 @@ class PortalFill:
 
             for li_num in range(0, len_li_els):
                 li_text = self.li_els[li_num].text
-                # li_text = self.li_els[li_num].find_element(by=By.CSS_SELECTOR, value="span:nth-of-type(2)").text
+                # li_text = self.li_els[li_num].find_element(by=By.CSS_SELECTOR,
+                # value="span:nth-of-type(2)").text
 
                 self.driver.execute_script("arguments[0].click();", self.li_els[li_num])
 
                 if self.header_titles[header_num] == 'Documents':
                     # TODO - Wait for the stuff to load on this page
                     sleep(10)
-                    # continue
 
                 self.driver.get_screenshot_as_file(
-                    f"CP_Screenshots/{deal_id}/{header_num + 1}. {self.header_titles[header_num]}/{li_num + 1}. {li_text}.png")
+                    f"CP_Screenshots/{deal_id}/{header_num + 1}. "
+                    f"{self.header_titles[header_num]}/{li_num + 1}. {li_text}.png")

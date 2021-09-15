@@ -26,7 +26,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 import Permanent.client_portal.login
 from Permanent import org_funcs, user_manipulation, workflow_manipulation
 from Permanent.client_portal.portal_fill import PortalFill
-from Permanent.deal_create import CreateDeal
+from main.Permanent.deal_create.deal_create import CreateDeal
 from Permanent.deal_fill import FillDeal
 from Permanent.document_comparator import DocumentCheck
 from Permanent.login import LogIn
