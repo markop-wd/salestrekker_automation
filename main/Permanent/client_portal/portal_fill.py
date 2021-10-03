@@ -195,6 +195,7 @@ class PortalFill:
         self.header_titles = []
         self.li_els = []
         self.header_div = None
+        self.main()
 
     def main(self):
 

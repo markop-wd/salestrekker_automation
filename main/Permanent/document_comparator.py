@@ -1,144 +1,112 @@
 from datetime import datetime, date
 from time import sleep
 
-from selenium.common import exceptions
 from selenium.webdriver import Chrome
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as ec
-from selenium.webdriver.support.wait import WebDriverWait as WdWait
 
+from main.Permanent.helper_funcs import element_waiter
 from main.Permanent.org_funcs import org_changer
 
 
-class DocumentCheck:
-    def __init__(self, driver: Chrome, ent):
-        self.ent = ent
-        self.driver = driver
-        self.document_list = []
-        self.main_url = "https://" + ent + ".salestrekker.com"
-        self.parent_org = ''
-        self.child_org = ''
+def document_comparison(driver: Chrome, parent_org: str, child_org: str, wait: bool):
+    """
 
-    def document_get(self, org):
-        # TODO - LABEL
+    Args:
+        driver:
+        parent_org:
+        child_org:
+        wait:
 
-        self.parent_org = org
+    Returns:
 
-        org_changer(self.driver, org)
+    """
+    parent_list = _document_get(driver, parent_org)
+    if wait:
+        sleep(320)
+    child_list = _document_get(driver, child_org)
 
-        self.driver.get(self.main_url + '/settings/documents')
-        try:
-            WdWait(self.driver, 20).until(
-                ec.visibility_of_element_located((By.TAG_NAME, 'st-list')))
-        except exceptions.TimeoutException:
-            self.driver.get(self.main_url + '/settings/documents')
-            try:
-                WdWait(self.driver, 20).until(
-                    ec.visibility_of_element_located((By.TAG_NAME, 'st-list')))
-            except exceptions.TimeoutException:
-                self.driver.get(self.main_url + '/settings/documents')
-                WdWait(self.driver, 20).until(
-                    ec.visibility_of_element_located((By.TAG_NAME, 'st-list')))
+    ent = driver.current_url.split('.')[0].split('/')[-1]
+    _list_comparison(ent=ent, parent_org=parent_org, child_org=child_org, child_list=child_list, parent_list=parent_list)
 
-        main_content = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                value='body > md-content')
 
-        last_height = self.driver.execute_script(
+def _document_get(driver: Chrome, org: str):
+
+    org_changer(driver, org)
+    ent = driver.current_url.split('.')[0].split('/')[-1]
+    documents_url = "https://" + ent + '/salestrekker.com/settings/documents'
+
+    driver.get(documents_url)
+    element_waiter(driver, css_selector='st-list', url=documents_url)
+
+    main_content = driver.find_element(by=By.CSS_SELECTOR,
+                                       value='body > md-content')
+
+    last_height = driver.execute_script(
+        "return arguments[0].scrollHeight", main_content)
+    sleep(1)
+
+    while True:
+        driver.execute_script(
+            f"arguments[0].scroll(0,{last_height});", main_content)
+        # TODO - remove manual sleep
+        sleep(3)
+        new_height = driver.execute_script(
             "return arguments[0].scrollHeight", main_content)
-        sleep(1)
-        while True:
-            self.driver.execute_script(
-                f"arguments[0].scroll(0,{last_height});", main_content)
-            sleep(3)
-            new_height = self.driver.execute_script(
-                "return arguments[0].scrollHeight", main_content)
 
-            if new_height == last_height:
-                break
-            last_height = new_height
+        if new_height == last_height:
+            break
+        last_height = new_height
 
-        self.document_list = [
-            document.text for document in self.driver.find_elements(
-                by=By.CSS_SELECTOR, value='st-list-item a > content > span')
-        ]
+    document_list = [
+        document.text for document in driver.find_elements(
+            by=By.CSS_SELECTOR, value='st-list-item a > content > span')
+    ]
+    return document_list
 
-    def document_compare(self, org):
 
-        writer_time = str(datetime.today())
+def _list_comparison(ent: str, child_org: str, parent_org: str, child_list: list[str], parent_list: list[str]):
 
-        self.child_org = org
+    writer_time = str(datetime.today())
 
-        org_changer(self.driver, org)
+    #  First check the symmetric difference if it returns false (meaning that there isn't a single
+    #  differing element) it will check the difference both ways from new org to group and vice versa
 
-        self.driver.get(self.main_url + '/settings/documents')
-        self.driver.refresh()
-        WdWait(self.driver, 30).until(
-            ec.visibility_of_element_located((By.TAG_NAME, 'st-list')))
-        main_content = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                value='body > md-content')
+    list_difference = set(child_list).symmetric_difference(
+        set(parent_list))
+    if not list_difference:
+        with open(f"Reports/{date.today()}/document_inheritance.txt",
+                  "a+") as doc_inherit:
+            doc_inherit.write(ent + " - " + writer_time + ' - From ' +
+                              parent_org + ' to ' + child_org +
+                              ' no disrepancies noted between documents\n')
 
-        last_height = self.driver.execute_script(
-            "return arguments[0].scrollHeight", main_content)
-        sleep(1)
-        while True:
-            self.driver.execute_script(
-                f"arguments[0].scroll(0,{last_height});", main_content)
-            sleep(3)
-            new_height = self.driver.execute_script(
-                "return arguments[0].scrollHeight", main_content)
+    else:
+        not_inherited = [('\t' + documentino + '\n')
+                         for documentino in parent_list
+                         if documentino not in child_list]
 
-            if new_height == last_height:
-                break
-            last_height = new_height
-
-        new_org_document_list = [
-            document.text for document in self.driver.find_elements(
-                by=By.CSS_SELECTOR, value='st-list-item a > content > span')
-        ]
-
-        # TODO - Check if there is an easier way to handle this
-
-        #  First check the symmetric difference if it returns false (meaning that there isn't a single
-        #  differing element) it will check the difference both ways from new org to group and vice versa
-        list_difference = set(new_org_document_list).symmetric_difference(
-            set(self.document_list))
-
-        if not list_difference:
+        if not_inherited:
             with open(f"Reports/{date.today()}/document_inheritance.txt",
                       "a+") as doc_inherit:
-                doc_inherit.write(self.ent + " - " + writer_time + ' - From ' +
-                                  self.parent_org + ' to ' + self.child_org +
-                                  ' no disrepancies noted between documents\n')
+                doc_inherit.write(ent + " - " + writer_time + ' - From ' +
+                                  parent_org + ' to ' +
+                                  child_org +
+                                  " the following wasn't inherited\n")
+                doc_inherit.writelines(not_inherited)
+                doc_inherit.write('\n')
 
-        else:
-            not_inherited = [('\t' + documentino + '\n')
-                             for documentino in self.document_list
-                             if documentino not in new_org_document_list]
+        extra_docs = [('\t' + documentino + '\n')
+                      for documentino in child_list
+                      if documentino not in parent_list]
 
-            if not_inherited:
-                with open(f"Reports/{date.today()}/document_inheritance.txt",
-                          "a+") as doc_inherit:
-                    doc_inherit.write(self.ent + " - " + writer_time + ' - From ' +
-                                      self.parent_org + ' to ' +
-                                      self.child_org +
-                                      " the following wasn't inherited\n")
-                    doc_inherit.writelines(not_inherited)
-                    doc_inherit.write('\n')
-
-            extra_docs = [('\t' + documentino + '\n')
-                          for documentino in new_org_document_list
-                          if documentino not in self.document_list]
-
-            if extra_docs:
-                with open(f"Reports/{date.today()}/document_inheritance.txt",
-                          "a+") as doc_inherit:
-                    doc_inherit.write(self.ent + " - " +
-                                      writer_time +
-                                      " - Documents are present in the child org " +
-                                      self.child_org +
-                                      ' that are not present in the parent org ' +
-                                      self.parent_org + '\n')
-                    doc_inherit.writelines(not_inherited)
-                    doc_inherit.write('\n')
-
-        sleep(1)
+        if extra_docs:
+            with open(f"Reports/{date.today()}/document_inheritance.txt",
+                      "a+") as doc_inherit:
+                doc_inherit.write(ent + " - " +
+                                  writer_time +
+                                  " - Documents are present in the child org " +
+                                  child_org +
+                                  ' that are not present in the parent org ' +
+                                  parent_org + '\n')
+                doc_inherit.writelines(not_inherited)
+                doc_inherit.write('\n')
