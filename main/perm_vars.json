@@ -45,7 +45,9 @@
       "learn": "0. Learn GEM"
     }
   },
+
   "workflows": "None-Asset Finance-Commercial Loan-Conveyancing-Home Loan-Insurance-Personal Loan-Real Estate",
+
   "test_users": {
     "matthew": {
       "username": "Matthew Test",
