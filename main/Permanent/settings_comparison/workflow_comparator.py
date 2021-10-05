@@ -8,32 +8,11 @@ from main.Permanent.helper_funcs import element_waiter
 from main.Permanent.org_funcs import org_changer
 
 
-def worfklow_comparison(driver: Chrome, parent_org: str, child_org: str, wait: bool):
-    """
+def workflow_get(driver: Chrome, org: str):
 
-    Args:
-        driver:
-        parent_org:
-        child_org:
-        wait:
-
-    Returns:
-
-    """
-    parent_list = _workflow_get(driver, parent_org)
-    if wait:
-        sleep(320)
-    child_list = _workflow_get(driver, child_org)
-
-    ent = driver.current_url.split('.')[0].split('/')[-1]
-    _list_comparison(ent=ent, parent_org=parent_org, child_org=child_org, child_list=child_list,
-                     parent_list=parent_list)
-
-
-def _workflow_get(driver: Chrome, org: str):
     org_changer(driver, org)
     ent = driver.current_url.split('.')[0].split('/')[-1]
-    workflow_url = 'https://' + ent + 'salestrekker.com/settings/workflows'
+    workflow_url = 'https://' + ent + '.salestrekker.com/settings/workflows'
 
     driver.get(workflow_url)
     element_waiter(driver, css_selector='st-list', url=workflow_url)
@@ -62,7 +41,7 @@ def _workflow_get(driver: Chrome, org: str):
     return workflow_list
 
 
-def _list_comparison(ent: str, child_org: str, parent_org: str, child_list: list[str], parent_list: list[str]):
+def wf_comparison_report(ent: str, child_org: str, parent_org: str, child_list: list[str], parent_list: list[str]):
     writer_time = str(datetime.today())
 
     #  First check the symmetric difference if it returns false (meaning that there isn't a single

@@ -15,9 +15,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 from Permanent import org_funcs, user_manipulation, workflow_manipulation
 from main.Permanent.deal_create.deal_create import CreateDeal
 from Permanent.deal_fill import FillDeal
-from Permanent.document_comparator import DocumentCheck, document_comparison
+from main.Permanent.settings_comparison import main_comparator
 from Permanent.login import LogIn
-from Permanent.workflow_comparator import WorkflowCheck, worfklow_comparison
 
 
 def test_worker(ent: str = 'dev', password: str = "+!'Y$pE+{Bw_oXB.",
@@ -60,28 +59,35 @@ def simple_worker(driver: Chrome, ent: str, password: str, email: str = 'helpdes
     start_time = datetime.now()
 
     LogIn(driver, ent, email, password).log_in()
+
     org_funcs.org_changer(driver, f'Test Organization {date.today()}')
 
-    hl_workflow = 'https://gemnz.salestrekker.com/board/b8bc12e1-95a8-4c18-9fea-f0b3ab5cbea7'
-    af_workflow = 'https://gemnz.salestrekker.com/board/48598fa2-03c9-4295-9d8b-a2afaddbd77e'
-    if con_arg == 1:
-        deal_1 = CreateDeal(ent, driver)
-        deal1_url = deal_1.run(workflow=hl_workflow, deal_owner_name='Phillip Salestrekker',
-                               client_email='matthew@salestrekker.com')
-        FillDeal(driver).run(deal1_url)
-    if con_arg == 2:
-        deal_2 = CreateDeal(ent, driver)
-        deal_2_url = deal_2.run(workflow=af_workflow, deal_owner_name='Phillip Salestrekker',
-                                client_email='matthew@salestrekker.com',
-                                af_type='cons')
-        FillDeal(driver).run(deal_2_url)
-    if con_arg == 3:
-        deal_3 = CreateDeal(ent, driver)
-        deal3_url = deal_3.run(workflow=af_workflow, deal_owner_name='Phillip Salestrekker',
-                               client_email='matthew@salestrekker.com',
-                               af_type='comm')
-        FillDeal(driver).run(deal3_url)
+    hl_workflow = ''
+    af_workflow = ''
+    for workflow in workflow_manipulation.get_all_workflows(driver, ent):
+        if "Test WF - Home Loan" in workflow['name']:
+            hl_workflow = workflow['link']
+        if "Test WF - Asset Finance" in workflow['name']:
+            af_workflow = workflow['link']
 
+    if hl_workflow or af_workflow:
+        deal_create = CreateDeal(ent, driver)
+        deal_fill = FillDeal(driver)
+        # hd_username = user_manipulation.get_current_username(driver)
+        if hl_workflow:
+            deal_link = deal_create.run(workflow=hl_workflow, deal_owner_name='Phillip Djukanovic',
+                                        client_email='matthew@salestrekker.com')
+            deal_fill.run(deal_link)
+        if af_workflow:
+            deal_link = deal_create.run(workflow=af_workflow, deal_owner_name='Phillip Djukanovic',
+                                        af_type='cons',
+                                        client_email='matthew@salestrekker.com')
+            deal_fill.run(deal_link)
+
+            deal_link = deal_create.run(workflow=af_workflow, deal_owner_name='Phillip Djukanovic',
+                                        af_type='comm',
+                                        client_email='matthew@salestrekker.com')
+            deal_fill.run(deal_link)
     sleep(3)
     print(f'finished {ent}', datetime.now() - start_time)
 
@@ -282,9 +288,7 @@ def worker_main(driver: Chrome, ent: str, password: str, email: str = 'helpdesk@
     org_funcs.organization_create(driver, ent, runner_learn_org, runner_main_org)
 
     # Compares
-    document_comparison(driver=driver, parent_org=runner_main_org,
-                        child_org=f'Test Organization {date.today()}', wait=True)
-    worfklow_comparison(driver=driver, parent_org=runner_main_org,
+    main_comparator.run(driver=driver, parent_org=runner_learn_org,
                         child_org=f'Test Organization {date.today()}', wait=True)
 
     # Add all users defined in perm_var.json to the organization you are currently in (new org by the current logic)

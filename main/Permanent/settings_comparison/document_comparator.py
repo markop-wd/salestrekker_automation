@@ -8,32 +8,11 @@ from main.Permanent.helper_funcs import element_waiter
 from main.Permanent.org_funcs import org_changer
 
 
-def document_comparison(driver: Chrome, parent_org: str, child_org: str, wait: bool):
-    """
-
-    Args:
-        driver:
-        parent_org:
-        child_org:
-        wait:
-
-    Returns:
-
-    """
-    parent_list = _document_get(driver, parent_org)
-    if wait:
-        sleep(320)
-    child_list = _document_get(driver, child_org)
-
-    ent = driver.current_url.split('.')[0].split('/')[-1]
-    _list_comparison(ent=ent, parent_org=parent_org, child_org=child_org, child_list=child_list, parent_list=parent_list)
-
-
-def _document_get(driver: Chrome, org: str):
+def document_get(driver: Chrome, org: str):
 
     org_changer(driver, org)
     ent = driver.current_url.split('.')[0].split('/')[-1]
-    documents_url = "https://" + ent + '/salestrekker.com/settings/documents'
+    documents_url = "https://" + ent + '.salestrekker.com/settings/documents'
 
     driver.get(documents_url)
     element_waiter(driver, css_selector='st-list', url=documents_url)
@@ -64,7 +43,7 @@ def _document_get(driver: Chrome, org: str):
     return document_list
 
 
-def _list_comparison(ent: str, child_org: str, parent_org: str, child_list: list[str], parent_list: list[str]):
+def doc_comparison_report(ent: str, child_org: str, parent_org: str, child_list: list[str], parent_list: list[str]):
 
     writer_time = str(datetime.today())
 
