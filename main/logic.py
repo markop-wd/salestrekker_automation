@@ -15,7 +15,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from Permanent import org_funcs, user_manipulation, workflow_manipulation
 from main.Permanent.deal_create.deal_create import CreateDeal
 from Permanent.deal_fill import FillDeal
-from main.Permanent.settings_comparison import main_comparator
+from main.Permanent import main_comparator
 from Permanent.login import LogIn
 
 
@@ -56,38 +56,19 @@ def simple_worker(driver: Chrome, ent: str, password: str, email: str = 'helpdes
         driver:
         ent (object):
     """
+    with open("perm_vars.json", "r") as perm_json:
+        perm_vars = json.load(perm_json)
+
+    runner_learn_org = perm_vars['ents_info'][ent]['learn']
+    runner_main_org = perm_vars['ents_info'][ent]['main']
+
     start_time = datetime.now()
 
     LogIn(driver, ent, email, password).log_in()
 
-    org_funcs.org_changer(driver, f'Test Organization {date.today()}')
+    main_comparator.run(driver=driver, parent_org=runner_learn_org,
+                        child_org=f'Test Organization {date.today()}', wait=False)
 
-    hl_workflow = ''
-    af_workflow = ''
-    for workflow in workflow_manipulation.get_all_workflows(driver, ent):
-        if "Test WF - Home Loan" in workflow['name']:
-            hl_workflow = workflow['link']
-        if "Test WF - Asset Finance" in workflow['name']:
-            af_workflow = workflow['link']
-
-    if hl_workflow or af_workflow:
-        deal_create = CreateDeal(ent, driver)
-        deal_fill = FillDeal(driver)
-        # hd_username = user_manipulation.get_current_username(driver)
-        if hl_workflow:
-            deal_link = deal_create.run(workflow=hl_workflow, deal_owner_name='Phillip Djukanovic',
-                                        client_email='matthew@salestrekker.com')
-            deal_fill.run(deal_link)
-        if af_workflow:
-            deal_link = deal_create.run(workflow=af_workflow, deal_owner_name='Phillip Djukanovic',
-                                        af_type='cons',
-                                        client_email='matthew@salestrekker.com')
-            deal_fill.run(deal_link)
-
-            deal_link = deal_create.run(workflow=af_workflow, deal_owner_name='Phillip Djukanovic',
-                                        af_type='comm',
-                                        client_email='matthew@salestrekker.com')
-            deal_fill.run(deal_link)
     sleep(3)
     print(f'finished {ent}', datetime.now() - start_time)
 

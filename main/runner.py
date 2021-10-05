@@ -89,9 +89,9 @@ def main_runner(ent='gemnz', email="helpdesk@salestrekker.com", cp_pin: str = ''
             cp_worker(driver=driver, pin=cp_pin, link=cp_link)
         else:
             # If no cp link or pin then call the main worker with parameters you get from perm vars and details
-            worker_main(driver=driver, ent=ent, password=info[ent][email], email=email,
-                        con_arg=conccurent_arg)
-            # worker(driver=driver, ent=ent, password=info[ent][email], email=email, con_arg=conccurent_arg)
+            # worker_main(driver=driver, ent=ent, password=info[ent][email], email=email,
+            #             con_arg=conccurent_arg)
+            simple_worker(driver=driver, ent=ent, password=info[ent][email], email=email, con_arg=conccurent_arg)
 
     # Exception catching and storing the exceptions, time when it happened and the traceback for reporting and also include a screenshot.
     except http_execs.NewConnectionError:
@@ -161,11 +161,11 @@ if __name__ == '__main__':
     #      "cp_pin": "268132"}
     # ]
 
-    my_test_ents = ['nlgconnect', 'platform', 'sfg']
-    with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
-        future_runner = {executor.submit(main_runner, ent): ent for ent in
-                         my_test_ents}
-    # main_runner('dev')
+    # my_test_ents = ['nlgconnect', 'platform', 'sfg']
+    # with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
+    #     future_runner = {executor.submit(main_runner, ent): ent for ent in
+    #                      my_test_ents}
+    main_runner('dev')
 
     # with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
     #     future_runner = {executor.submit(main_runner, 'dev'): _ for _ in
