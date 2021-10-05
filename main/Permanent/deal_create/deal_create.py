@@ -326,7 +326,8 @@ class CreateDeal:
         # Estimated settlement date
         # Add two months on top of the current one for the settlement date (and don't go over 12)
         today = datetime.now()
-        new_month = (today.month + 2) % 12
+        # TODO - replace this, this was created as modulo loops over to 0 so I add 1 on top of the result
+        new_month = ((today.month + 1) % 12)+1
         settlement_date = today.replace(month=new_month).strftime("%d/%m/%Y")
 
         settlement_date_input = main_info_block.find_element(by=eval(SETTLEMENT_DATE['by']),

@@ -9,7 +9,7 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.wait import WebDriverWait as WdWait
 
-from main.Permanent.helper_funcs import element_clicker
+from main.Permanent.helper_funcs import element_clicker, element_waiter
 from main.Permanent.user_manipulation import get_current_username
 
 
@@ -123,12 +123,11 @@ def _organization_change(driver: Chrome, org_el: WebElement, org_name: str):
 
 
 def _check_current_org(driver: Chrome, org_name: str) -> bool:
-    _toolbar_check(driver)
+    element_waiter(driver=driver, css_selector='#navBar', url=driver.current_url)
 
     try:
         search_input = driver.find_element(by=By.CSS_SELECTOR,
-                                           value='md-autocomplete-wrap > input').get_attribute(
-            'aria-label')
+                                           value='md-autocomplete-wrap > input').get_attribute('aria-label')
     except exceptions.NoSuchElementException:
         try:
             driver.find_element(by=By.CSS_SELECTOR, value='button.md-icon-button').click()
@@ -150,52 +149,16 @@ def _check_current_org(driver: Chrome, org_name: str) -> bool:
         return True
 
 
-def _toolbar_check(driver, wait_time=30):
-    # TODO - Tidy this one
-
-    # a way to split nums. into two parts i.e. - 30 into 23 and 7
-    longer = wait_time - (wait_time // 4)
-    shorter = wait_time - longer
-
-    try:
-        WdWait(driver, shorter).until(ec.visibility_of_element_located((By.ID, 'navBar')))
-    except exceptions.TimeoutException:
-        driver.refresh()
-        try:
-            WdWait(driver, longer).until(ec.visibility_of_element_located((By.ID, 'navBar')))
-        except exceptions.TimeoutException:
-            raise exceptions.TimeoutException('Could not find the navbar via the toolbar_checker')
-
-
 def organization_create(driver: Chrome, ent, parent_group, ent_group,
                         new_org=f'Test Organization {date.today()}'):
     main_url = "https://" + ent + ".salestrekker.com"
-
+    groups_and_branches_url = main_url + '/settings/groups-and-branches'
     # Go to the main enterprise group
     org_changer(driver, ent_group)
 
     driver.get(main_url + "/settings/groups-and-branches")
-    try:
-        WdWait(driver, 60).until(
-            ec.visibility_of_element_located(
-                (By.CSS_SELECTOR,
-                 'st-organization-groups-and-branches-list > main > md-content > st-list')))
-    except exceptions.TimeoutException:
-        driver.get(main_url + "/settings/groups-and-branches")
-        try:
-            WdWait(driver, 30).until(
-                ec.visibility_of_element_located(
-                    (By.TAG_NAME,
-                     'st-organization-groups-and-branches-list > main > md-content > st-list')))
-        except exceptions.TimeoutException:
-            driver.get(main_url + "/settings/groups-and-branches")
-            try:
-                WdWait(driver, 50).until(
-                    ec.invisibility_of_element_located((By.TAG_NAME, 'st-progressbar')))
-            except exceptions.TimeoutException:
-                driver.get(main_url + "/settings/groups-and-branches")
-                WdWait(driver, 50).until(
-                    ec.invisibility_of_element_located((By.TAG_NAME, 'st-progressbar')))
+    element_waiter(driver=driver, css_selector='st-organization-groups-and-branches-list > main > md-content > st-list',
+                   url=groups_and_branches_url)
 
     current_user_name = get_current_username(driver)
 
