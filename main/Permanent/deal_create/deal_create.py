@@ -23,6 +23,7 @@ from main.Permanent.helper_funcs import element_clicker, selector
 
 
 # TODO - Move to an API call
+# TODO Redo All of this
 class CreateDeal:
     def __init__(self, ent: str, driver: Chrome, config: dict = None, deal_name: str = ''):
         if deal_name:
@@ -31,6 +32,7 @@ class CreateDeal:
             self.deal_name = f'Test {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
 
         if config is None:
+            # TODO - what, no!
             deal_config = Path(__file__).parent.resolve() / "../../deal_config.json"
             with open(deal_config, 'r', encoding='utf-8') as deal_config_json:
                 deal_config = json.load(deal_config_json)

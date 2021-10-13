@@ -12,11 +12,10 @@ from time import sleep
 from selenium.webdriver import Chrome
 from webdriver_manager.chrome import ChromeDriverManager
 
-from Permanent import org_funcs, user_manipulation, workflow_manipulation
+from main.Permanent import org_funcs, user_manipulation, workflow_manipulation, login
 from main.Permanent.deal_create.deal_create import CreateDeal
 from Permanent.deal_fill import FillDeal
 from main.Permanent import main_comparator
-from Permanent.login import LogIn
 
 
 def test_worker(ent: str = 'dev', password: str = "+!'Y$pE+{Bw_oXB.",
@@ -35,10 +34,11 @@ def test_worker(ent: str = 'dev', password: str = "+!'Y$pE+{Bw_oXB.",
 
     driver = Chrome(executable_path=ChromeDriverManager().install())
 
-    LogIn(driver, ent, email, password).log_in()
+    login.run(driver, ent, email, password)
     org_funcs.org_changer(driver, '# Enterprise')
 
     workflow_manipulation.get_deals(driver, 'dev', all_deals=True)
+
 
     sleep(3)
     print(f'finished {ent}', datetime.now() - start_time)
@@ -56,18 +56,32 @@ def simple_worker(driver: Chrome, ent: str, password: str, email: str = 'helpdes
         driver:
         ent (object):
     """
-    with open("perm_vars.json", "r") as perm_json:
-        perm_vars = json.load(perm_json)
-
-    runner_learn_org = perm_vars['ents_info'][ent]['learn']
-    runner_main_org = perm_vars['ents_info'][ent]['main']
 
     start_time = datetime.now()
 
-    LogIn(driver, ent, email, password).log_in()
+    login.run(driver, ent, email, password)
 
-    main_comparator.run(driver=driver, parent_org=runner_learn_org,
-                        child_org=f'Test Organization {date.today()}', wait=False)
+    org_funcs.org_changer(driver, 'Test Organization 2021-10-05')
+
+    af_workflow = ''
+    for workflow in workflow_manipulation.get_all_workflows(driver, ent):
+        if "Test WF - Asset Finance" in workflow['name']:
+            af_workflow = workflow['link']
+
+    if af_workflow:
+        deal_create = CreateDeal(ent, driver)
+        deal_fill = FillDeal(driver)
+        # hd_username = user_manipulation.get_current_username(driver)
+        if af_workflow:
+            deal_link = deal_create.run(workflow=af_workflow, deal_owner_name='Marko P',
+                                        af_type='cons',
+                                        client_email='matthew@salestrekker.com')
+            deal_fill.run(deal_link)
+
+            deal_link = deal_create.run(workflow=af_workflow, deal_owner_name='Marko P',
+                                        af_type='comm',
+                                        client_email='matthew@salestrekker.com')
+            deal_fill.run(deal_link)
 
     sleep(3)
     print(f'finished {ent}', datetime.now() - start_time)
@@ -95,7 +109,7 @@ def worker(driver: Chrome, ent: str, password: str, email: str = 'helpdesk@sales
     # test_users = perm_vars['test_users']
     # allowed_workflows = perm_vars['workflows'].split('-')
 
-    LogIn(driver, ent, email, password).log_in()
+    login.run(driver, ent, email, password)
     # org_funcs.org_changer(driver, 'Dinar Playground')
 
     # ContactCreate(driver).main_contact_create_logic()
@@ -264,15 +278,18 @@ def worker_main(driver: Chrome, ent: str, password: str, email: str = 'helpdesk@
 
     driver.implicitly_wait(20)
 
-    LogIn(driver, ent, email, password).log_in()
+    login.run(driver, ent, email, password)
 
     org_funcs.organization_create(driver, ent, runner_learn_org, runner_main_org)
 
-    # Compares
+    # Compares both wfs and docs between two orgs
     main_comparator.run(driver=driver, parent_org=runner_learn_org,
                         child_org=f'Test Organization {date.today()}', wait=True)
 
-    # Add all users defined in perm_var.json to the organization you are currently in (new org by the current logic)
+    # make sure you are in the proper Test Org
+    org_funcs.org_changer(driver=driver, org_name=f'Test Organization {date.today()}')
+
+    # Add all users defined in perm_var.json
     email_spli = test_users['matthew']['email'].split('@')
     date_email = email_spli[0] + f'+{date.today().strftime("%d%m%y")}@' + email_spli[1]
     user_manipulation.add_user(driver, ent,

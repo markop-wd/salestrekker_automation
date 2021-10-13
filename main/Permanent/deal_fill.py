@@ -451,22 +451,24 @@ class FillDeal:
                     current_separator = button.find_element(by=eval(BUTTON_TEXT['by']),
                                                             value=BUTTON_TEXT['value']).text
                 except exceptions.StaleElementReferenceException as inst:
-                    # TODO ?
+                    # TODO
                     print(inst.stacktrace)
                     print('Current separator exception')
                     continue
 
+                # TODO - review the break below
                 if current_separator in ['Asset to be financed', 'Lender and product',
                                          'Compare products',
                                          'Security details', 'Funding worksheet',
-                                         'Maximum borrowing']:
+                                         'Maximum borrowing', 'Analysis']:
                     break
                 if current_separator in ['Connect to Mercury', 'Connect to Flex']:
                     continue
 
                 separators.append(current_separator)
 
-            # I am using separator names rather than buttons as the page might need to be reloaded and the buttons might go stale
+            # I am using separator names rather than buttons
+            # as the page might need to be reloaded and the button els might go stale
             for separator in separators:
                 try:
                     current_button = self.driver.find_element(by=By.XPATH,

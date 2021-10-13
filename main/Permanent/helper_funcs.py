@@ -18,9 +18,6 @@ from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait as WdWait
 
-from main.Permanent.login import LogIn
-from main.mail import mail_get
-
 
 def random_string_create(char_nums: int = 10, chars: bool = True):
     if chars:
@@ -126,72 +123,6 @@ def password_string_create(char_nums: int = 10):
 
     result_str += ''.join(random.choice(string.printable[:-6]) for i in range(char_nums))
     return result_str
-
-
-def user_setup_raw(driver: Chrome, ent: str):
-    """
-    This is a basic version of setting up a user for the first time
-    # TODO Improve this version and connect it to the LogIn class
-    :param driver:
-    :param ent:
-    :return:
-    """
-    driver.maximize_window()
-    add_input = AddressInput()
-
-    mail_dict = mail_get(ent)
-    if mail_dict['email'] and mail_dict['password']:
-        LogIn(driver, ent, mail_dict['email'], mail_dict['password']).log_in()
-        try:
-            driver.find_element(by=By.CSS_SELECTOR, value='input[name="phoneNumber"]')
-
-        except exceptions.NoSuchElementException:
-            pass
-        else:
-            phone_num_el = WdWait(driver, 10).until(
-                ec.visibility_of_element_located((
-                    By.CSS_SELECTOR, 'input[name="phoneNumber"]')))
-            phone_num_el.send_keys(Keys.CONTROL + "A")
-            sleep(0.1)
-            phone_num_el.send_keys(Keys.DELETE)
-            phone_num_el.send_keys('0412341234')
-
-            address_el = WdWait(driver, 10).until(
-                ec.visibility_of_element_located((
-                    By.CSS_SELECTOR,
-                    'input[aria-label="Search address"]')))
-            add_input.ul_list_selector(driver, address_el, f'{random.randrange(1, 100)} ae')
-
-        sleep(5)
-        element_clicker(driver, css_selector='a[ui-sref=".password-and-security"]')
-
-        WdWait(driver, 10).until(
-            ec.visibility_of_element_located((By.CSS_SELECTOR, 'input[type="password"]')))
-        new_password = password_string_create()
-        print(new_password)
-        for element in driver.find_elements_by_css_selector('input[type="password"]'):
-            if element.get_attribute('ng-model') == 'Model.oldPassword':
-                element.send_keys(mail_dict['password'])
-            else:
-                element.send_keys(new_password)
-            sleep(1)
-
-        WdWait(driver, 10).until(ec.element_to_be_clickable((
-            By.CSS_SELECTOR, 'button[ng-click="changePassword()"]'))).click()
-
-        WdWait(driver, 10).until(ec.element_to_be_clickable
-                                 ((By.CSS_SELECTOR,
-                                   'div[ng-if="Model.AUTH.isPasswordChangeRequired()"] button'))) \
-            .click()
-
-        # TODO - Better, robust waits
-        WdWait(driver, 50).until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'board#board')))
-        # driver.get("https://"+ent+".salestrekker.com/settings/my-accreditations")
-        # WdWait(driver, 50).until(ec.visibility_of_element_located((By.TAG_NAME, 'st-block-form-content')))
-        # input(f'{ent} finish')
-        return mail_dict['email'], new_password
-    else:
-        print('Oj dios mio no email information')
 
 
 # TODO make an element waiter, like WebdriverWait but for web-elements (input a web element, find its child element or just wait for it to be visible)
@@ -584,21 +515,18 @@ def element_waiter(driver: Chrome, css_selector: str, url: str = '') -> WebEleme
     """
     condition = ec.presence_of_element_located((By.CSS_SELECTOR, css_selector))
     try:
-        ret_el = WdWait(driver, 20).until(condition)
+        ret_el = WdWait(driver, 10).until(condition)
     except exceptions.TimeoutException:
         if url:
             driver.get(url)
-        else:
-            driver.refresh()
 
         try:
-            ret_el = WdWait(driver, 10).until(condition)
+            ret_el = WdWait(driver, 5).until(condition)
         except exceptions.TimeoutException:
             if url:
                 driver.get(url)
-            else:
-                driver.refresh()
-            ret_el = WdWait(driver, 20).until(condition)
+
+            ret_el = WdWait(driver, 5).until(condition)
 
     return ret_el
 
@@ -769,3 +697,8 @@ def random_date(test_date1: date = date(1980, 1, 1), test_date2: date = date.tod
     randay = random.randrange(total_days.days)
     return_date = test_date1 + timedelta(days=randay)
     return return_date
+
+
+def ent_extract(url: str) -> str:
+    extract_url = ''
+    return extract_url

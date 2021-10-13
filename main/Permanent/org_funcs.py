@@ -19,8 +19,6 @@ def org_changer(driver: Chrome, org_name):
     assert "salestrekker" in driver.current_url, 'invalid url'
     assert "authenticate" not in driver.current_url, 'you are at a login page'
 
-    # toolbar_check(driver)
-
     if not _check_current_org(driver, org_name):
         element_clicker(driver, css_selector='#navBar > div > md-menu > a')
         # TODO - Sandwich click handler (if the screen is narrow)
@@ -89,9 +87,6 @@ def org_changer(driver: Chrome, org_name):
         else:
             _organization_change(driver, org_el, org_name)
 
-    # else:
-    # print('Already in that organisation, moving on')
-
 
 def _organization_change(driver: Chrome, org_el: WebElement, org_name: str):
     """
@@ -149,19 +144,19 @@ def _check_current_org(driver: Chrome, org_name: str) -> bool:
         return True
 
 
-def organization_create(driver: Chrome, ent, parent_group, ent_group,
-                        new_org=f'Test Organization {date.today()}'):
+def organization_create(driver: Chrome, ent: str, parent_branch: str, ent_org: str,
+                        new_org: str = f'Test Organization {date.today()}'):
+
     main_url = "https://" + ent + ".salestrekker.com"
     groups_and_branches_url = main_url + '/settings/groups-and-branches'
     # Go to the main enterprise group
-    org_changer(driver, ent_group)
+    org_changer(driver, ent_org)
 
-    driver.get(main_url + "/settings/groups-and-branches")
+    driver.get(groups_and_branches_url)
     element_waiter(driver=driver, css_selector='st-organization-groups-and-branches-list > main > md-content > st-list',
                    url=groups_and_branches_url)
 
     current_user_name = get_current_username(driver)
-
     add_new_org_button = WdWait(driver, 30).until(
         ec.element_to_be_clickable((By.CSS_SELECTOR, 'button.primary.md-button.md-ink-ripple')))
 
@@ -188,7 +183,7 @@ def organization_create(driver: Chrome, ent, parent_group, ent_group,
     sleep(0.1)
     for elemento in parent_group_selector.find_elements(by=By.TAG_NAME,
                                                         value='md-option > div > span'):
-        if elemento.text == parent_group:
+        if elemento.text == parent_branch:
             elemento.click()
 
     # input('Test')

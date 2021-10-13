@@ -165,11 +165,11 @@ if __name__ == '__main__':
     # with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
     #     future_runner = {executor.submit(main_runner, ent): ent for ent in
     #                      my_test_ents}
-    main_runner('dev')
+    # main_runner('dev')
 
-    # with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
-    #     future_runner = {executor.submit(main_runner, 'dev'): _ for _ in
-    #                      range(3)}
+    with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
+        future_runner = {executor.submit(main_runner, 'dev'): _ for _ in
+                         range(3)}
 
     # import_ents = [
     #     'platform', 'sfg'
