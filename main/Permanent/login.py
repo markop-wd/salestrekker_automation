@@ -4,125 +4,56 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.wait import WebDriverWait as WdWait
 
-
 # TODO - Add assertions that certain elements are in place - this is a good starting point for tests
-# TODO - Switch the element clicker for the one in the pattern funcs
-# TODO - Make custom exceptions for handling the below
+from main.Permanent.helper_funcs import element_waiter
 
-class LogIn:
 
-    def __init__(self, driver: Chrome, ent, email, password):
-        self.driver = driver
-        self.ent = ent
-        self.email = email
-        self.password = password
-        self.retries = 0
+def run(driver: Chrome, ent: str, email: str, password: str, two_fact: str = ''):
+    auth_url = "https://" + ent + '.salestrekker.com/authenticate'
 
-    def log_in_helper(self):
-        assert self.driver.current_url == f'https://{self.ent}.salestrekker.com/authenticate'
+    driver.get(auth_url)
+    element_waiter(driver=driver, css_selector="form#auth", url=auth_url)
 
-        try:
-            WdWait(self.driver, 15).until(ec.visibility_of_element_located((By.TAG_NAME, "input")))
-        except exceptions.TimeoutException:
-            self.driver.refresh()
+    driver.find_element(by=By.CSS_SELECTOR,
+                        value='input[name="email"]').send_keys(email)
+
+    driver.find_element(by=By.CSS_SELECTOR,
+                        value='input[ng-model="password"]').send_keys(password)
+    driver.find_element(by=By.TAG_NAME, value='button').click()
+
+    try:
+        WdWait(driver, 5).until(
+            ec.visibility_of_element_located((By.CSS_SELECTOR, 'span > span.mr1')))
+    except exceptions.TimeoutException:
+        pass
+    else:
+        # TODO - custom exception, remove the try except pass block
+        print('Incorrect login information')
+        raise exceptions.TimeoutException
+
+    try:
+        WdWait(driver, 10).until(ec.visibility_of_element_located((By.ID, 'navBar')))
+    except exceptions.TimeoutException:
+        if driver.current_url == auth_url:
             try:
-                WdWait(self.driver, 20).until(
-                    ec.visibility_of_element_located((By.TAG_NAME, "input")))
+                WdWait(driver, 5).until(
+                    ec.visibility_of_element_located(
+                        (By.CSS_SELECTOR, 'input[ng-model="twoFactorCode"]')))
             except exceptions.TimeoutException:
-                self.driver.refresh()
                 try:
-                    WdWait(self.driver, 25).until(
-                        ec.visibility_of_element_located((By.TAG_NAME, "input")))
+                    WdWait(driver, 10).until(
+                        ec.visibility_of_element_located((By.ID, 'navBar')))
                 except exceptions.TimeoutException:
-                    print('Salestrekker unresponsive, manual checkup needed')
                     raise exceptions.TimeoutException
-                    # self.driver.quit()
-                    # TODO - Check Availability and Cleanup
 
-        else:
-            try:
-                self.driver.find_element(by=By.CSS_SELECTOR,
-                                         value='input[ng-model="email"]').send_keys(self.email)
-            except exceptions.NoSuchElementException:
-                print('No email element?')
             else:
-                try:
-                    self.driver.find_element(by=By.CSS_SELECTOR,
-                                             value='input[ng-model="password"]').send_keys(
-                        self.password)
-                except exceptions.NoSuchElementException:
-                    print('No password elemento?')
-                else:
-                    self.driver.find_element(by=By.TAG_NAME, value='button').click()
+                # TODO - Writer a leaner implementation, add a custom exception
+                if not two_fact:
+                    raise ValueError('No two factor code provided')
 
-            try:
-                WdWait(self.driver, 5).until(
-                    ec.visibility_of_element_located((By.CSS_SELECTOR, 'span > span.mr1')))
-            except exceptions.TimeoutException:
-                pass
-            else:
-                print('Incorrect login information')
-                raise exceptions.TimeoutException
-                # self.driver.quit()
+                driver.find_element(By.CSS_SELECTOR,
+                                    value='input[ng-model="twoFactorCode"]').send_keys(two_fact)
+                driver.find_element(by=By.TAG_NAME, value='button').click()
+                element_waiter(driver, css_selector='#navBar')
 
-            try:
-                WdWait(self.driver, 10).until(ec.visibility_of_element_located((By.ID, 'navBar')))
-            except exceptions.TimeoutException:
-                if self.driver.current_url == f'https://{self.ent}.salestrekker.com/authenticate':
-                    try:
-                        WdWait(self.driver, 5).until(
-                            ec.visibility_of_element_located(
-                                (By.CSS_SELECTOR, 'input[ng-model="twoFactorCode"]')))
-                    except exceptions.TimeoutException:
-                        try:
-                            WdWait(self.driver, 10).until(
-                                ec.visibility_of_element_located((By.ID, 'navBar')))
-                        except exceptions.TimeoutException:
-                            print('Test')
-                            if not self.retries > 1:
-                                self.retries += 1
-                                self.log_in()
-                            else:
-                                raise exceptions.TimeoutException
-                                # self.driver.quit()
-                    else:
-                        self.driver.find_element(By.CSS_SELECTOR,
-                                                 value='input[ng-model="twoFactorCode"]').send_keys(
-                            input(f'Enter the two factor for {self.email} on {self.ent}: '))
-                        self.driver.find_element(by=By.TAG_NAME, value='button').click()
-                        try:
-                            WdWait(self.driver, 15).until(
-                                ec.visibility_of_element_located((By.ID, 'navBar')))
-                        except exceptions.TimeoutException:
-                            if not self.retries > 1:
-                                self.retries += 1
-                                self.log_in()
-                            else:
-                                raise exceptions.TimeoutException
-                                # self.driver.quit()
 
-    def log_in(self):
-        self.driver.get("https://" + self.ent + '.salestrekker.com/authenticate')
-        try:
-            WdWait(self.driver, 10).until(
-                ec.visibility_of_element_located((By.TAG_NAME, 'sign-in')))
-        except exceptions.TimeoutException:
-            time_increment = 0
-            while True:
-                self.driver.get("https://" + self.ent + '.salestrekker.com/authenticate')
-                if "Authentication" in self.driver.title:
-                    break
-                elif time_increment > 13:
-                    print('Salestrekker unresponsive, manual checkup needed')
-                    raise exceptions.TimeoutException
-                    # self.driver.quit()
-                    # TODO - Check Availability
-
-                # sleep(time_increment)
-                try:
-                    WdWait(self.driver, time_increment).until(
-                        ec.visibility_of_element_located((By.TAG_NAME, 'sign-in')))
-                except exceptions.TimeoutException:
-                    time_increment += 2
-        finally:
-            self.log_in_helper()

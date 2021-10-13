@@ -224,6 +224,7 @@ class WorkflowComparator:
 class InvalidOrganisationNameException(Exception):
     """
     Inner exception in case anyone tampers with the main_comparator
+    A different not runtime solution should be found
     """
     def __init__(self, message="Organisation name provided to the comparator is not valid"):
         super().__init__(message)
