@@ -1,3 +1,4 @@
+import asyncio
 from time import sleep
 from datetime import datetime, date
 
@@ -8,7 +9,7 @@ from main.Permanent.helper_funcs import element_waiter
 from main.Permanent.org_funcs import org_changer
 
 
-def run(driver: Chrome, parent_org: str, child_org: str, wait: bool):
+async def run(driver: Chrome, parent_org: str, child_org: str, wait: bool):
     # Instantiates comparator classes with orgs
     dc = DocumentComparator(driver=driver, child_org=child_org, parent_org=parent_org)
     wf = WorkflowComparator(driver=driver, child_org=child_org, parent_org=parent_org)
@@ -18,7 +19,7 @@ def run(driver: Chrome, parent_org: str, child_org: str, wait: bool):
     dc.document_get(dc.parent_org)
     wf.workflow_get(wf.parent_org)
     if wait:
-        sleep(320)
+        await asyncio.sleep(320)
     dc.document_get(dc.child_org)
     wf.workflow_get(wf.child_org)
 

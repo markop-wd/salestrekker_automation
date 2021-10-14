@@ -27,6 +27,7 @@ def random_string_create(char_nums: int = 10, chars: bool = True):
         result_str = ''.join(random.choice(string.digits) for _ in range(char_nums))
         return result_str
 
+
 # TODO
 def accreditation_fill(driver: Chrome, ent: str, all_new: bool = True):
     if driver.current_url != f"https://{ent}.salestrekker.com/settings/my-accreditations":
@@ -121,7 +122,7 @@ def password_string_create(char_nums: int = 10):
     result_str += random.choice(string.digits)
     result_str += random.choice(string.punctuation)
 
-    result_str += ''.join(random.choice(string.printable[:-6]) for i in range(char_nums))
+    result_str += ''.join(random.choice(string.printable[:-6]) for _ in range(char_nums))
     return result_str
 
 

@@ -1,0 +1,42 @@
+import datetime
+
+import requests
+from datetime import datetime
+import json
+from main.utils.project_root import get_useragents_json
+import selenium.webdriver.common.devtools.v95 as devtools
+
+ua_json_path = get_useragents_json()
+
+with open(ua_json_path, 'r') as ua_file:
+    ua_file_json = json.load(fp=ua_file)
+
+current_time = datetime.now()
+
+ua_time = ua_file_json['time']
+previous_call_time = datetime.strptime(
+    ua_time, '%Y-%m-%d %H:%M:%S.%f')
+
+api_call_delta = current_time - previous_call_time
+
+if api_call_delta.days >= 30:
+    url = "https://browsers-versions.p.rapidapi.com/v2/browsers/latest"
+    headers = {
+        'x-rapidapi-host': "browsers-versions.p.rapidapi.com",
+        'x-rapidapi-key': "a45be5812bmshcb6a5f38cd7eaf2p1074c0jsn05bdc5570e02"
+    }
+
+    resp = requests.get(url, headers=headers)
+    api_resp = json.loads(resp.text)
+    with open(ua_json_path, 'w+') as ua_file:
+        json.dump({'time': str(current_time), 'info': api_resp}, fp=ua_file)
+        ua_file.flush()
+        ua_file_json = json.load(fp=ua_file)
+
+print(ua_file_json['info']['chrome']['windows']['ua'])
+
+
+# {'chrome': {'windows': {'version': '94.0.4606.81', 'ua': 'Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36'}, 'macos': {'version': '94.0.4606.81', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36'}, 'linux': {'version': '94.0.4606.81', 'ua': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36'}, 'android': {'version': '93.0.4577.62', 'ua': 'Mozilla/5.0 (Linux; Android 8.1.0; One) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36'}, 'ios': {'version': '94.0.4606.76', 'ua': 'Mozilla/5.0 (iPad; CPU OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/94.0.4606.76 Mobile/15E148 Safari/604.1'}}, 'firefox': {'windows': {'version': '93.0', 'ua': 'Mozilla/5.0 (Windows NT 10.0; Win32; x32; rv:88.0) Gecko/20100101 Firefox/93.0'}, 'macos': {'version': '93.0', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:93.0) Gecko/20100101 Firefox/93.0'}, 'linux': {'version': '93.0', 'ua': 'Mozilla/5.0 (X11; Linux i686; rv:93.0) Gecko/20100101 Firefox/93.0'}, 'android': {'version': '92.1.1', 'ua': 'Mozilla/5.0 (Android 10.0; Mobile; rv:92.1) Gecko/92.1 Firefox/92.1'}, 'ios': {'version': '38.1', 'ua': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/38.1 Mobile/15E148 Safari/605.1.15'}}, 'safari': {'windows': {'version': '5.1.7', 'ua': 'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/535.3 (KHTML, like Gecko) Version/5.1.7 Safari/535.3'}, 'macos': {'version': '14.1.2', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Safari/605.1.15,gzip(gfe)'}, 'ios': {'version': '14.6', 'ua': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.6 Mobile/15E148 Safari/605.1.15 BingSapphire/1.0.390426002'}}, 'edge': {'windows': {'version': '94.0.992.38', 'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Safari/537.36 Edg/94.0.992.38'}, 'macos': {'version': '94.0.992.38', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Safari/537.36 Edg/94.0.992.38'}, 'android': {'version': '46.06.2.5161', 'ua': 'Mozilla/5.0 (Linux; Android 10; LM-K200) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.116 Mobile Safari/537.36 EdgA/46.06.2.5161'}, 'ios': {'version': '93.961.69', 'ua': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 EdgiOS/93.961.69 Mobile/15E148 Safari/605.1.15'}}, 'opera': {'windows': {'version': '80.0.4170.16', 'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36 OPR/80.0.4170.16'}, 'macos': {'version': '80.0.4170.16', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36 OPR/80.0.4170.16'}, 'linux': {'version': '80.0.4170.16', 'ua': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36 OPR/80.0.4170.16'}, 'android': {'version': '65.1.3381.61266', 'ua': 'Mozilla/5.0 (Linux; Android 10; Lenovo TB-X606X) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.166 Safari/537.36 OPR/65.1.3381.61266'}}, 'vivaldi': {'windows': {'version': '4.3.2439.44', 'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.83 Safari/537.36 Vivaldi/4.3.2439.44'}, 'macos': {'version': '4.3.2439.44', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.145 Safari/537.36 Vivaldi/4.3.2439.44'}, 'linux': {'version': '4.3.2439.44', 'ua': 'Mozilla/5.0 (X11; Linux 21.04 x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36 Vivaldi/4.3.2439.44'}}, 'yandex_browser': {'windows': {'version': '21.9.0.1052', 'ua': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 YaBrowser/21.9.0.1052 Yowser/2.5 Safari/537.36'}, 'macos': {'version': '21.9.0.1052', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 YaBrowser/21.9.0.1052 Yowser/2.5 Safari/537.36'}, 'linux': {'version': '21.9.0.1052', 'ua': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.166 YaBrowser/21.9.0.1052.01 (beta) Safari/537.36'}, 'android': {'version': '21.8.1.127', 'ua': 'Mozilla/5.0 (Linux; arm_64; Android 9; Redmi Note 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 YaBrowser/21.8.1.127.00 SA/3 Mobile Safari/537.36'}, 'ios': {'version': '21.8.5.464', 'ua': 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 YaBrowser/21.8.5.464.10 SA/3 Mobile/15E148 Safari/604.1'}}, 'ie': {'windows': {'version': '11.0', 'ua': 'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko'}}, 'samsung_browser': {'android': {'version': '15.0.4.9', 'ua': 'Mozilla/5.0 (Linux; Android 8.0.0; SAMSUNG SM-G5700) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/15.0 Chrome/90.0.4430.210 Mobile Safari/537.36'}}}
+
+
+# devtools.emulation.set_user_agent_override()

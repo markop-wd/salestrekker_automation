@@ -99,6 +99,11 @@ def worker(driver: Chrome, ent: str, password: str, email: str = 'helpdesk@sales
         driver:
         ent (object):
     """
+    with open("perm_vars.json", "r") as perm_json:
+        perm_vars = json.load(perm_json)
+
+    runner_learn_org = perm_vars['ents_info'][ent]['learn']
+
     start_time = datetime.now()
     print('start', ent if not con_arg else con_arg)
     # with open("perm_vars.json", "r") as perm_json:
@@ -110,6 +115,9 @@ def worker(driver: Chrome, ent: str, password: str, email: str = 'helpdesk@sales
     # allowed_workflows = perm_vars['workflows'].split('-')
 
     login.run(driver, ent, email, password)
+    main_comparator.run(driver=driver, parent_org=runner_learn_org,
+                        child_org=f'Test Organization {date.today()}', wait=False)
+
     # org_funcs.org_changer(driver, 'Dinar Playground')
 
     # ContactCreate(driver).main_contact_create_logic()

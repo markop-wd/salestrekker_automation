@@ -19,12 +19,14 @@ from selenium.webdriver.support.wait import WebDriverWait as WdWait
 from selenium.webdriver.support import expected_conditions as ec
 import requests
 
+from main.Permanent import login
 from main.Permanent.deal_create.deal_create import CreateDeal
 from main.Permanent.deal_fill import FillDeal
 from main.Permanent.helper_funcs import md_toast_remover, random_string_create, AddressInput, element_clicker, selector, \
-    element_dissapear, element_waiter
+    element_dissapear, element_waiter, password_string_create
 from main.Permanent.deal_fill_selectors import CONTENT, INFO_BUTTONS, ADD_HOUSEHOLD, \
     HOUSEHOLD_PICKER
+from main.mail import mail_get
 
 
 class Test:
@@ -84,7 +86,7 @@ class Test:
 
 
 def config_deal_create(driver: Chrome, ent: str, hl_workflow: str, con_arg: int):
-    with open("deal_config.json") as create_config:
+    with open("../main/deal_config.json") as create_config:
         main_config = json.load(create_config)
     scen_1 = copy.deepcopy(main_config)
     scen_1['contacts']['number_of_contacts']['value'] = 1
@@ -121,7 +123,7 @@ def config_deal_create(driver: Chrome, ent: str, hl_workflow: str, con_arg: int)
     else:
         url = deal.run(workflow=hl_workflow, deal_owner_name='Salestrekker Help Desk',
                        af_type="comm")
-    with open("edit_config.json") as fill_config:
+    with open("../main/edit_config.json") as fill_config:
         edit_config = json.load(fill_config)
     scen1_fill = copy.deepcopy(edit_config)
     scen1_fill['income']['type'] = 'bus'
@@ -150,11 +152,11 @@ class ContactCreate:
                                      'Search mailing address',
                                      'Search previous address',
                                      'Search post settlement address']
-        occupation_path = Path('assets/occupations.json')
+        occupation_path = Path('../main/assets/occupations.json')
         with open(occupation_path) as occupation_codes:
             self.occupations = json.load(occupation_codes)
 
-        industry_path = Path('assets/industries.json')
+        industry_path = Path('../main/assets/industries.json')
         with open(industry_path, 'r') as industry_codes:
             self.industries = json.load(industry_codes)
 
@@ -816,7 +818,7 @@ def user_setup_raw(driver: Chrome, ent: str):
 
     mail_dict = mail_get(ent)
     if mail_dict['email'] and mail_dict['password']:
-        LogIn(driver, ent, mail_dict['email'], mail_dict['password']).log_in()
+        login.run(driver, ent, mail_dict['email'], mail_dict['password'])
         try:
             driver.find_element(by=By.CSS_SELECTOR, value='input[name="phoneNumber"]')
 
@@ -844,7 +846,7 @@ def user_setup_raw(driver: Chrome, ent: str):
             ec.visibility_of_element_located((By.CSS_SELECTOR, 'input[type="password"]')))
         new_password = password_string_create()
         print(new_password)
-        for element in driver.find_elements_by_css_selector('input[type="password"]'):
+        for element in driver.find_elements(by=By.CSS_SELECTOR, value='input[type="password"]'):
             if element.get_attribute('ng-model') == 'Model.oldPassword':
                 element.send_keys(mail_dict['password'])
             else:

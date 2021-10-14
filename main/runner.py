@@ -11,6 +11,7 @@ from pathlib import Path
 
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 
 from urllib3 import exceptions as http_execs
 from webdriver_manager.chrome import ChromeDriverManager
@@ -66,13 +67,11 @@ def main_runner(ent='gemnz', email="helpdesk@salestrekker.com", cp_pin: str = ''
 
     os.environ['WDM_LOG_LEVEL'] = '0'
     options = Options()
-    # options.headless = True
+    options.headless = True
     # Detach it so the program can end but the Chrome will remain open until you close it manually
     # options.add_experimental_option("detach", True)
-
-    driver = Chrome(
-        executable_path=ChromeDriverManager(log_level=0, print_first_line=False).install(),
-        options=options)
+    service = Service(executable_path=ChromeDriverManager(log_level=0, print_first_line=False).install())
+    driver = Chrome(service=service, options=options)
 
     # driver_ids = {"url": driver.command_executor._url, "id": driver.session_id}
     # with open("new_session.json", "w") as new:
@@ -91,7 +90,7 @@ def main_runner(ent='gemnz', email="helpdesk@salestrekker.com", cp_pin: str = ''
             # If no cp link or pin then call the main worker with parameters you get from perm vars and details
             # worker_main(driver=driver, ent=ent, password=info[ent][email], email=email,
             #             con_arg=conccurent_arg)
-            simple_worker(driver=driver, ent=ent, password=info[ent][email], email=email, con_arg=conccurent_arg)
+            worker(driver=driver, ent=ent, password=info[ent][email], email=email, con_arg=conccurent_arg)
 
     # Exception catching and storing the exceptions, time when it happened and the traceback for reporting and also include a screenshot.
     except http_execs.NewConnectionError:
@@ -165,11 +164,11 @@ if __name__ == '__main__':
     # with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
     #     future_runner = {executor.submit(main_runner, ent): ent for ent in
     #                      my_test_ents}
-    # main_runner('dev')
-
-    with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
-        future_runner = {executor.submit(main_runner, 'dev'): _ for _ in
-                         range(3)}
+    main_runner('dev')
+    #
+    # with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
+    #     future_runner = {executor.submit(main_runner, 'dev'): _ for _ in
+    #                      range(3)}
 
     # import_ents = [
     #     'platform', 'sfg'
